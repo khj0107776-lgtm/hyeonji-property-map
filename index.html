@@ -1,3457 +1,3158 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>현지공인중개사 매물지도</title>
+<title>현지공인중개사 매물지도</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+* {
+    box-sizing: border-box;
+}
 
-    html,
-    body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      font-family:
-        Arial,
+body {
+    margin: 0;
+    font-family:
         "Noto Sans KR",
+        "Malgun Gothic",
+        Arial,
         sans-serif;
-      color: #222;
-      background: #f7f8fa;
-    }
+    color: #202124;
+    background: #f5f7fb;
+}
 
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
 
-    /* =========================
-       상단
-    ========================= */
+button {
+    cursor: pointer;
+}
+
+header {
+    height: 72px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1000;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.logo span {
+    color: #e51c23;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #555;
+    font-size: 14px;
+}
+
+.phone {
+    font-weight: 700;
+    color: #333;
+}
+
+.login-btn,
+.logout-btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 11px 16px;
+    font-weight: 700;
+}
+
+.login-btn {
+    background: #536dfe;
+    color: white;
+}
+
+.logout-btn {
+    background: #eef0f5;
+    color: #333;
+}
+
+.main {
+    display: flex;
+    height: calc(100vh - 72px);
+}
+
+.map-area {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+.top-search {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    z-index: 500;
+    display: flex;
+    gap: 8px;
+}
+
+.top-search input {
+    width: 310px;
+    height: 48px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 0 16px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,.12);
+    font-size: 15px;
+}
+
+.search-btn {
+    height: 48px;
+    border: 0;
+    background: #536dfe;
+    color: white;
+    border-radius: 12px;
+    padding: 0 20px;
+    font-weight: 800;
+}
+
+.side {
+    width: 390px;
+    background: white;
+    border-left: 1px solid #ddd;
+    overflow-y: auto;
+    position: relative;
+    z-index: 600;
+}
+
+.category {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 18px;
+    border-bottom: 1px solid #eee;
+}
+
+.category button {
+    background: white;
+    border: 1px solid #d8dbe2;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.category button.active {
+    background: #536dfe;
+    border-color: #536dfe;
+    color: white;
+}
+
+.request-menu {
+    margin: 14px 18px;
+    width: calc(100% - 36px);
+    border: 0;
+    border-radius: 12px;
+    padding: 14px;
+    background: #fff3e0;
+    color: #e65100;
+    font-weight: 900;
+    font-size: 15px;
+}
+
+.count-info {
+    padding: 0 18px 15px;
+    color: #666;
+    font-size: 13px;
+}
+
+.property-list {
+    padding: 0 14px 30px;
+}
+
+.property-card {
+    border: 1px solid #e3e5ea;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    background: white;
+    transition: .15s;
+}
+
+.property-card:hover {
+    box-shadow: 0 4px 18px rgba(0,0,0,.10);
+    transform: translateY(-1px);
+}
+
+.property-photo {
+    width: 100%;
+    height: 175px;
+    object-fit: cover;
+    background: #eee;
+}
+
+.no-photo {
+    height: 175px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f1f5;
+    color: #999;
+    font-weight: 700;
+}
+
+.property-content {
+    padding: 14px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #edf0ff;
+    color: #4659d8;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.property-title {
+    margin-top: 8px;
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.property-address {
+    margin-top: 6px;
+    color: #666;
+    font-size: 13px;
+}
+
+.price {
+    margin-top: 10px;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.rights {
+    color: #d84315;
+    margin-left: 8px;
+}
+
+.detail-link {
+    margin-top: 10px;
+    display: inline-block;
+    color: #536dfe;
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.dong-label {
+    background: white;
+    border: 2px solid #536dfe;
+    border-radius: 18px;
+    padding: 8px 13px;
+    box-shadow: 0 3px 12px rgba(0,0,0,.18);
+    white-space: nowrap;
+    font-weight: 900;
+}
+
+.dong-label strong {
+    color: #536dfe;
+    font-size: 17px;
+    margin-right: 5px;
+}
+
+.modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-bg.show {
+    display: flex;
+}
+
+.modal {
+    width: 100%;
+    max-width: 650px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 15px 50px rgba(0,0,0,.3);
+}
+
+.modal h2 {
+    margin-top: 0;
+}
+
+.close {
+    float: right;
+    border: 0;
+    background: #eee;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    font-size: 20px;
+}
+
+.form-group {
+    margin-bottom: 13px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    border: 1px solid #d7dbe3;
+    border-radius: 9px;
+    padding: 11px;
+    font-size: 14px;
+    outline: none;
+}
+
+.form-group textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.form-submit {
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    padding: 14px;
+    background: #536dfe;
+    color: white;
+    font-weight: 900;
+    font-size: 15px;
+}
+
+.admin-panel {
+    display: none;
+    margin: 15px 18px;
+    padding: 15px;
+    background: #f5f6ff;
+    border: 1px solid #dce1ff;
+    border-radius: 13px;
+}
+
+.admin-panel.show {
+    display: block;
+}
+
+.admin-title {
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.admin-btn {
+    width: 100%;
+    border: 0;
+    border-radius: 9px;
+    padding: 11px;
+    margin-bottom: 8px;
+    background: #536dfe;
+    color: white;
+    font-weight: 800;
+}
+
+.admin-btn.orange {
+    background: #ff8a00;
+}
+
+.request-item {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #fff;
+}
+
+.request-item img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.delete-btn {
+    border: 0;
+    background: #ef5350;
+    color: white;
+    padding: 8px 11px;
+    border-radius: 7px;
+    font-weight: 800;
+    margin-top: 8px;
+}
+
+.detail-photo {
+    width: 100%;
+    max-height: 350px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+.detail-table th,
+.detail-table td {
+    border-bottom: 1px solid #eee;
+    padding: 10px 5px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.detail-table th {
+    width: 90px;
+    color: #777;
+}
+
+.empty {
+    text-align: center;
+    padding: 50px 10px;
+    color: #999;
+}
+
+@media(max-width: 900px) {
 
     header {
-      height: 68px;
-      background: #fff;
-      border-bottom: 1px solid #e5e7eb;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      padding: 0 24px;
-
-      position: relative;
-      z-index: 50;
+        padding: 0 12px;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-
-      font-size: 22px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .phone-box {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      font-size: 15px;
-      font-weight: 700;
-      color: #333;
+    .logo {
+        font-size: 18px;
     }
 
     .phone {
-      display: inline-flex;
-      align-items: center;
-
-      padding: 7px 10px;
-
-      border-radius: 8px;
-
-      background: #f5f7fb;
+        display: none;
     }
 
-    .head-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .main {
+        display: block;
+        height: calc(100vh - 62px);
     }
 
-    .user-mail {
-      font-size: 13px;
-      color: #666;
+    header {
+        height: 62px;
     }
 
-    .login-btn,
-    .logout-btn {
-      border: 0;
-      border-radius: 10px;
-
-      padding: 10px 15px;
-
-      color: #fff;
-      background: #4f6fe8;
-
-      cursor: pointer;
+    .map-area {
+        height: 55vh;
     }
-
-    .logout-btn {
-      background: #4f6fe8;
-    }
-
-
-    /* =========================
-       전체 화면
-    ========================= */
-
-    main {
-      height: calc(100vh - 68px);
-
-      display: flex;
-
-      overflow: hidden;
-    }
-
-
-    /* =========================
-       지도
-    ========================= */
-
-    #map {
-      position: relative;
-
-      flex: 1;
-
-      min-width: 0;
-      height: 100%;
-
-      background: #eee;
-    }
-
-
-    /* =========================
-       지도 검색
-    ========================= */
-
-    .map-search {
-      position: absolute;
-
-      top: 16px;
-      left: 16px;
-
-      z-index: 20;
-
-      display: flex;
-      gap: 6px;
-    }
-
-    .map-search input {
-      width: 290px;
-
-      border: 1px solid #ddd;
-      border-radius: 11px;
-
-      padding: 12px 14px;
-
-      background: #fff;
-
-      box-shadow:
-        0 3px 12px rgba(0,0,0,.12);
-
-      outline: none;
-    }
-
-    .map-search input:focus {
-      border-color: #4f6fe8;
-    }
-
-    .map-search button {
-      border: 0;
-      border-radius: 11px;
-
-      padding: 0 17px;
-
-      color: #fff;
-      background: #4f6fe8;
-
-      cursor: pointer;
-
-      box-shadow:
-        0 3px 12px rgba(0,0,0,.12);
-    }
-
-
-    /* =========================
-       관리자 버튼
-    ========================= */
-
-    .admin-open {
-      display: none;
-
-      position: absolute;
-
-      right: 18px;
-      top: 18px;
-
-      z-index: 30;
-
-      border: 0;
-      border-radius: 11px;
-
-      padding: 11px 15px;
-
-      background: #fff;
-
-      box-shadow:
-        0 3px 12px rgba(0,0,0,.15);
-
-      cursor: pointer;
-
-      font-weight: 700;
-    }
-
-    .admin-open.show {
-      display: block;
-    }
-
-
-    /* =========================
-       오른쪽 매물 목록
-    ========================= */
 
     .side {
-      width: 410px;
-
-      background: #fff;
-
-      border-left: 1px solid #e5e7eb;
-
-      display: flex;
-      flex-direction: column;
-
-      z-index: 10;
-    }
-
-
-    /* =========================
-       필터
-    ========================= */
-
-    .filters {
-      padding: 14px;
-
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-
-      border-bottom: 1px solid #eee;
-    }
-
-    .filter {
-      border: 1px solid #ddd;
-
-      background: #fff;
-
-      border-radius: 10px;
-
-      padding: 9px 12px;
-
-      cursor: pointer;
-
-      font-weight: 600;
-    }
-
-    .filter:hover {
-      background: #f5f7ff;
-    }
-
-    .filter.active {
-      color: #fff;
-
-      background: #4f6fe8;
-
-      border-color: #4f6fe8;
-    }
-
-
-    /* =========================
-       매물 개수
-    ========================= */
-
-    .count {
-      padding: 11px 15px;
-
-      font-size: 13px;
-
-      color: #667085;
-
-      border-bottom: 1px solid #eee;
-    }
-
-
-    /* =========================
-       매물 리스트
-    ========================= */
-
-    #list {
-      flex: 1;
-
-      overflow-y: auto;
-    }
-
-    .card {
-      display: flex;
-
-      gap: 11px;
-
-      padding: 13px;
-
-      border-bottom: 1px solid #eee;
-
-      cursor: pointer;
-
-      transition: background .15s;
-    }
-
-    .card:hover {
-      background: #f7f9ff;
-    }
-
-    .thumb {
-      width: 110px;
-      height: 84px;
-
-      flex: none;
-
-      object-fit: cover;
-
-      border-radius: 9px;
-
-      background: #eef1f5;
-    }
-
-    .card-info {
-      min-width: 0;
-    }
-
-    .card-title {
-      margin-bottom: 5px;
-
-      font-size: 15px;
-      font-weight: 800;
-
-      line-height: 1.4;
-    }
-
-    .muted {
-      font-size: 12px;
-
-      color: #777;
-
-      line-height: 1.5;
-    }
-
-    .price {
-      margin-top: 5px;
-
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .premium-small {
-      margin-top: 3px;
-
-      color: #e5484d;
-
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .empty {
-      padding: 50px 20px;
-
-      text-align: center;
-
-      color: #888;
-    }
-
-
-    /* =========================
-       동별 매물 개수
-    ========================= */
-
-    .dong-bubble {
-      min-width: 65px;
-
-      text-align: center;
-
-      background: #fff;
-
-      border: 2px solid #4f6fe8;
-
-      border-radius: 20px;
-
-      padding: 7px 10px;
-
-      box-shadow:
-        0 3px 12px rgba(0,0,0,.18);
-
-      font-weight: 800;
-
-      color: #334155;
-    }
-
-    .dong-bubble strong {
-      display: block;
-
-      font-size: 16px;
-    }
-
-    .dong-bubble span {
-      display: block;
-
-      margin-top: 1px;
-
-      font-size: 11px;
-
-      font-weight: 500;
-
-      color: #666;
-    }
-
-
-    /* =========================
-       관리자 패널
-    ========================= */
-
-    .admin-panel {
-      display: none;
-
-      position: absolute;
-
-      left: 18px;
-      top: 18px;
-
-      width: 380px;
-
-      max-height: calc(100vh - 105px);
-
-      overflow-y: auto;
-
-      padding: 19px;
-
-      background: #fff;
-
-      border-radius: 17px;
-
-      box-shadow:
-        0 15px 40px rgba(0,0,0,.22);
-
-      z-index: 40;
-    }
-
-    .admin-panel.show {
-      display: block;
-    }
-
-    .admin-panel h2 {
-      margin: 0 0 15px;
-
-      font-size: 20px;
-    }
-
-    .close {
-      position: absolute;
-
-      top: 10px;
-      right: 13px;
-
-      border: 0;
-
-      background: transparent;
-
-      font-size: 24px;
-
-      cursor: pointer;
-
-      color: #555;
-    }
-
-    .field {
-      margin-bottom: 10px;
-    }
-
-    .field label {
-      display: block;
-
-      margin-bottom: 5px;
-
-      font-size: 12px;
-
-      color: #555;
-
-      font-weight: 600;
-    }
-
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-
-      padding: 10px 11px;
-
-      border: 1px solid #d9dde5;
-
-      border-radius: 9px;
-
-      outline: none;
-
-      background: #fff;
-    }
-
-    .field input:focus,
-    .field select:focus,
-    .field textarea:focus {
-      border-color: #4f6fe8;
-    }
-
-    .field textarea {
-      min-height: 90px;
-
-      resize: vertical;
-    }
-
-    .row {
-      display: grid;
-
-      grid-template-columns: 1fr 1fr;
-
-      gap: 8px;
-    }
-
-    .submit {
-      width: 100%;
-
-      border: 0;
-      border-radius: 10px;
-
-      padding: 12px;
-
-      color: #fff;
-
-      background: #4f6fe8;
-
-      cursor: pointer;
-
-      font-weight: 800;
-    }
-
-    .submit:hover {
-      background: #405fd5;
-    }
-
-    .preview {
-      display: none;
-
-      width: 100%;
-
-      max-height: 190px;
-
-      margin-top: 8px;
-
-      object-fit: cover;
-
-      border-radius: 9px;
-    }
-
-    .admin-list {
-      margin-top: 20px;
-
-      padding-top: 13px;
-
-      border-top: 1px solid #eee;
-    }
-
-    .admin-item {
-      padding: 11px 0;
-
-      border-bottom: 1px solid #eee;
-    }
-
-    .admin-item b {
-      font-size: 13px;
-    }
-
-    .delete {
-      float: right;
-
-      border: 0;
-
-      border-radius: 7px;
-
-      padding: 5px 9px;
-
-      color: #fff;
-
-      background: #ef4444;
-
-      cursor: pointer;
-
-      font-size: 12px;
-    }
-
-    .login-required {
-      padding: 15px;
-
-      border-radius: 10px;
-
-      background: #f5f7fa;
-
-      color: #667085;
-
-      font-size: 13px;
-
-      line-height: 1.6;
-    }
-
-
-    /* =========================
-       상세정보 모달
-    ========================= */
-
-    .modal {
-      display: none;
-
-      position: fixed;
-
-      inset: 0;
-
-      z-index: 100;
-
-      align-items: center;
-      justify-content: center;
-
-      padding: 18px;
-
-      background: rgba(0,0,0,.55);
-    }
-
-    .modal.show {
-      display: flex;
-    }
-
-    .detail {
-      position: relative;
-
-      width: min(680px, 100%);
-
-      max-height: 90vh;
-
-      overflow-y: auto;
-
-      padding: 20px;
-
-      background: #fff;
-
-      border-radius: 18px;
-
-      box-shadow:
-        0 20px 60px rgba(0,0,0,.3);
-    }
-
-    .detail > img {
-      display: block;
-
-      width: 100%;
-
-      max-height: 370px;
-
-      object-fit: cover;
-
-      border-radius: 12px;
-
-      background: #f0f2f5;
-    }
-
-    .detail-tags {
-      margin-top: 13px;
-    }
-
-    .tag {
-      display: inline-block;
-
-      padding: 6px 9px;
-
-      margin-right: 5px;
-
-      border-radius: 7px;
-
-      color: #4357b9;
-
-      background: #eef2ff;
-
-      font-size: 12px;
-
-      font-weight: 700;
-    }
-
-    .detail h2 {
-      margin: 12px 0 6px;
-
-      font-size: 21px;
-    }
-
-    .detail-address {
-      color: #666;
-
-      font-size: 13px;
-    }
-
-    .detail-grid {
-      display: grid;
-
-      grid-template-columns: 1fr 1fr;
-
-      gap: 8px;
-
-      margin-top: 15px;
-    }
-
-    .info {
-      padding: 11px;
-
-      border-radius: 10px;
-
-      background: #f7f8fa;
-    }
-
-    .info small {
-      display: block;
-
-      margin-bottom: 4px;
-
-      color: #777;
-
-      font-size: 11px;
-    }
-
-    .info b {
-      font-size: 14px;
-    }
-
-    .detail-description {
-      margin-top: 17px;
-
-      line-height: 1.7;
-
-      white-space: pre-wrap;
-
-      font-size: 14px;
-    }
-
-    .premium-detail {
-      color: #e5484d;
-    }
-
-    .external {
-      display: inline-block;
-
-      margin-top: 12px;
-
-      padding: 10px 14px;
-
-      border-radius: 9px;
-
-      color: #fff;
-
-      background: #111827;
-
-      text-decoration: none;
-
-      font-size: 13px;
-
-      font-weight: 700;
-    }
-
-
-    /* =========================
-       모바일
-    ========================= */
-
-    @media(max-width: 900px) {
-
-      header {
-        padding: 0 14px;
-      }
-
-      .brand {
-        gap: 8px;
-
-        font-size: 17px;
-      }
-
-      .phone-box {
-        gap: 5px;
-
-        font-size: 11px;
-      }
-
-      .phone {
-        padding: 5px 6px;
-      }
-
-      .user-mail {
-        display: none;
-      }
-
-      .side {
-        width: 360px;
-      }
-
-      .map-search input {
-        width: 220px;
-      }
-
-    }
-
-
-    @media(max-width: 650px) {
-
-      header {
-        height: 60px;
-      }
-
-      main {
-        height: calc(100vh - 60px);
-
-        display: block;
-      }
-
-      #map {
-        height: 55vh;
-      }
-
-      .side {
         width: 100%;
         height: 45vh;
-
         border-left: 0;
-
-        border-top: 1px solid #e5e7eb;
-      }
-
-      .brand {
-        font-size: 16px;
-      }
-
-      .phone-box {
-        display: none;
-      }
-
-      .map-search {
-        top: 10px;
-        left: 10px;
-      }
-
-      .map-search input {
-        width: calc(100vw - 110px);
-      }
-
-      .map-search button {
-        padding: 0 12px;
-      }
-
-      .admin-panel {
-        left: 10px;
-        top: 10px;
-
-        width: calc(100% - 20px);
-
-        max-height: calc(55vh - 20px);
-      }
-
-      .detail-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
+        border-top: 1px solid #ddd;
     }
 
-  </style>
-</head>
+    .top-search {
+        left: 10px;
+        right: 10px;
+    }
 
+    .top-search input {
+        flex: 1;
+        width: auto;
+    }
+}
+</style>
+</head>
 
 <body>
 
-  <!-- =========================
-       상단
-  ========================= -->
+<header>
+    <div class="logo">
+        <span>📍</span>
+        현지공인중개사 매물지도
+    </div>
 
-  <header>
+    <div class="header-right">
 
-    <div class="brand">
+        <div class="phone">
+            041-414-1124&nbsp;&nbsp; | &nbsp;&nbsp;010-8279-3919
+        </div>
 
-      <span>
-        📍 현지공인중개사 매물지도
-      </span>
+        <div id="loginEmail"></div>
 
-      <div class="phone-box">
+        <button class="login-btn" id="loginBtn">
+            관리자 로그인
+        </button>
 
-        <span class="phone">
-          ☎ 041-414-1124
-        </span>
+        <button class="logout-btn" id="logoutBtn" style="display:none;">
+            로그아웃
+        </button>
 
-        <span class="phone">
-          📱 010-8279-3919
-        </span>
+    </div>
+</header>
 
-      </div>
+
+<div class="main">
+
+    <div class="map-area">
+
+        <div class="top-search">
+            <input
+                id="searchInput"
+                type="text"
+                placeholder="주소·동·매물명 검색"
+            >
+            <button class="search-btn" onclick="searchProperties()">
+                검색
+            </button>
+        </div>
+
+        <div id="map"></div>
 
     </div>
 
-
-    <div class="head-right">
-
-      <span
-        id="userMail"
-        class="user-mail"
-      ></span>
-
-      <button
-        id="loginBtn"
-        class="login-btn"
-      >
-        구글 로그인
-      </button>
-
-      <button
-        id="logoutBtn"
-        class="logout-btn"
-        style="display:none"
-      >
-        로그아웃
-      </button>
-
-    </div>
-
-  </header>
-
-
-  <!-- =========================
-       메인
-  ========================= -->
-
-  <main>
-
-
-    <!-- =========================
-         지도
-    ========================= -->
-
-    <section id="map">
-
-
-      <!-- 지도 검색 -->
-
-      <div class="map-search">
-
-        <input
-          id="mapSearch"
-          type="text"
-          placeholder="주소·동·매물명 검색"
-        >
-
-        <button
-          onclick="searchText()"
-        >
-          검색
-        </button>
-
-      </div>
-
-
-      <!-- 관리자 버튼 -->
-
-      <button
-        id="adminOpen"
-        class="admin-open"
-        onclick="toggleAdmin()"
-      >
-        🔐 관리자
-      </button>
-
-
-      <!-- =========================
-           관리자 등록 패널
-      ========================= -->
-
-      <div
-        id="adminPanel"
-        class="admin-panel"
-      >
-
-        <button
-          class="close"
-          onclick="toggleAdmin()"
-        >
-          ×
-        </button>
-
-
-        <h2>
-          매물 등록
-        </h2>
-
-
-        <div
-          id="notAdmin"
-          class="login-required"
-          style="display:none"
-        >
-          관리자 구글 계정으로 로그인하면
-          매물을 등록하고 삭제할 수 있습니다.
-        </div>
-
-
-        <div id="adminForm">
-
-
-          <!-- 제목 -->
-
-          <div class="field">
-
-            <label>
-              매물 제목
-            </label>
-
-            <input
-              id="fTitle"
-              type="text"
-              placeholder="예: 신부동 1층 상가"
-            >
-
-          </div>
-
-
-          <!-- 주소 -->
-
-          <div class="field">
-
-            <label>
-              주소
-            </label>
-
-            <input
-              id="fAddress"
-              type="text"
-              placeholder="예: 천안시 동남구 신부동 1761"
-            >
-
-          </div>
-
-
-          <!-- 종류 / 거래 -->
-
-          <div class="row">
-
-            <div class="field">
-
-              <label>
-                매물 종류
-              </label>
-
-              <select id="fType">
-
-                <option value="상가">
-                  상가
-                </option>
-
-                <option value="공장">
-                  공장
-                </option>
-
-                <option value="토지">
-                  토지
-                </option>
-
-                <option value="원투룸">
-                  원·투룸
-                </option>
-
-                <option value="주택">
-                  주택
-                </option>
-
-                <option value="아파트">
-                  아파트
-                </option>
-
-              </select>
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                거래 유형
-              </label>
-
-              <select id="fDeal">
-
-                <option value="월세">
-                  월세
-                </option>
-
-                <option value="전세">
-                  전세
-                </option>
-
-                <option value="매매">
-                  매매
-                </option>
-
-              </select>
-
-            </div>
-
-          </div>
-
-
-          <!-- 보증금 / 월세 -->
-
-          <div class="row">
-
-            <div class="field">
-
-              <label>
-                보증금 (만원)
-              </label>
-
-              <input
-                id="fDeposit"
-                type="text"
-                inputmode="numeric"
-                placeholder="3000"
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                월세 (만원)
-              </label>
-
-              <input
-                id="fRent"
-                type="text"
-                inputmode="numeric"
-                placeholder="250"
-              >
-
-            </div>
-
-          </div>
-
-
-          <!-- 권리금 / 면적 -->
-
-          <div class="row">
-
-            <div class="field">
-
-              <label>
-                권리금 (만원)
-              </label>
-
-              <input
-                id="fPremium"
-                type="text"
-                inputmode="numeric"
-                placeholder="없으면 0"
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                면적
-              </label>
-
-              <input
-                id="fArea"
-                type="text"
-                placeholder="58.23㎡ / 17.61평"
-              >
-
-            </div>
-
-          </div>
-
-
-          <!-- 층 / 동 -->
-
-          <div class="row">
-
-            <div class="field">
-
-              <label>
-                층
-              </label>
-
-              <input
-                id="fFloor"
-                type="text"
-                placeholder="1층"
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label>
-                동
-              </label>
-
-              <input
-                id="fDong"
-                type="text"
-                placeholder="신부동"
-              >
-
-            </div>
-
-          </div>
-
-
-          <!-- 관리비 -->
-
-          <div class="field">
-
-            <label>
-              관리비
-            </label>
-
-            <input
-              id="fFee"
-              type="text"
-              placeholder="20만원 / 없음"
-            >
-
-          </div>
-
-
-          <!-- 설명 -->
-
-          <div class="field">
-
-            <label>
-              매물 설명
-            </label>
-
-            <textarea
-              id="fDesc"
-              placeholder="매물의 장점과 시설 등을 입력하세요."
-            ></textarea>
-
-          </div>
-
-
-          <!-- 외부 상세정보 주소 -->
-
-          <div class="field">
-
-            <label>
-              상세정보 연결 주소
-            </label>
-
-            <input
-              id="fUrl"
-              type="url"
-              placeholder="https://..."
-            >
-
-          </div>
-
-
-          <!-- 대표사진 -->
-
-          <div class="field">
-
-            <label>
-              대표사진 1장
-            </label>
-
-            <input
-              id="fImage"
-              type="file"
-              accept="image/*"
-            >
-
-
-            <img
-              id="preview"
-              class="preview"
-              alt="대표사진 미리보기"
-            >
-
-          </div>
-
-
-          <!-- 등록 -->
-
-          <button
-            class="submit"
-            onclick="registerProperty()"
-          >
-            매물 등록하기
-          </button>
-
-
-          <!-- 관리자 매물 관리 -->
-
-          <div class="admin-list">
-
-            <b>
-              등록 매물 관리
-            </b>
-
-            <div id="adminList"></div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
-         오른쪽 매물 목록
-    ========================= -->
 
     <aside class="side">
 
+        <div class="category">
 
-      <!-- 필터 -->
+            <button
+                class="active"
+                data-category="전체"
+                onclick="changeCategory('전체', this)">
+                전체
+            </button>
 
-      <div
-        class="filters"
-        id="filters"
-      >
+            <button
+                data-category="상가"
+                onclick="changeCategory('상가', this)">
+                상가
+            </button>
+
+            <button
+                data-category="공장"
+                onclick="changeCategory('공장', this)">
+                공장
+            </button>
+
+            <button
+                data-category="토지"
+                onclick="changeCategory('토지', this)">
+                토지
+            </button>
+
+            <button
+                data-category="원·투룸"
+                onclick="changeCategory('원·투룸', this)">
+                원·투룸
+            </button>
+
+            <button
+                data-category="주택"
+                onclick="changeCategory('주택', this)">
+                주택
+            </button>
+
+            <button
+                data-category="아파트"
+                onclick="changeCategory('아파트', this)">
+                아파트
+            </button>
+
+        </div>
+
 
         <button
-          class="filter active"
-          data-type=""
-        >
-          전체
+            class="request-menu"
+            onclick="openRequestModal()">
+            📩 내 매물 접수하기
         </button>
 
-        <button
-          class="filter"
-          data-type="상가"
-        >
-          상가
-        </button>
 
-        <button
-          class="filter"
-          data-type="공장"
-        >
-          공장
-        </button>
+        <div
+            class="admin-panel"
+            id="adminPanel">
 
-        <button
-          class="filter"
-          data-type="토지"
-        >
-          토지
-        </button>
+            <div class="admin-title">
+                🔐 관리자 메뉴
+            </div>
 
-        <button
-          class="filter"
-          data-type="원투룸"
-        >
-          원·투룸
-        </button>
+            <button
+                class="admin-btn"
+                onclick="openPropertyModal()">
+                + 매물 등록
+            </button>
 
-        <button
-          class="filter"
-          data-type="주택"
-        >
-          주택
-        </button>
+            <button
+                class="admin-btn orange"
+                onclick="openRequestsModal()">
+                📥 고객 매물접수 확인
+            </button>
 
-        <button
-          class="filter"
-          data-type="아파트"
-        >
-          아파트
-        </button>
-
-      </div>
+        </div>
 
 
-      <!-- 개수 -->
-
-      <div
-        id="count"
-        class="count"
-      >
-        매물 불러오는 중...
-      </div>
+        <div class="count-info" id="countInfo">
+            매물 0개 · 동별 매물 수 표시
+        </div>
 
 
-      <!-- 목록 -->
-
-      <div id="list"></div>
-
+        <div
+            class="property-list"
+            id="propertyList">
+        </div>
 
     </aside>
 
-  </main>
+</div>
 
 
-  <!-- =========================
-       상세정보 팝업
-  ========================= -->
 
-  <div
-    id="detailModal"
-    class="modal"
-    onclick="
-      if(event.target === this)
-      closeDetail()
-    "
-  >
+<!-- 고객 매물 접수 -->
 
-    <div class="detail">
+<div
+    class="modal-bg"
+    id="requestModal">
 
-      <button
-        class="close"
-        onclick="closeDetail()"
-      >
-        ×
-      </button>
+    <div class="modal">
 
+        <button
+            class="close"
+            onclick="closeModal('requestModal')">
+            ×
+        </button>
 
-      <!-- 대표사진 -->
+        <h2>📩 내 매물 접수</h2>
 
-      <img
-        id="dImage"
-        alt="대표사진"
-      >
+        <p style="color:#777;font-size:13px;">
+            아래 내용을 작성해 주시면 확인 후 연락드리겠습니다.
+        </p>
 
 
-      <!-- 종류 -->
-
-      <div class="detail-tags">
-
-        <span
-          id="dType"
-          class="tag"
-        ></span>
-
-        <span
-          id="dDeal"
-          class="tag"
-        ></span>
-
-      </div>
+        <div class="form-group">
+            <label>이름 *</label>
+            <input id="reqName" placeholder="성함">
+        </div>
 
 
-      <!-- 제목 -->
-
-      <h2 id="dTitle"></h2>
-
-
-      <!-- 주소 -->
-
-      <div
-        id="dAddress"
-        class="detail-address"
-      ></div>
+        <div class="form-group">
+            <label>연락처 *</label>
+            <input id="reqPhone" placeholder="010-0000-0000">
+        </div>
 
 
-      <!-- 정보 -->
+        <div class="form-group">
+            <label>매물 종류 *</label>
 
-      <div class="detail-grid">
+            <select id="reqCategory">
 
+                <option value="상가">상가</option>
+                <option value="공장">공장</option>
+                <option value="토지">토지</option>
+                <option value="원·투룸">원·투룸</option>
+                <option value="주택">주택</option>
+                <option value="아파트">아파트</option>
 
-        <div class="info">
-
-          <small>
-            보증금
-          </small>
-
-          <b id="dDeposit">
-            -
-          </b>
+            </select>
 
         </div>
 
 
-        <div class="info">
+        <div class="form-group">
+            <label>주소 *</label>
+            <input
+                id="reqAddress"
+                placeholder="매물 주소">
+        </div>
 
-          <small>
-            월세
-          </small>
 
-          <b id="dRent">
-            -
-          </b>
+        <div class="form-group">
+            <label>매물 제목</label>
+            <input
+                id="reqTitle"
+                placeholder="예: 신부동 1층 코너 상가">
+        </div>
+
+
+        <div class="form-group">
+            <label>보증금</label>
+            <input
+                id="reqDeposit"
+                placeholder="만원">
+        </div>
+
+
+        <div class="form-group">
+            <label>월세</label>
+            <input
+                id="reqRent"
+                placeholder="만원">
+        </div>
+
+
+        <div class="form-group">
+            <label>매매가</label>
+            <input
+                id="reqSale"
+                placeholder="만원">
+        </div>
+
+
+        <div class="form-group">
+            <label>권리금</label>
+            <input
+                id="reqRights"
+                placeholder="만원">
+        </div>
+
+
+        <div class="form-group">
+            <label>면적</label>
+            <input
+                id="reqArea"
+                placeholder="㎡ 또는 평">
+        </div>
+
+
+        <div class="form-group">
+            <label>층수</label>
+            <input
+                id="reqFloor"
+                placeholder="예: 1층">
+        </div>
+
+
+        <div class="form-group">
+            <label>매물 설명</label>
+
+            <textarea
+                id="reqDescription"
+                placeholder="매물에 대한 내용을 적어주세요.">
+            </textarea>
 
         </div>
 
 
-        <div class="info">
+        <div class="form-group">
+            <label>사진 1장</label>
 
-          <small>
-            권리금
-          </small>
-
-          <b
-            id="dPremium"
-            class="premium-detail"
-          >
-            -
-          </b>
+            <input
+                id="reqPhoto"
+                type="file"
+                accept="image/*">
 
         </div>
 
 
-        <div class="info">
-
-          <small>
-            면적
-          </small>
-
-          <b id="dArea">
-            -
-          </b>
-
-        </div>
-
-
-        <div class="info">
-
-          <small>
-            층
-          </small>
-
-          <b id="dFloor">
-            -
-          </b>
-
-        </div>
-
-
-        <div class="info">
-
-          <small>
-            관리비
-          </small>
-
-          <b id="dFee">
-            -
-          </b>
-
-        </div>
-
-
-      </div>
-
-
-      <!-- 설명 -->
-
-      <div
-        id="dDesc"
-        class="detail-description"
-      ></div>
-
-
-      <!-- 외부 사이트 -->
-
-      <a
-        id="dUrl"
-        class="external"
-        target="_blank"
-        rel="noopener noreferrer"
-        style="display:none"
-      >
-        🔎 상세정보 보기
-      </a>
+        <button
+            class="form-submit"
+            onclick="submitRequest()">
+            매물 접수하기
+        </button>
 
     </div>
 
-  </div>
+</div>
 
 
-  <!-- =========================
-       카카오맵
-  ========================= -->
 
-  <script
-    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer&autoload=false"
-  ></script>
+<!-- 관리자 매물 등록 -->
 
+<div
+    class="modal-bg"
+    id="propertyModal">
 
-  <!-- =========================
-       Firebase
-  ========================= -->
+    <div class="modal">
 
-  <script type="module">
+        <button
+            class="close"
+            onclick="closeModal('propertyModal')">
+            ×
+        </button>
 
-    import {
-      initializeApp
-    }
-    from
-      "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        <h2>🏢 매물 등록</h2>
 
 
-    import {
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      onAuthStateChanged,
-      signOut
-    }
-    from
-      "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+        <div class="form-group">
+            <label>매물 제목 *</label>
+            <input
+                id="pTitle"
+                placeholder="매물 제목">
+        </div>
 
 
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      deleteDoc,
-      doc,
-      serverTimestamp
-    }
-    from
-      "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+        <div class="form-group">
+            <label>주소 *</label>
+            <input
+                id="pAddress"
+                placeholder="예: 천안시 서북구 성정동 666-5">
+        </div>
 
 
-    /* =========================
-       Firebase 설정
-    ========================= */
+        <div class="form-group">
+            <label>매물 종류 *</label>
 
-    const firebaseConfig = {
+            <select id="pCategory">
 
-      apiKey:
-        "AIzaSyAC9YI78OLAKD4KJNJZTT6KRrhevG5GpVM",
+                <option value="상가">상가</option>
+                <option value="공장">공장</option>
+                <option value="토지">토지</option>
+                <option value="원·투룸">원·투룸</option>
+                <option value="주택">주택</option>
+                <option value="아파트">아파트</option>
 
-      authDomain:
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+            <label>보증금 (만원)</label>
+            <input id="pDeposit">
+        </div>
+
+
+        <div class="form-group">
+            <label>월세 (만원)</label>
+            <input id="pRent">
+        </div>
+
+
+        <div class="form-group">
+            <label>매매가 (만원)</label>
+            <input id="pSale">
+        </div>
+
+
+        <div class="form-group">
+            <label>권리금 (만원)</label>
+            <input id="pRights">
+        </div>
+
+
+        <div class="form-group">
+            <label>면적</label>
+            <input
+                id="pArea"
+                placeholder="예: 89.9㎡ / 27.2평">
+        </div>
+
+
+        <div class="form-group">
+            <label>층</label>
+            <input
+                id="pFloor"
+                placeholder="예: 1층">
+        </div>
+
+
+        <div class="form-group">
+            <label>매물 설명</label>
+
+            <textarea
+                id="pDescription">
+            </textarea>
+
+        </div>
+
+
+        <div class="form-group">
+            <label>상세정보 연결 주소</label>
+
+            <input
+                id="pExternalUrl"
+                placeholder="https://...">
+
+            <small style="color:#888;">
+                매물 클릭 후 상세정보를 볼 사이트 주소
+            </small>
+
+        </div>
+
+
+        <div class="form-group">
+            <label>대표사진 1장</label>
+
+            <input
+                id="pPhoto"
+                type="file"
+                accept="image/*">
+
+        </div>
+
+
+        <button
+            class="form-submit"
+            onclick="saveProperty()">
+            매물 등록
+        </button>
+
+    </div>
+
+</div>
+
+
+
+<!-- 매물 상세 -->
+
+<div
+    class="modal-bg"
+    id="detailModal">
+
+    <div class="modal">
+
+        <button
+            class="close"
+            onclick="closeModal('detailModal')">
+            ×
+        </button>
+
+        <div id="detailContent"></div>
+
+    </div>
+
+</div>
+
+
+
+<!-- 관리자 접수목록 -->
+
+<div
+    class="modal-bg"
+    id="requestsModal">
+
+    <div class="modal">
+
+        <button
+            class="close"
+            onclick="closeModal('requestsModal')">
+            ×
+        </button>
+
+        <h2>📥 고객 매물접수</h2>
+
+        <div id="requestsContent">
+            불러오는 중...
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- Firebase -->
+
+<script type="module">
+
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    deleteDoc,
+    doc,
+    serverTimestamp,
+    query,
+    orderBy
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+
+const firebaseConfig = {
+
+    apiKey: "AIzaSyAC9YI78OLAKD4KJNJZTT6KRrhevG5GpVM",
+
+    authDomain:
         "hyunji-8fc9c.firebaseapp.com",
 
-      projectId:
+    projectId:
         "hyunji-8fc9c",
 
-      storageBucket:
+    storageBucket:
         "hyunji-8fc9c.firebasestorage.app",
 
-      messagingSenderId:
+    messagingSenderId:
         "659657503337",
 
-      appId:
+    appId:
         "1:659657503337:web:aa2e24ae4d37ed29d6a8f8",
 
-      measurementId:
+    measurementId:
         "G-1LPMGC6317"
+};
 
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getFirestore(app);
+
+const provider = new GoogleAuthProvider();
+
+
+const ADMIN_EMAIL =
+    "khj0107776@gmail.com";
+
+
+let currentUser = null;
+
+let allProperties = [];
+
+let currentCategory = "전체";
+
+let markers = [];
+
+let dongOverlays = [];
+
+let map;
+
+
+window.firebaseAuth = auth;
+
+
+
+/* -------------------------------
+   카카오 지도
+-------------------------------- */
+
+window.kakaoMapReady = function() {
+
+    const container =
+        document.getElementById("map");
+
+    const options = {
+
+        center:
+            new kakao.maps.LatLng(
+                36.8151,
+                127.1139
+            ),
+
+        level: 8
     };
 
-
-    const app =
-      initializeApp(firebaseConfig);
-
-
-    const auth =
-      getAuth(app);
-
-
-    const db =
-      getFirestore(app);
-
-
-    /*
-      관리자 구글 계정
-    */
-
-    const ADMIN_EMAIL =
-      "khj0107776@gmail.com";
-
-
-    let currentUser =
-      null;
-
-
-    let properties =
-      [];
-
-
-    let activeType =
-      "";
-
-
-    let map =
-      null;
-
-
-    let geocoder =
-      null;
-
-
-    let markers =
-      [];
-
-
-    let dongOverlays =
-      [];
-
-
-    /* =========================
-       간단한 요소 선택
-    ========================= */
-
-    const $ =
-      id =>
-        document.getElementById(id);
-
-
-    /* =========================
-       HTML 문자 처리
-    ========================= */
-
-    function esc(value = "") {
-
-      return String(value)
-        .replace(
-          /[&<>"']/g,
-          function(match) {
-
-            return {
-
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#039;"
-
-            }[match];
-
-          }
+    map =
+        new kakao.maps.Map(
+            container,
+            options
         );
 
+    loadProperties();
+
+};
+
+
+
+/* -------------------------------
+   로그인
+-------------------------------- */
+
+document
+    .getElementById("loginBtn")
+    .addEventListener("click", async () => {
+
+        try {
+
+            await signInWithPopup(
+                auth,
+                provider
+            );
+
+        } catch(error) {
+
+            console.error(error);
+
+            alert(
+                "Google 로그인 중 오류가 발생했습니다.\n\n"
+                + error.message
+            );
+        }
+
+    });
+
+
+
+document
+    .getElementById("logoutBtn")
+    .addEventListener("click", async () => {
+
+        await signOut(auth);
+
+    });
+
+
+
+onAuthStateChanged(
+    auth,
+    user => {
+
+        currentUser = user;
+
+        const email =
+            document.getElementById(
+                "loginEmail"
+            );
+
+        const loginBtn =
+            document.getElementById(
+                "loginBtn"
+            );
+
+        const logoutBtn =
+            document.getElementById(
+                "logoutBtn"
+            );
+
+        const adminPanel =
+            document.getElementById(
+                "adminPanel"
+            );
+
+
+        if(user) {
+
+            email.textContent =
+                user.email || "";
+
+            loginBtn.style.display =
+                "none";
+
+            logoutBtn.style.display =
+                "block";
+
+
+            if(
+                user.email
+                    .toLowerCase()
+                ===
+                ADMIN_EMAIL
+                    .toLowerCase()
+            ) {
+
+                adminPanel.classList.add(
+                    "show"
+                );
+
+            } else {
+
+                adminPanel.classList.remove(
+                    "show"
+                );
+
+            }
+
+        } else {
+
+            email.textContent = "";
+
+            loginBtn.style.display =
+                "block";
+
+            logoutBtn.style.display =
+                "none";
+
+            adminPanel.classList.remove(
+                "show"
+            );
+
+        }
+
+    }
+);
+
+
+
+/* -------------------------------
+   관리자 확인
+-------------------------------- */
+
+function checkAdmin() {
+
+    if(!currentUser) {
+
+        alert(
+            "관리자 Google 계정으로 로그인해주세요."
+        );
+
+        return false;
     }
 
 
-    /* =========================
-       숫자 처리
-    ========================= */
+    if(
+        currentUser.email
+            .toLowerCase()
+        !==
+        ADMIN_EMAIL
+            .toLowerCase()
+    ) {
 
-    function n(value) {
+        alert(
+            "관리자 계정만 사용할 수 있습니다."
+        );
 
-      return Number(
-        String(value || "")
-          .replace(/,/g, "")
-      ) || 0;
-
+        return false;
     }
 
-
-    /* =========================
-       금액 표시
-    ========================= */
-
-    function money(value) {
-
-      const number =
-        n(value);
+    return true;
+}
 
 
-      if (!number) {
 
-        return "없음";
+/* -------------------------------
+   이미지 압축
+-------------------------------- */
 
-      }
+function compressImage(
+    file
+) {
 
-
-      return (
-        number.toLocaleString() +
-        "만원"
-      );
-
-    }
-
-
-    /* =========================
-       종류 표시
-    ========================= */
-
-    function formatType(type) {
-
-      if (type === "원투룸") {
-
-        return "원·투룸";
-
-      }
-
-      return type || "";
-
-    }
-
-
-    /* =========================
-       동 추출
-    ========================= */
-
-    function extractDong(address) {
-
-      const match =
-        String(address || "")
-          .match(
-            /([가-힣0-9]+(?:동|읍|면|리))(?=\s|$)/
-          );
-
-
-      return match
-        ? match[1]
-        : "";
-
-    }
-
-
-    /* =========================
-       사진 압축
-    ========================= */
-
-    async function compressImage(file) {
-
-      if (!file) {
-
-        return "";
-
-      }
-
-
-      return new Promise(
+    return new Promise(
         (resolve, reject) => {
 
-          const reader =
-            new FileReader();
+            if(!file) {
+
+                resolve("");
+
+                return;
+            }
 
 
-          reader.onload =
-            () => {
-
-              const img =
-                new Image();
+            const reader =
+                new FileReader();
 
 
-              img.onload =
-                () => {
+            reader.onload =
+                event => {
 
-                  const maxSize =
-                    1200;
-
-
-                  const scale =
-                    Math.min(
-                      1,
-                      maxSize /
-                      Math.max(
-                        img.width,
-                        img.height
-                      )
-                    );
+                    const img =
+                        new Image();
 
 
-                  const canvas =
-                    document.createElement(
-                      "canvas"
-                    );
+                    img.onload =
+                        () => {
+
+                            const maxSize =
+                                1200;
+
+                            let width =
+                                img.width;
+
+                            let height =
+                                img.height;
 
 
-                  canvas.width =
-                    Math.round(
-                      img.width * scale
-                    );
+                            if(
+                                width >
+                                    maxSize
+                                ||
+                                height >
+                                    maxSize
+                            ) {
+
+                                if(
+                                    width >
+                                    height
+                                ) {
+
+                                    height =
+                                        height
+                                        *
+                                        maxSize
+                                        /
+                                        width;
+
+                                    width =
+                                        maxSize;
+
+                                } else {
+
+                                    width =
+                                        width
+                                        *
+                                        maxSize
+                                        /
+                                        height;
+
+                                    height =
+                                        maxSize;
+
+                                }
+
+                            }
 
 
-                  canvas.height =
-                    Math.round(
-                      img.height * scale
-                    );
+                            const canvas =
+                                document
+                                .createElement(
+                                    "canvas"
+                                );
 
 
-                  const ctx =
-                    canvas.getContext(
-                      "2d"
-                    );
+                            canvas.width =
+                                width;
+
+                            canvas.height =
+                                height;
 
 
-                  ctx.drawImage(
-                    img,
-                    0,
-                    0,
-                    canvas.width,
-                    canvas.height
-                  );
+                            const ctx =
+                                canvas.getContext(
+                                    "2d"
+                                );
 
 
-                  let quality =
-                    0.78;
+                            ctx.drawImage(
+                                img,
+                                0,
+                                0,
+                                width,
+                                height
+                            );
 
 
-                  let data =
-                    canvas.toDataURL(
-                      "image/jpeg",
-                      quality
-                    );
+                            let quality =
+                                0.75;
+
+                            let result =
+                                canvas.toDataURL(
+                                    "image/jpeg",
+                                    quality
+                                );
 
 
-                  /*
-                    Firestore 문서 크기를
-                    고려해서 사진을 줄임
-                  */
+                            /*
+                             Firestore 문서가 너무 커지지 않도록
+                             최대한 압축
+                            */
 
-                  while (
-                    data.length > 850000 &&
-                    quality > 0.35
-                  ) {
+                            while(
+                                result.length >
+                                    700000
+                                &&
+                                quality >
+                                    0.35
+                            ) {
 
-                    quality -= 0.06;
+                                quality -=
+                                    0.1;
+
+                                result =
+                                    canvas.toDataURL(
+                                        "image/jpeg",
+                                        quality
+                                    );
+
+                            }
 
 
-                    data =
-                      canvas.toDataURL(
-                        "image/jpeg",
-                        quality
-                      );
+                            if(
+                                result.length >
+                                    900000
+                            ) {
 
-                  }
+                                reject(
+                                    new Error(
+                                        "사진 용량이 너무 큽니다."
+                                    )
+                                );
+
+                                return;
+                            }
 
 
-                  resolve(data);
+                            resolve(result);
+
+                        };
+
+
+                    img.onerror =
+                        reject;
+
+                    img.src =
+                        event.target.result;
 
                 };
 
 
-              img.onerror =
+            reader.onerror =
                 reject;
 
-
-              img.src =
-                reader.result;
-
-            };
-
-
-          reader.onerror =
-            reject;
-
-
-          reader.readAsDataURL(file);
+            reader.readAsDataURL(file);
 
         }
-      );
+    );
 
-    }
+}
 
 
-    /* =========================
-       주소 → 좌표
-    ========================= */
 
-    async function geocode(address) {
+/* -------------------------------
+   매물 불러오기
+-------------------------------- */
 
-      return new Promise(
-        (resolve, reject) => {
+async function loadProperties() {
 
-          geocoder.addressSearch(
-            address,
-            (result, status) => {
+    try {
 
-              if (
-                status ===
-                  kakao.maps.services.Status.OK &&
-                result.length
-              ) {
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "properties"
+                )
+            );
 
-                resolve({
 
-                  lat:
-                    Number(result[0].y),
+        allProperties = [];
 
-                  lng:
-                    Number(result[0].x)
+
+        snapshot.forEach(
+            item => {
+
+                allProperties.push({
+
+                    id: item.id,
+
+                    ...item.data()
 
                 });
 
-              }
-              else {
-
-                reject(
-                  new Error(
-                    "주소를 카카오지도에서 찾지 못했습니다."
-                  )
-                );
-
-              }
-
             }
-          );
-
-        }
-      );
-
-    }
+        );
 
 
-    /* =========================
-       Firestore 매물 불러오기
-    ========================= */
+        renderProperties();
 
-    async function loadProperties() {
-
-      try {
-
-        const snapshot =
-          await getDocs(
-            collection(
-              db,
-              "properties"
-            )
-          );
-
-
-        properties =
-          snapshot.docs.map(
-            document => ({
-
-              id:
-                document.id,
-
-              ...document.data()
-
-            })
-          );
-
-
-        render();
-
-      }
-      catch (error) {
+    } catch(error) {
 
         console.error(error);
 
-
-        $("count").textContent =
-          "매물 불러오기 오류";
-
-
         alert(
-          "매물 불러오기 오류\n\n" +
-          error.message
+            "매물을 불러오지 못했습니다.\n\n"
+            + error.message
         );
 
-      }
+    }
+
+}
+
+
+
+/* -------------------------------
+   카테고리
+-------------------------------- */
+
+window.changeCategory =
+function(
+    category,
+    button
+) {
+
+    currentCategory =
+        category;
+
+
+    document
+        .querySelectorAll(
+            ".category button"
+        )
+        .forEach(
+            btn =>
+                btn.classList.remove(
+                    "active"
+                )
+        );
+
+
+    button.classList.add(
+        "active"
+    );
+
+
+    renderProperties();
+
+};
+
+
+
+/* -------------------------------
+   매물 표시
+-------------------------------- */
+
+function renderProperties() {
+
+    let list =
+        allProperties;
+
+
+    if(
+        currentCategory !==
+        "전체"
+    ) {
+
+        list =
+            list.filter(
+                item =>
+                    item.category
+                    ===
+                    currentCategory
+            );
 
     }
 
 
-    /* =========================
-       필터링
-    ========================= */
-
-    function filteredProperties() {
-
-      const search =
-        $("mapSearch")
-          .value
-          .trim()
-          .toLowerCase();
+    const keyword =
+        document
+        .getElementById(
+            "searchInput"
+        )
+        .value
+        .trim()
+        .toLowerCase();
 
 
-      return properties.filter(
+    if(keyword) {
+
+        list =
+            list.filter(
+                item => {
+
+                    const text =
+                        (
+                            item.title
+                            + " "
+                            + item.address
+                            + " "
+                            + item.description
+                        )
+                        .toLowerCase();
+
+                    return text.includes(
+                        keyword
+                    );
+
+                }
+            );
+
+    }
+
+
+    const listEl =
+        document.getElementById(
+            "propertyList"
+        );
+
+
+    listEl.innerHTML = "";
+
+
+    if(list.length === 0) {
+
+        listEl.innerHTML =
+            `
+            <div class="empty">
+                등록된 매물이 없습니다.
+            </div>
+            `;
+
+    }
+
+
+    list.forEach(
         property => {
 
-          const typeOK =
-            !activeType ||
-            property.type === activeType;
+            const card =
+                document
+                .createElement(
+                    "div"
+                );
 
 
-          const text =
-            [
-
-              property.title,
-              property.address,
-              property.dong,
-              property.description
-
-            ]
-            .join(" ")
-            .toLowerCase();
+            card.className =
+                "property-card";
 
 
-          const searchOK =
-            !search ||
-            text.includes(search);
+            card.onclick =
+                () =>
+                    showPropertyDetail(
+                        property
+                    );
 
 
-          return (
-            typeOK &&
-            searchOK
-          );
-
-        }
-      );
-
-    }
+            let photo =
+                property.photo;
 
 
-    /* =========================
-       전체 렌더링
-    ========================= */
-
-    function render() {
-
-      const list =
-        filteredProperties();
-
-
-      $("count").textContent =
-        `현재 ${list.length}개 매물 · 동별 매물 수 표시`;
-
-
-      renderList(list);
-
-      drawMap(list);
-
-      renderAdminList();
-
-    }
-
-
-    /* =========================
-       오른쪽 매물 목록
-    ========================= */
-
-    function renderList(list) {
-
-      if (!list.length) {
-
-        $("list").innerHTML = `
-          <div class="empty">
-            조건에 맞는 매물이 없습니다.
-          </div>
-        `;
-
-        return;
-
-      }
-
-
-      $("list").innerHTML =
-        list.map(
-          property => {
-
-            const premium =
-              n(property.premium)
-                ? `
-                  <div class="premium-small">
-                    권리금 ${money(property.premium)}
-                  </div>
+            const photoHtml =
+                photo
+                ?
                 `
-                : "";
-
-
-            const image =
-              property.image || "";
-
-
-            const price =
-              property.deal === "매매"
-
-                ? "매매"
-
-                : `
-                  보증금 ${money(property.deposit)}
-                  / 월세 ${money(property.rent)}
+                <img
+                    class="property-photo"
+                    src="${photo}">
+                `
+                :
+                `
+                <div class="no-photo">
+                    대표사진 없음
+                </div>
                 `;
 
 
-            return `
+            let price = "";
 
-              <div
-                class="card"
-                onclick="showDetail('${property.id}')"
-              >
 
-                <img
-                  class="thumb"
-                  src="${image}"
-                  alt=""
-                  onerror="
-                    this.style.visibility='hidden'
-                  "
-                >
-
-
-                <div class="card-info">
-
-                  <div class="card-title">
-                    ${esc(
-                      property.title ||
-                      "매물"
-                    )}
-                  </div>
-
-
-                  <div class="muted">
-                    ${esc(
-                      property.address ||
-                      ""
-                    )}
-                  </div>
-
-
-                  <div class="muted">
-
-                    ${formatType(
-                      property.type
-                    )}
-
-                    ·
-
-                    ${esc(
-                      property.area ||
-                      ""
-                    )}
-
-                  </div>
-
-
-                  <div class="price">
-                    ${price}
-                  </div>
-
-
-                  ${premium}
-
-                </div>
-
-              </div>
-
-            `;
-
-          }
-        ).join("");
-
-    }
-
-
-    /* =========================
-       지도에 마커 + 동별 개수
-    ========================= */
-
-    function drawMap(list) {
-
-      if (!map) {
-
-        return;
-
-      }
-
-
-      /*
-        기존 마커 제거
-      */
-
-      markers.forEach(
-        marker =>
-          marker.setMap(null)
-      );
-
-
-      markers = [];
-
-
-      /*
-        기존 동별 표시 제거
-      */
-
-      dongOverlays.forEach(
-        overlay =>
-          overlay.setMap(null)
-      );
-
-
-      dongOverlays = [];
-
-
-      const groups = {};
-
-
-      list.forEach(
-        property => {
-
-          if (
-            property.lat === undefined ||
-            property.lng === undefined
-          ) {
-
-            return;
-
-          }
-
-
-          const position =
-            new kakao.maps.LatLng(
-              Number(property.lat),
-              Number(property.lng)
-            );
-
-
-          const marker =
-            new kakao.maps.Marker({
-
-              position
-
-            });
-
-
-          marker.setMap(map);
-
-
-          kakao.maps.event.addListener(
-            marker,
-            "click",
-            () => {
-
-              showDetail(
-                property.id
-              );
-
-            }
-          );
-
-
-          markers.push(marker);
-
-
-          /*
-            동별 그룹
-          */
-
-          const dong =
-            property.dong ||
-            extractDong(
-              property.address
-            ) ||
-            "기타";
-
-
-          if (!groups[dong]) {
-
-            groups[dong] = [];
-
-          }
-
-
-          groups[dong].push(
-            property
-          );
-
-        }
-      );
-
-
-      /*
-        동별 매물 수 표시
-      */
-
-      Object.entries(groups)
-        .forEach(
-          ([dong, list]) => {
-
-            if (!list.length) {
-
-              return;
-
-            }
-
-
-            const lat =
-              list.reduce(
-                (sum, property) =>
-                  sum +
-                  Number(property.lat),
-                0
-              ) /
-              list.length;
-
-
-            const lng =
-              list.reduce(
-                (sum, property) =>
-                  sum +
-                  Number(property.lng),
-                0
-              ) /
-              list.length;
-
-
-            const element =
-              document.createElement(
-                "div"
-              );
-
-
-            element.className =
-              "dong-bubble";
-
-
-            element.innerHTML = `
-
-              <strong>
-                ${list.length}
-              </strong>
-
-              <span>
-                ${esc(dong)}
-              </span>
-
-            `;
-
-
-            const overlay =
-              new kakao.maps.CustomOverlay({
-
-                position:
-                  new kakao.maps.LatLng(
-                    lat,
-                    lng
-                  ),
-
-                content:
-                  element,
-
-                yAnchor:
-                  1.65
-
-              });
-
-
-            overlay.setMap(map);
-
-
-            dongOverlays.push(
-              overlay
-            );
-
-          }
-        );
-
-    }
-
-
-    /* =========================
-       검색
-    ========================= */
-
-    window.searchText =
-      function() {
-
-        render();
-
-
-        const text =
-          $("mapSearch")
-            .value
-            .trim();
-
-
-        if (
-          !text ||
-          !geocoder
-        ) {
-
-          return;
-
-        }
-
-
-        geocoder.addressSearch(
-          text,
-          (result, status) => {
-
-            if (
-              status ===
-                kakao.maps.services.Status.OK &&
-              result.length
+            if(
+                property.deposit
+                ||
+                property.rent
             ) {
 
-              map.setCenter(
-                new kakao.maps.LatLng(
-                  result[0].y,
-                  result[0].x
-                )
-              );
+                price +=
+                    `보증금 ${
+                        property.deposit
+                        || "-"
+                    }만원`;
 
-
-              map.setLevel(4);
+                price +=
+                    ` / 월세 ${
+                        property.rent
+                        || "-"
+                    }만원`;
 
             }
 
-          }
+
+            if(property.sale) {
+
+                price =
+                    `매매 ${
+                        property.sale
+                    }만원`;
+
+            }
+
+
+            const rights =
+                property.rights
+                ?
+                `
+                <span class="rights">
+                    권리금 ${property.rights}만원
+                </span>
+                `
+                :
+                "";
+
+
+            card.innerHTML =
+                `
+                ${photoHtml}
+
+                <div class="property-content">
+
+                    <span class="badge">
+                        ${property.category || ""}
+                    </span>
+
+                    <div class="property-title">
+                        ${escapeHtml(
+                            property.title || "매물"
+                        )}
+                    </div>
+
+                    <div class="property-address">
+                        ${escapeHtml(
+                            property.address || ""
+                        )}
+                    </div>
+
+                    <div class="price">
+                        ${price}
+                        ${rights}
+                    </div>
+
+                    ${
+                        property.externalUrl
+                        ?
+                        `
+                        <div class="detail-link">
+                            상세정보 보기 →
+                        </div>
+                        `
+                        :
+                        ""
+                    }
+
+                </div>
+                `;
+
+
+            listEl.appendChild(
+                card
+            );
+
+        }
+    );
+
+
+    document
+        .getElementById(
+            "countInfo"
+        )
+        .textContent =
+        `현재 ${list.length}개 매물 · 동별 매물 수 표시`;
+
+
+    drawMap(list);
+
+}
+
+
+
+/* -------------------------------
+   지도 표시
+-------------------------------- */
+
+async function drawMap(
+    properties
+) {
+
+    if(!map) return;
+
+
+    markers.forEach(
+        marker =>
+            marker.setMap(null)
+    );
+
+
+    dongOverlays.forEach(
+        overlay =>
+            overlay.setMap(null)
+    );
+
+
+    markers = [];
+
+    dongOverlays = [];
+
+
+    const geocoder =
+        new kakao.maps.services.Geocoder();
+
+
+    const dongGroups = {};
+
+
+    for(
+        const property of properties
+    ) {
+
+        if(!property.address)
+            continue;
+
+
+        await new Promise(
+            resolve => {
+
+                geocoder.addressSearch(
+                    property.address,
+                    (
+                        result,
+                        status
+                    ) => {
+
+                        if(
+                            status
+                            ===
+                            kakao.maps.services.Status.OK
+                        ) {
+
+                            const lat =
+                                parseFloat(
+                                    result[0].y
+                                );
+
+                            const lng =
+                                parseFloat(
+                                    result[0].x
+                                );
+
+
+                            const position =
+                                new kakao.maps.LatLng(
+                                    lat,
+                                    lng
+                                );
+
+
+                            const marker =
+                                new kakao.maps.Marker({
+
+                                    map: map,
+
+                                    position:
+                                        position
+
+                                });
+
+
+                            marker.setZIndex(
+                                10
+                            );
+
+
+                            kakao.maps.event.addListener(
+                                marker,
+                                "click",
+                                () => {
+
+                                    showPropertyDetail(
+                                        property
+                                    );
+
+                                }
+                            );
+
+
+                            markers.push(
+                                marker
+                            );
+
+
+                            /*
+                             행정동 이름
+                            */
+
+                            const callback =
+                                (
+                                    regionResult,
+                                    regionStatus
+                                ) => {
+
+                                    if(
+                                        regionStatus
+                                        ===
+                                        kakao.maps.services.Status.OK
+                                    ) {
+
+                                        let dong =
+                                            "기타";
+
+
+                                        for(
+                                            const region
+                                            of regionResult
+                                        ) {
+
+                                            if(
+                                                region.region_type
+                                                ===
+                                                "H"
+                                            ) {
+
+                                                dong =
+                                                    region.region_3depth_name;
+
+                                                break;
+
+                                            }
+
+                                        }
+
+
+                                        if(
+                                            !dongGroups[dong]
+                                        ) {
+
+                                            dongGroups[dong] =
+                                                {
+                                                    count: 0,
+                                                    lat: 0,
+                                                    lng: 0
+                                                };
+
+                                        }
+
+
+                                        dongGroups[dong].count++;
+
+                                        dongGroups[dong].lat +=
+                                            lat;
+
+                                        dongGroups[dong].lng +=
+                                            lng;
+
+                                    }
+
+                                };
+
+
+                            geocoder.coord2RegionCode(
+                                lng,
+                                lat,
+                                callback
+                            );
+
+                        }
+
+
+                        resolve();
+
+                    }
+                );
+
+            }
         );
 
-      };
+    }
 
 
-    /* =========================
-       상세정보
-    ========================= */
+    /*
+     동별 숫자 표시
+    */
 
-    window.showDetail =
-      function(id) {
+    Object
+        .entries(
+            dongGroups
+        )
+        .forEach(
+            ([
+                dong,
+                info
+            ]) => {
 
-        const property =
-          properties.find(
-            item =>
-              item.id === id
-          );
+                const avgLat =
+                    info.lat
+                    /
+                    info.count;
+
+                const avgLng =
+                    info.lng
+                    /
+                    info.count;
 
 
-        if (!property) {
+                const position =
+                    new kakao.maps.LatLng(
+                        avgLat,
+                        avgLng
+                    );
 
-          return;
 
+                const content =
+                    `
+                    <div class="dong-label">
+                        <strong>
+                            ${info.count}
+                        </strong>
+                        ${dong}
+                    </div>
+                    `;
+
+
+                const overlay =
+                    new kakao.maps.CustomOverlay({
+
+                        map: map,
+
+                        position:
+                            position,
+
+                        content:
+                            content,
+
+                        yAnchor:
+                            1.4
+
+                    });
+
+
+                dongOverlays.push(
+                    overlay
+                );
+
+            }
+        );
+
+}
+
+
+
+/* -------------------------------
+   상세정보
+-------------------------------- */
+
+window.showPropertyDetail =
+function(
+    property
+) {
+
+    const detail =
+        document.getElementById(
+            "detailContent"
+        );
+
+
+    const photo =
+        property.photo
+        ?
+        `
+        <img
+            class="detail-photo"
+            src="${property.photo}">
+        `
+        :
+        "";
+
+
+    let price =
+        "";
+
+
+    if(
+        property.deposit
+        ||
+        property.rent
+    ) {
+
+        price +=
+            `보증금 ${
+                property.deposit || "-"
+            }만원 / 월세 ${
+                property.rent || "-"
+            }만원`;
+
+    }
+
+
+    if(property.sale) {
+
+        price =
+            `매매가 ${
+                property.sale
+            }만원`;
+
+    }
+
+
+    detail.innerHTML =
+        `
+        ${photo}
+
+        <span class="badge">
+            ${property.category || ""}
+        </span>
+
+        <h2>
+            ${escapeHtml(
+                property.title || ""
+            )}
+        </h2>
+
+
+        <table class="detail-table">
+
+            <tr>
+                <th>주소</th>
+                <td>
+                    ${escapeHtml(
+                        property.address || "-"
+                    )}
+                </td>
+            </tr>
+
+            <tr>
+                <th>거래금액</th>
+                <td>
+                    ${price || "-"}
+                </td>
+            </tr>
+
+            <tr>
+                <th>권리금</th>
+                <td>
+                    ${
+                        property.rights
+                        ?
+                        property.rights + "만원"
+                        :
+                        "-"
+                    }
+                </td>
+            </tr>
+
+            <tr>
+                <th>면적</th>
+                <td>
+                    ${escapeHtml(
+                        property.area || "-"
+                    )}
+                </td>
+            </tr>
+
+            <tr>
+                <th>층수</th>
+                <td>
+                    ${escapeHtml(
+                        property.floor || "-"
+                    )}
+                </td>
+            </tr>
+
+            <tr>
+                <th>설명</th>
+                <td>
+                    ${escapeHtml(
+                        property.description || "-"
+                    )}
+                </td>
+            </tr>
+
+        </table>
+
+
+        ${
+            property.externalUrl
+            ?
+            `
+            <a
+                href="${safeUrl(
+                    property.externalUrl
+                )}"
+                target="_blank"
+                rel="noopener"
+                style="
+                    display:block;
+                    margin-top:18px;
+                    text-align:center;
+                    padding:13px;
+                    background:#536dfe;
+                    color:white;
+                    border-radius:10px;
+                    text-decoration:none;
+                    font-weight:900;
+                "
+            >
+                🔎 상세 매물정보 보기
+            </a>
+            `
+            :
+            ""
         }
 
 
-        $("dImage").src =
-          property.image || "";
-
-
-        $("dType").textContent =
-          formatType(
-            property.type
-          );
-
-
-        $("dDeal").textContent =
-          property.deal || "";
-
-
-        $("dTitle").textContent =
-          property.title ||
-          "매물";
-
-
-        $("dAddress").textContent =
-          property.address ||
-          "";
-
-
-        $("dDeposit").textContent =
-          money(
-            property.deposit
-          );
-
-
-        $("dRent").textContent =
-          money(
-            property.rent
-          );
-
-
-        $("dPremium").textContent =
-          money(
-            property.premium
-          );
-
-
-        $("dArea").textContent =
-          property.area ||
-          "-";
-
-
-        $("dFloor").textContent =
-          property.floor ||
-          "-";
-
-
-        $("dFee").textContent =
-          property.fee ||
-          "-";
-
-
-        $("dDesc").textContent =
-          property.description ||
-          "";
-
-
-        /*
-          외부 상세정보 주소가
-          있을 때만 버튼 표시
-        */
-
-        if (
-          property.url &&
-          property.url.trim()
-        ) {
-
-          $("dUrl").href =
-            property.url;
-
-
-          $("dUrl").style.display =
-            "inline-block";
-
-        }
-        else {
-
-          $("dUrl").style.display =
-            "none";
-
-        }
-
-
-        $("detailModal")
-          .classList
-          .add("show");
-
-      };
-
-
-    /* =========================
-       상세정보 닫기
-    ========================= */
-
-    window.closeDetail =
-      function() {
-
-        $("detailModal")
-          .classList
-          .remove("show");
-
-      };
-
-
-    /* =========================
-       관리자 패널
-    ========================= */
-
-    window.toggleAdmin =
-      function() {
-
-        if (
-          !currentUser ||
-          currentUser.email !==
+        ${
+            currentUser
+            &&
+            currentUser.email
+                .toLowerCase()
+            ===
             ADMIN_EMAIL
-        ) {
-
-          alert(
-            "관리자 구글 계정으로 로그인해 주세요."
-          );
-
-          return;
-
+                .toLowerCase()
+            ?
+            `
+            <button
+                onclick="deleteProperty('${property.id}')"
+                style="
+                    width:100%;
+                    margin-top:10px;
+                    padding:12px;
+                    border:0;
+                    border-radius:10px;
+                    background:#ef5350;
+                    color:white;
+                    font-weight:900;
+                "
+            >
+                🗑 이 매물 삭제
+            </button>
+            `
+            :
+            ""
         }
 
-
-        $("adminPanel")
-          .classList
-          .toggle("show");
-
-      };
+        `;
 
 
-    /* =========================
-       매물 등록
-    ========================= */
+    openModal(
+        "detailModal"
+    );
 
-    async function registerProperty() {
+};
 
-      /*
-        관리자 확인
-      */
 
-      if (
-        !currentUser ||
-        currentUser.email !==
-          ADMIN_EMAIL
-      ) {
+
+/* -------------------------------
+   매물 등록
+-------------------------------- */
+
+window.openPropertyModal =
+function() {
+
+    if(!checkAdmin())
+        return;
+
+
+    openModal(
+        "propertyModal"
+    );
+
+};
+
+
+
+window.saveProperty =
+async function() {
+
+    if(!checkAdmin())
+        return;
+
+
+    const title =
+        document.getElementById(
+            "pTitle"
+        ).value.trim();
+
+
+    const address =
+        document.getElementById(
+            "pAddress"
+        ).value.trim();
+
+
+    if(!title || !address) {
 
         alert(
-          "관리자 계정만 매물을 등록할 수 있습니다."
+            "매물 제목과 주소를 입력해주세요."
         );
 
         return;
-
-      }
-
-
-      const title =
-        $("fTitle")
-          .value
-          .trim();
+    }
 
 
-      const address =
-        $("fAddress")
-          .value
-          .trim();
+    try {
 
-
-      if (!title) {
-
-        alert(
-          "매물 제목을 입력하세요."
-        );
-
-        return;
-
-      }
-
-
-      if (!address) {
-
-        alert(
-          "주소를 입력하세요."
-        );
-
-        return;
-
-      }
-
-
-      try {
-
-        /*
-          주소를 카카오맵 좌표로 변환
-        */
-
-        const position =
-          await geocode(
-            address
-          );
-
-
-        /*
-          대표사진 1장 압축
-        */
-
-        const file =
-          $("fImage")
+        const photoFile =
+            document
+            .getElementById(
+                "pPhoto"
+            )
             .files[0];
 
 
-        const image =
-          await compressImage(
-            file
-          );
+        let photo = "";
 
 
-        /*
-          동
-        */
+        if(photoFile) {
 
-        const dong =
-          $("fDong")
-            .value
-            .trim() ||
-          extractDong(
-            address
-          );
+            photo =
+                await compressImage(
+                    photoFile
+                );
+
+        }
 
 
-        /*
-          Firestore 저장
-        */
-
-        await addDoc(
-          collection(
-            db,
-            "properties"
-          ),
-          {
+        const data = {
 
             title,
 
             address,
 
-            dong,
-
-            type:
-              $("fType").value,
-
-            deal:
-              $("fDeal").value,
+            category:
+                document
+                .getElementById(
+                    "pCategory"
+                ).value,
 
             deposit:
-              n(
-                $("fDeposit").value
-              ),
+                document
+                .getElementById(
+                    "pDeposit"
+                ).value.trim(),
 
             rent:
-              n(
-                $("fRent").value
-              ),
+                document
+                .getElementById(
+                    "pRent"
+                ).value.trim(),
 
-            premium:
-              n(
-                $("fPremium").value
-              ),
+            sale:
+                document
+                .getElementById(
+                    "pSale"
+                ).value.trim(),
+
+            rights:
+                document
+                .getElementById(
+                    "pRights"
+                ).value.trim(),
 
             area:
-              $("fArea")
-                .value
-                .trim(),
+                document
+                .getElementById(
+                    "pArea"
+                ).value.trim(),
 
             floor:
-              $("fFloor")
-                .value
-                .trim(),
-
-            fee:
-              $("fFee")
-                .value
-                .trim(),
+                document
+                .getElementById(
+                    "pFloor"
+                ).value.trim(),
 
             description:
-              $("fDesc")
-                .value
-                .trim(),
+                document
+                .getElementById(
+                    "pDescription"
+                ).value.trim(),
 
-            url:
-              $("fUrl")
-                .value
-                .trim(),
+            externalUrl:
+                document
+                .getElementById(
+                    "pExternalUrl"
+                ).value.trim(),
 
-            image,
-
-            lat:
-              position.lat,
-
-            lng:
-              position.lng,
+            photo,
 
             createdBy:
-              currentUser.email,
+                currentUser.email,
 
             createdAt:
-              serverTimestamp()
+                serverTimestamp()
 
-          }
+        };
+
+
+        await addDoc(
+            collection(
+                db,
+                "properties"
+            ),
+            data
         );
 
 
         alert(
-          "매물이 등록되었습니다."
+            "매물이 등록되었습니다."
         );
 
 
-        /*
-          입력창 초기화
-        */
-
-        [
-          "fTitle",
-          "fAddress",
-          "fDeposit",
-          "fRent",
-          "fPremium",
-          "fArea",
-          "fFloor",
-          "fDong",
-          "fFee",
-          "fDesc",
-          "fUrl"
-        ]
-        .forEach(
-          id => {
-
-            $(id).value =
-              "";
-
-          }
+        closeModal(
+            "propertyModal"
         );
 
 
-        $("fImage").value =
-          "";
+        clearPropertyForm();
 
-
-        $("preview")
-          .style
-          .display =
-          "none";
-
-
-        /*
-          다시 불러오기
-        */
 
         await loadProperties();
 
-      }
-      catch (error) {
+
+    } catch(error) {
 
         console.error(error);
 
-
         alert(
-          "매물 등록 중 오류가 발생했습니다.\n\n" +
-          error.message
+            "매물 등록 중 오류가 발생했습니다.\n\n"
+            + error.message
         );
 
-      }
-
     }
 
-
-    window.registerProperty =
-      registerProperty;
+};
 
 
-    /* =========================
-       매물 삭제
-    ========================= */
 
-    window.deleteProperty =
-      async function(id) {
+/* -------------------------------
+   매물 삭제
+-------------------------------- */
 
-        if (
-          !currentUser ||
-          currentUser.email !==
-            ADMIN_EMAIL
-        ) {
+window.deleteProperty =
+async function(
+    propertyId
+) {
 
-          alert(
-            "관리자만 삭제할 수 있습니다."
-          );
-
-          return;
-
-        }
+    if(!checkAdmin())
+        return;
 
 
-        const property =
-          properties.find(
-            item =>
-              item.id === id
-          );
+    if(
+        !confirm(
+            "이 매물을 삭제하시겠습니까?"
+        )
+    )
+        return;
 
 
-        const title =
-          property?.title ||
-          "이 매물";
+    try {
 
-
-        const ok =
-          confirm(
-            `"${title}" 매물을 삭제할까요?`
-          );
-
-
-        if (!ok) {
-
-          return;
-
-        }
-
-
-        try {
-
-          await deleteDoc(
+        await deleteDoc(
             doc(
-              db,
-              "properties",
-              id
+                db,
+                "properties",
+                propertyId
             )
-          );
+        );
 
 
-          alert(
+        alert(
             "매물이 삭제되었습니다."
-          );
+        );
 
 
-          await loadProperties();
-
-        }
-        catch (error) {
-
-          console.error(error);
+        closeModal(
+            "detailModal"
+        );
 
 
-          alert(
-            "매물 삭제 오류\n\n" +
-            error.message
-          );
-
-        }
-
-      };
+        await loadProperties();
 
 
-    /* =========================
-       관리자 매물 목록
-    ========================= */
+    } catch(error) {
 
-    function renderAdminList() {
+        console.error(error);
 
-      if (
-        !currentUser ||
-        currentUser.email !==
-          ADMIN_EMAIL
-      ) {
-
-        $("adminList").innerHTML =
-          "";
-
-        return;
-
-      }
-
-
-      if (!properties.length) {
-
-        $("adminList").innerHTML = `
-
-          <div
-            class="muted"
-            style="padding:10px 0"
-          >
-            등록된 매물이 없습니다.
-          </div>
-
-        `;
-
-        return;
-
-      }
-
-
-      $("adminList").innerHTML =
-        properties.map(
-          property => `
-
-            <div
-              class="admin-item"
-            >
-
-              <button
-                class="delete"
-                onclick="
-                  deleteProperty(
-                    '${property.id}'
-                  )
-                "
-              >
-                삭제
-              </button>
-
-
-              <b>
-                ${esc(
-                  property.title ||
-                  "매물"
-                )}
-              </b>
-
-
-              <div class="muted">
-
-                ${esc(
-                  property.address ||
-                  ""
-                )}
-
-                ·
-
-                ${formatType(
-                  property.type
-                )}
-
-              </div>
-
-            </div>
-
-          `
-        ).join("");
+        alert(
+            "삭제 중 오류가 발생했습니다.\n\n"
+            + error.message
+        );
 
     }
 
-
-    /* =========================
-       대표사진 미리보기
-    ========================= */
-
-    $("fImage")
-      .addEventListener(
-        "change",
-        function() {
-
-          const file =
-            $("fImage")
-              .files[0];
+};
 
 
-          if (!file) {
 
-            $("preview")
-              .style
-              .display =
-              "none";
+/* -------------------------------
+   고객 매물 접수
+-------------------------------- */
+
+window.openRequestModal =
+function() {
+
+    openModal(
+        "requestModal"
+    );
+
+};
+
+
+
+window.submitRequest =
+async function() {
+
+    const name =
+        document
+        .getElementById(
+            "reqName"
+        )
+        .value.trim();
+
+
+    const phone =
+        document
+        .getElementById(
+            "reqPhone"
+        )
+        .value.trim();
+
+
+    const address =
+        document
+        .getElementById(
+            "reqAddress"
+        )
+        .value.trim();
+
+
+    if(
+        !name
+        ||
+        !phone
+        ||
+        !address
+    ) {
+
+        alert(
+            "이름, 연락처, 주소는 필수입니다."
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const photoFile =
+            document
+            .getElementById(
+                "reqPhoto"
+            )
+            .files[0];
+
+
+        let photo = "";
+
+
+        if(photoFile) {
+
+            photo =
+                await compressImage(
+                    photoFile
+                );
+
+        }
+
+
+        const data = {
+
+            name,
+
+            phone,
+
+            category:
+                document
+                .getElementById(
+                    "reqCategory"
+                ).value,
+
+            address,
+
+            title:
+                document
+                .getElementById(
+                    "reqTitle"
+                ).value.trim(),
+
+            deposit:
+                document
+                .getElementById(
+                    "reqDeposit"
+                ).value.trim(),
+
+            rent:
+                document
+                .getElementById(
+                    "reqRent"
+                ).value.trim(),
+
+            sale:
+                document
+                .getElementById(
+                    "reqSale"
+                ).value.trim(),
+
+            rights:
+                document
+                .getElementById(
+                    "reqRights"
+                ).value.trim(),
+
+            area:
+                document
+                .getElementById(
+                    "reqArea"
+                ).value.trim(),
+
+            floor:
+                document
+                .getElementById(
+                    "reqFloor"
+                ).value.trim(),
+
+            description:
+                document
+                .getElementById(
+                    "reqDescription"
+                ).value.trim(),
+
+            photo,
+
+            createdAt:
+                serverTimestamp()
+
+        };
+
+
+        await addDoc(
+            collection(
+                db,
+                "propertyRequests"
+            ),
+            data
+        );
+
+
+        alert(
+            "매물 접수가 완료되었습니다.\n\n확인 후 연락드리겠습니다."
+        );
+
+
+        closeModal(
+            "requestModal"
+        );
+
+
+        clearRequestForm();
+
+
+    } catch(error) {
+
+        console.error(error);
+
+        alert(
+            "매물 접수 중 오류가 발생했습니다.\n\n"
+            + error.message
+        );
+
+    }
+
+};
+
+
+
+/* -------------------------------
+   관리자 접수 확인
+-------------------------------- */
+
+window.openRequestsModal =
+async function() {
+
+    if(!checkAdmin())
+        return;
+
+
+    openModal(
+        "requestsModal"
+    );
+
+
+    const content =
+        document.getElementById(
+            "requestsContent"
+        );
+
+
+    content.innerHTML =
+        "접수 내용을 불러오는 중...";
+
+
+    try {
+
+        const q =
+            query(
+                collection(
+                    db,
+                    "propertyRequests"
+                ),
+                orderBy(
+                    "createdAt",
+                    "desc"
+                )
+            );
+
+
+        const snapshot =
+            await getDocs(q);
+
+
+        content.innerHTML = "";
+
+
+        if(snapshot.empty) {
+
+            content.innerHTML =
+                `
+                <div class="empty">
+                    접수된 매물이 없습니다.
+                </div>
+                `;
 
             return;
 
-          }
-
-
-          const reader =
-            new FileReader();
-
-
-          reader.onload =
-            function(event) {
-
-              $("preview").src =
-                event.target.result;
-
-
-              $("preview")
-                .style
-                .display =
-                "block";
-
-            };
-
-
-          reader.readAsDataURL(
-            file
-          );
-
         }
-      );
 
 
-    /* =========================
-       매물 종류 필터
-    ========================= */
+        snapshot.forEach(
+            item => {
 
-    document
-      .querySelectorAll(
-        ".filter"
-      )
-      .forEach(
-        button => {
+                const data =
+                    item.data();
 
-          button.addEventListener(
-            "click",
-            function() {
 
-              document
-                .querySelectorAll(
-                  ".filter"
-                )
-                .forEach(
-                  item =>
-                    item.classList
-                      .remove(
-                        "active"
-                      )
+                const div =
+                    document
+                    .createElement(
+                        "div"
+                    );
+
+
+                div.className =
+                    "request-item";
+
+
+                div.innerHTML =
+                    `
+                    <strong>
+                        ${escapeHtml(
+                            data.title || "매물 접수"
+                        )}
+                    </strong>
+
+                    <br>
+
+                    매물종류 :
+                    ${escapeHtml(
+                        data.category || "-"
+                    )}
+
+                    <br>
+
+                    이름 :
+                    ${escapeHtml(
+                        data.name || "-"
+                    )}
+
+                    <br>
+
+                    연락처 :
+                    ${escapeHtml(
+                        data.phone || "-"
+                    )}
+
+                    <br>
+
+                    주소 :
+                    ${escapeHtml(
+                        data.address || "-"
+                    )}
+
+                    <br>
+
+                    보증금 :
+                    ${escapeHtml(
+                        data.deposit || "-"
+                    )}
+
+                    / 월세 :
+                    ${escapeHtml(
+                        data.rent || "-"
+                    )}
+
+                    <br>
+
+                    매매가 :
+                    ${escapeHtml(
+                        data.sale || "-"
+                    )}
+
+                    <br>
+
+                    권리금 :
+                    ${escapeHtml(
+                        data.rights || "-"
+                    )}
+
+                    <br>
+
+                    면적 :
+                    ${escapeHtml(
+                        data.area || "-"
+                    )}
+
+                    / 층 :
+                    ${escapeHtml(
+                        data.floor || "-"
+                    )}
+
+                    <br><br>
+
+                    <strong>설명</strong>
+
+                    <p>
+                        ${escapeHtml(
+                            data.description || "-"
+                        )}
+                    </p>
+
+
+                    ${
+                        data.photo
+                        ?
+                        `
+                        <img
+                            src="${data.photo}">
+                        `
+                        :
+                        ""
+                    }
+
+
+                    <button
+                        class="delete-btn"
+                        onclick="deleteRequest('${item.id}')"
+                    >
+                        접수 삭제
+                    </button>
+                    `;
+
+
+                content.appendChild(
+                    div
                 );
 
-
-              this.classList
-                .add("active");
-
-
-              activeType =
-                this.dataset.type;
-
-
-              render();
-
             }
-          );
-
-        }
-      );
+        );
 
 
-    /* =========================
-       검색 Enter
-    ========================= */
+    } catch(error) {
 
-    $("mapSearch")
-      .addEventListener(
+        console.error(error);
+
+        content.innerHTML =
+            `
+            <div style="color:red;">
+                접수 내용을 불러오지 못했습니다.
+                <br><br>
+                ${escapeHtml(
+                    error.message
+                )}
+            </div>
+            `;
+
+    }
+
+};
+
+
+
+window.deleteRequest =
+async function(
+    requestId
+) {
+
+    if(!checkAdmin())
+        return;
+
+
+    if(
+        !confirm(
+            "이 접수 내용을 삭제하시겠습니까?"
+        )
+    )
+        return;
+
+
+    try {
+
+        await deleteDoc(
+            doc(
+                db,
+                "propertyRequests",
+                requestId
+            )
+        );
+
+
+        alert(
+            "삭제되었습니다."
+        );
+
+
+        await openRequestsModal();
+
+
+    } catch(error) {
+
+        console.error(error);
+
+        alert(
+            "삭제 중 오류가 발생했습니다."
+        );
+
+    }
+
+};
+
+
+
+/* -------------------------------
+   검색
+-------------------------------- */
+
+window.searchProperties =
+function() {
+
+    renderProperties();
+
+};
+
+
+
+document
+    .getElementById(
+        "searchInput"
+    )
+    .addEventListener(
         "keydown",
-        function(event) {
+        event => {
 
-          if (
-            event.key ===
-            "Enter"
-          ) {
+            if(
+                event.key ===
+                "Enter"
+            ) {
 
-            searchText();
-
-          }
-
-        }
-      );
-
-
-    /* =========================
-       구글 로그인
-    ========================= */
-
-    $("loginBtn")
-      .addEventListener(
-        "click",
-        async function() {
-
-          try {
-
-            const provider =
-              new GoogleAuthProvider();
-
-
-            /*
-              구글 계정 선택창
-            */
-
-            provider.setCustomParameters({
-              prompt: "select_account"
-            });
-
-
-            await signInWithPopup(
-              auth,
-              provider
-            );
-
-          }
-          catch (error) {
-
-            console.error(error);
-
-
-            alert(
-              "Google 로그인 중 오류가 발생했습니다.\n\n" +
-              error.message
-            );
-
-          }
-
-        }
-      );
-
-
-    /* =========================
-       로그아웃
-    ========================= */
-
-    $("logoutBtn")
-      .addEventListener(
-        "click",
-        async function() {
-
-          try {
-
-            await signOut(
-              auth
-            );
-
-          }
-          catch (error) {
-
-            console.error(error);
-
-          }
-
-        }
-      );
-
-
-    /* =========================
-       로그인 상태
-    ========================= */
-
-    onAuthStateChanged(
-      auth,
-      function(user) {
-
-        currentUser =
-          user;
-
-
-        if (user) {
-
-          $("userMail")
-            .textContent =
-            user.email || "";
-
-
-          $("loginBtn")
-            .style
-            .display =
-            "none";
-
-
-          $("logoutBtn")
-            .style
-            .display =
-            "inline-block";
-
-
-          /*
-            관리자 이메일과
-            로그인 이메일이 같으면
-            관리자 기능 활성화
-          */
-
-          const isAdmin =
-            user.email ===
-            ADMIN_EMAIL;
-
-
-          $("adminOpen")
-            .classList
-            .toggle(
-              "show",
-              isAdmin
-            );
-
-
-          $("adminForm")
-            .style
-            .display =
-            isAdmin
-              ? "block"
-              : "none";
-
-
-          $("notAdmin")
-            .style
-            .display =
-            isAdmin
-              ? "none"
-              : "block";
-
-
-          if (isAdmin) {
-
-            $("adminPanel")
-              .classList
-              .add("show");
-
-          }
-
-        }
-        else {
-
-          $("userMail")
-            .textContent =
-            "";
-
-
-          $("loginBtn")
-            .style
-            .display =
-            "inline-block";
-
-
-          $("logoutBtn")
-            .style
-            .display =
-            "none";
-
-
-          $("adminOpen")
-            .classList
-            .remove(
-              "show"
-            );
-
-
-          $("adminPanel")
-            .classList
-            .remove(
-              "show"
-            );
-
-        }
-
-
-        renderAdminList();
-
-      }
-    );
-
-
-    /* =========================
-       카카오맵 시작
-    ========================= */
-
-    kakao.maps.load(
-      function() {
-
-        map =
-          new kakao.maps.Map(
-            $("map"),
-            {
-
-              center:
-                new kakao.maps.LatLng(
-                  36.8151,
-                  127.1139
-                ),
-
-              level:
-                8
+                searchProperties();
 
             }
-          );
 
-
-        geocoder =
-          new kakao.maps.services.Geocoder();
-
-
-        /*
-          Firebase 매물 불러오기
-        */
-
-        loadProperties();
-
-      }
+        }
     );
 
 
-  </script>
+
+/* -------------------------------
+   모달
+-------------------------------- */
+
+function openModal(
+    id
+) {
+
+    document
+        .getElementById(id)
+        .classList.add(
+            "show"
+        );
+
+}
+
+
+window.closeModal =
+function(id) {
+
+    document
+        .getElementById(id)
+        .classList.remove(
+            "show"
+        );
+
+};
+
+
+
+/* -------------------------------
+   폼 초기화
+-------------------------------- */
+
+function clearRequestForm() {
+
+    [
+        "reqName",
+        "reqPhone",
+        "reqAddress",
+        "reqTitle",
+        "reqDeposit",
+        "reqRent",
+        "reqSale",
+        "reqRights",
+        "reqArea",
+        "reqFloor",
+        "reqDescription"
+    ]
+    .forEach(
+        id => {
+
+            document
+                .getElementById(id)
+                .value = "";
+
+        }
+    );
+
+
+    document
+        .getElementById(
+            "reqPhoto"
+        )
+        .value = "";
+
+}
+
+
+
+function clearPropertyForm() {
+
+    [
+        "pTitle",
+        "pAddress",
+        "pDeposit",
+        "pRent",
+        "pSale",
+        "pRights",
+        "pArea",
+        "pFloor",
+        "pDescription",
+        "pExternalUrl"
+    ]
+    .forEach(
+        id => {
+
+            document
+                .getElementById(id)
+                .value = "";
+
+        }
+    );
+
+
+    document
+        .getElementById(
+            "pPhoto"
+        )
+        .value = "";
+
+}
+
+
+
+/* -------------------------------
+   보안용 문자열 처리
+-------------------------------- */
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value || ""
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+
+}
+
+
+
+function safeUrl(
+    url
+) {
+
+    try {
+
+        const parsed =
+            new URL(
+                url
+            );
+
+
+        if(
+            parsed.protocol
+            ===
+            "https:"
+            ||
+            parsed.protocol
+            ===
+            "http:"
+        ) {
+
+            return parsed.href;
+
+        }
+
+    } catch(e) {}
+
+
+    return "#";
+
+}
+
+
+
+</script>
+
+
+<!-- Kakao Maps -->
+
+<script
+    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services&autoload=false"
+    onload="
+        kakao.maps.load(
+            function(){
+                kakaoMapReady();
+            }
+        );
+    ">
+</script>
+
 
 </body>
 </html>
