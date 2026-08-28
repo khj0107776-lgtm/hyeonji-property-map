@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>현지공인중개사 매물지도</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Malgun Gothic",sans-serif;color:#222;background:#f4f6f8}
+header{height:62px;background:#fff;border-bottom:1px solid #ddd;display:flex;align-items:center;padding:0 20px;font-size:22px;font-weight:800}
+.search{background:#fff;border-bottom:1px solid #ddd;padding:10px;display:flex;gap:7px;flex-wrap:wrap}
+input,select,button{height:42px;border:1px solid #ccc;border-radius:8px;padding:0 12px;font-size:14px}
+.addr{flex:1 1 400px}.title{width:170px}.money{width:110px}.type{width:110px}.link{flex:1 1 300px}
+button{background:#222;color:#fff;border-color:#222;font-weight:700;cursor:pointer}
+.status{padding:7px 12px;background:#fff;border-bottom:1px solid #ddd;color:#666;font-size:12px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 390px;height:calc(100vh - 123px);min-height:600px}
+#map{min-width:0}.side{background:#fff;border-left:1px solid #ddd;overflow:auto}
+.sidehead{padding:13px 15px;border-bottom:1px solid #eee;display:flex;justify-content:space-between}
+.card{display:grid;grid-template-columns:95px 1fr;gap:10px;padding:11px;border-bottom:1px solid #eee;cursor:pointer}
+.photo{height:78px;border-radius:7px;background:#e8ebed;display:flex;align-items:center;justify-content:center;color:#888;font-size:12px}
+.name{font-weight:800;line-height:1.3}.meta{font-size:12px;color:#777;margin-top:4px}.price{margin-top:7px;font-weight:800}
+.badge{display:inline-block;background:#4cae72;color:#fff;border-radius:4px;padding:2px 5px;font-size:10px;margin-right:3px}
+.empty{text-align:center;color:#777;padding:35px 15px}
+.setup{max-width:620px;margin:70px auto;background:#fff;border:1px solid #ddd;border-radius:14px;padding:25px}
+.setup h2{margin-top:0}.setup input{width:100%;margin:8px 0}.setup button{width:100%}
+@media(max-width:850px){.main{grid-template-columns:1fr;height:auto}#map{height:520px}.side{height:480px;border-left:0;border-top:1px solid #ddd}}
+</style>
+</head>
+<body>
+<header>📍 현지공인중개사 매물지도</header>
+
+<div id="setup" class="setup">
+<h2>카카오 지도 연결</h2>
+<p>카카오디벨로퍼스의 <b>JavaScript 키</b>를 입력하세요.</p>
+<input id="key" placeholder="JavaScript 키">
+<button id="start">지도 시작</button>
+<p style="font-size:12px;color:#777;line-height:1.5">
+카카오디벨로퍼스에서 JavaScript SDK 도메인에 실제 사용하는 웹사이트 주소를 등록해야 합니다.
+</p>
+</div>
+
+<div id="app" hidden>
+<div class="search">
+<input id="address" class="addr" placeholder="주소 입력 예) 천안시 서북구 성정동 1063">
+<select id="type" class="type">
+<option>상가</option><option>사무실</option><option>원룸</option><option>투룸</option><option>공장</option><option>아파트</option>
+</select>
+<input id="title" class="title" placeholder="매물명">
+<input id="deposit" class="money" placeholder="보증금">
+<input id="rent" class="money" placeholder="월세">
+<input id="link" class="link" placeholder="핀 클릭 시 연결할 사이트 주소(선택)">
+<button id="add">주소 등록</button>
+</div>
+<div id="status" class="status">주소를 입력하면 정확한 위치에 핀이 표시됩니다.</div>
+<div class="main">
+<div id="map"></div>
+<aside class="side">
+<div class="sidehead"><b>등록 매물</b><span id="count">0건</span></div>
+<div id="list" class="empty">등록된 매물이 없습니다.</div>
+</aside>
+</div>
+</div>
+
+<script>
+let map=null,geocoder=null,ready=false;
+const items=[];
+const $=id=>document.getElementById(id);
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function msg(t){$("status").textContent=t}
+
+$("start").onclick=()=>{
+ const key=$("key").value.trim();
+ if(!key){alert("JavaScript 키를 입력해주세요.");return}
+ msg("카카오 지도를 불러오는 중입니다...");
+ const s=document.createElement("script");
+ s.src="https://dapi.kakao.com/v2/maps/sdk.js?appkey="+encodeURIComponent(key)+"&libraries=services&autoload=false";
+ s.onload=()=>{
+  try{
+   kakao.maps.load(()=>{
+    map=new kakao.maps.Map($("map"),{
+      center:new kakao.maps.LatLng(36.8151,127.1139),level:7
+    });
+    geocoder=new kakao.maps.services.Geocoder();
+    ready=true;$("setup").hidden=true;$("app").hidden=false;
+    msg("지도 준비 완료! 주소를 입력하세요.");
+   });
+  }catch(e){msg("지도 초기화 실패. JavaScript 키와 도메인 설정을 확인해주세요.")}
+ };
+ s.onerror=()=>msg("카카오 지도 SDK를 불러오지 못했습니다. JavaScript 키 또는 도메인을 확인해주세요.");
+ document.head.appendChild(s);
+};
+
+$("add").onclick=()=>{
+ if(!ready)return;
+ const address=$("address").value.trim();
+ if(!address){alert("주소를 입력해주세요.");return}
+ msg("주소 검색 중입니다...");
+ geocoder.addressSearch(address,(result,stat)=>{
+  if(stat!==kakao.maps.services.Status.OK||!result.length){
+   msg("주소를 찾지 못했습니다. 지번 또는 도로명 주소로 다시 입력해주세요.");return;
+  }
+  const r=result[0],pos=new kakao.maps.LatLng(r.y,r.x);
+  const x={
+   address,type:$("type").value,title:$("title").value.trim()||address,
+   deposit:$("deposit").value.trim(),rent:$("rent").value.trim(),
+   link:$("link").value.trim(),pos
+  };
+  x.marker=new kakao.maps.Marker({map,position:pos});
+  x.info=new kakao.maps.InfoWindow({
+   content:'<div style="padding:12px;min-width:210px;font-size:13px;line-height:1.5">'+
+   '<b>'+esc(x.title)+'</b><br>'+esc(x.type)+' · '+esc(x.address)+'<br>'+
+   (x.deposit?'보증금 '+esc(x.deposit)+' ':'')+
+   (x.rent?' / 월세 '+esc(x.rent):'')+
+   (x.link?'<br><button id="detailLink" style="margin-top:7px;height:32px;background:#222;color:#fff;border:0;border-radius:6px;padding:0 9px">매물 상세보기 →</button>':'')+
+   '</div>'
+  });
+  kakao.maps.event.addListener(x.marker,"click",()=>{
+   x.info.open(map,x.marker);
+   setTimeout(()=>{const b=document.getElementById("detailLink");if(b)b.onclick=()=>window.open(x.link,"_blank","noopener")},0);
+  });
+  items.push(x);map.setCenter(pos);map.setLevel(3);render();
+  ["address","title","deposit","rent","link"].forEach(id=>$(id).value="");
+  msg("등록 완료: "+address);
+ });
+};
+
+function render(){
+ $("count").textContent=items.length+"건";
+ const list=$("list");list.innerHTML="";
+ if(!items.length){list.className="empty";list.textContent="등록된 매물이 없습니다.";return}
+ list.className="";
+ items.forEach(x=>{
+  const c=document.createElement("div");c.className="card";
+  c.innerHTML='<div class="photo">사진</div><div>'+
+   '<div class="name">'+esc(x.title)+'</div>'+
+   '<div class="meta">'+esc(x.address)+'</div>'+
+   '<div class="meta">'+esc(x.type)+'</div>'+
+   '<div class="price"><span class="badge">보증금</span>'+esc(x.deposit||"-")+
+   ' <span class="badge">월세</span>'+esc(x.rent||"-")+'</div></div>';
+  c.onclick=()=>{map.setCenter(x.pos);map.setLevel(3);kakao.maps.event.trigger(x.marker,"click")};
+  list.appendChild(c);
+ });
+}
+$("address").addEventListener("keydown",e=>{if(e.key==="Enter")$("add").click()});
+</script>
+</body>
+</html>
