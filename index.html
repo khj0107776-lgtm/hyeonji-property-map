@@ -10,7 +10,6 @@
 
 html,body{
     margin:0;
-    padding:0;
     width:100%;
     height:100%;
     font-family:Arial,"Malgun Gothic","Noto Sans KR",sans-serif;
@@ -22,9 +21,7 @@ button,input,select,textarea{
     font-family:inherit;
 }
 
-button{
-    cursor:pointer;
-}
+button{cursor:pointer}
 
 .header{
     height:64px;
@@ -34,14 +31,11 @@ button{
     align-items:center;
     justify-content:space-between;
     padding:0 22px;
-    position:relative;
-    z-index:1000;
 }
 
 .logo{
     font-size:20px;
     font-weight:800;
-    color:#222;
 }
 
 .logo span{
@@ -55,8 +49,8 @@ button{
 }
 
 .login-user{
+    color:#666;
     font-size:13px;
-    color:#555;
 }
 
 .btn{
@@ -70,7 +64,6 @@ button{
 .btn-google{
     background:#fff;
     border:1px solid #ddd;
-    color:#333;
 }
 
 .btn-primary{
@@ -90,18 +83,16 @@ button{
 
 .layout{
     display:flex;
-    width:100%;
     height:calc(100vh - 64px);
 }
 
 .sidebar{
-    width:390px;
-    min-width:390px;
+    width:410px;
+    min-width:410px;
     background:#fff;
     border-right:1px solid #ddd;
     display:flex;
     flex-direction:column;
-    overflow:hidden;
 }
 
 .sidebar-top{
@@ -111,39 +102,24 @@ button{
 
 .search{
     width:100%;
-    padding:12px 13px;
+    padding:12px;
     border:1px solid #ddd;
     border-radius:9px;
     outline:none;
-    font-size:14px;
 }
 
 .filter-row{
     display:flex;
-    gap:7px;
+    gap:8px;
     margin-top:9px;
 }
 
 .filter-row select{
     flex:1;
-    padding:9px;
+    padding:10px;
     border:1px solid #ddd;
     border-radius:8px;
     background:#fff;
-}
-
-.admin-panel{
-    margin-top:12px;
-    padding:12px;
-    background:#f5f7ff;
-    border:1px solid #dce3ff;
-    border-radius:10px;
-}
-
-.admin-title{
-    font-weight:800;
-    font-size:14px;
-    margin-bottom:9px;
 }
 
 .property-list{
@@ -155,23 +131,17 @@ button{
 .property-card{
     border:1px solid #e1e1e1;
     border-radius:11px;
-    padding:13px;
+    padding:14px;
     margin-bottom:9px;
     background:#fff;
-    transition:.15s;
-}
-
-.property-card:hover{
-    border-color:#8ca3ff;
-    box-shadow:0 2px 8px rgba(0,0,0,.06);
 }
 
 .property-type{
     display:inline-block;
+    padding:4px 7px;
     background:#edf1ff;
     color:#4264d8;
     border-radius:5px;
-    padding:4px 7px;
     font-size:11px;
     font-weight:800;
 }
@@ -179,38 +149,46 @@ button{
 .property-title{
     font-size:16px;
     font-weight:800;
-    margin:8px 0 5px;
+    margin:8px 0;
 }
 
 .property-address{
-    color:#666;
     font-size:13px;
+    color:#666;
     line-height:1.5;
 }
 
 .property-price{
+    margin-top:9px;
     font-size:15px;
     font-weight:800;
-    margin-top:9px;
 }
 
 .property-info{
     margin-top:7px;
-    color:#777;
     font-size:12px;
+    color:#777;
+}
+
+.property-description{
+    margin-top:9px;
+    font-size:13px;
+    line-height:1.5;
+    color:#555;
+    white-space:pre-line;
 }
 
 .card-buttons{
     display:flex;
     gap:6px;
-    margin-top:10px;
+    margin-top:11px;
 }
 
 .card-buttons button{
     flex:1;
-    padding:7px;
     border:0;
     border-radius:7px;
+    padding:8px;
     font-size:12px;
     font-weight:700;
 }
@@ -225,35 +203,34 @@ button{
     color:#d63d2e;
 }
 
+.empty{
+    padding:50px 15px;
+    text-align:center;
+    color:#999;
+}
+
 .map-area{
     flex:1;
     position:relative;
-    background:#e9edf2;
-    overflow:hidden;
-}
-
-.map-placeholder{
-    width:100%;
-    height:100%;
+    background:
+        linear-gradient(90deg,#fff 1px,transparent 1px),
+        linear-gradient(#fff 1px,transparent 1px);
+    background-size:45px 45px;
+    background-color:#e9edf2;
     display:flex;
     align-items:center;
     justify-content:center;
-    text-align:center;
-    color:#777;
-    background:
-        linear-gradient(90deg,rgba(255,255,255,.55) 1px,transparent 1px),
-        linear-gradient(rgba(255,255,255,.55) 1px,transparent 1px);
-    background-size:40px 40px;
 }
 
-.map-message{
+.map-box{
     background:#fff;
-    padding:25px 30px;
+    padding:30px;
     border-radius:15px;
-    box-shadow:0 4px 20px rgba(0,0,0,.12);
+    text-align:center;
+    box-shadow:0 5px 25px rgba(0,0,0,.12);
 }
 
-.map-message h2{
+.map-box h2{
     margin:0 0 10px;
 }
 
@@ -264,9 +241,8 @@ button{
     background:#fff;
     padding:9px 13px;
     border-radius:8px;
-    box-shadow:0 2px 8px rgba(0,0,0,.12);
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
     font-size:12px;
-    z-index:20;
 }
 
 .modal-bg{
@@ -276,8 +252,8 @@ button{
     display:none;
     align-items:center;
     justify-content:center;
-    z-index:3000;
     padding:20px;
+    z-index:9999;
 }
 
 .modal-bg.show{
@@ -285,14 +261,13 @@ button{
 }
 
 .modal{
-    width:600px;
+    width:650px;
     max-width:100%;
     max-height:90vh;
     overflow-y:auto;
     background:#fff;
     border-radius:15px;
     padding:22px;
-    box-shadow:0 15px 50px rgba(0,0,0,.3);
 }
 
 .modal h2{
@@ -312,7 +287,7 @@ button{
 }
 
 .form-group.full{
-    grid-column:1 / -1;
+    grid-column:1/-1;
 }
 
 .form-group label{
@@ -324,15 +299,16 @@ button{
 .form-group input,
 .form-group select,
 .form-group textarea{
+    width:100%;
+    padding:10px;
     border:1px solid #ddd;
     border-radius:8px;
-    padding:10px;
     outline:none;
     font-size:14px;
 }
 
 .form-group textarea{
-    min-height:90px;
+    min-height:100px;
     resize:vertical;
 }
 
@@ -343,19 +319,23 @@ button{
     margin-top:18px;
 }
 
-.empty{
-    padding:40px 15px;
-    text-align:center;
-    color:#999;
-    font-size:14px;
-}
-
-.admin-only{
+.admin-area{
     display:none;
 }
 
-.admin-mode .admin-only{
+.admin-mode .admin-area{
     display:block;
+}
+
+.admin-badge{
+    margin-top:10px;
+    padding:10px;
+    background:#f1f4ff;
+    border:1px solid #dce3ff;
+    border-radius:8px;
+    font-size:12px;
+    color:#4264d8;
+    font-weight:700;
 }
 
 @media(max-width:800px){
@@ -363,14 +343,6 @@ button{
     .header{
         height:58px;
         padding:0 12px;
-    }
-
-    .logo{
-        font-size:16px;
-    }
-
-    .login-user{
-        display:none;
     }
 
     .layout{
@@ -383,6 +355,10 @@ button{
     }
 
     .map-area{
+        display:none;
+    }
+
+    .login-user{
         display:none;
     }
 
@@ -409,16 +385,18 @@ button{
 
         <div id="loginUser" class="login-user"></div>
 
-        <button id="loginBtn"
-                class="btn btn-google"
-                onclick="googleLogin()">
+        <button
+            id="loginBtn"
+            class="btn btn-google"
+            onclick="googleLogin()">
             🔐 관리자 Google 로그인
         </button>
 
-        <button id="logoutBtn"
-                class="btn btn-gray"
-                style="display:none"
-                onclick="logout()">
+        <button
+            id="logoutBtn"
+            class="btn btn-gray"
+            style="display:none"
+            onclick="logout()">
             로그아웃
         </button>
 
@@ -437,13 +415,15 @@ button{
                 id="searchInput"
                 class="search"
                 placeholder="주소, 매물명, 종류 검색"
-                oninput="renderList()"
-            >
+                oninput="renderList()">
 
             <div class="filter-row">
 
-                <select id="typeFilter" onchange="renderList()">
-                    <option value="">전체</option>
+                <select
+                    id="typeFilter"
+                    onchange="renderList()">
+
+                    <option value="">전체 매물</option>
                     <option value="상가">상가</option>
                     <option value="공장">공장</option>
                     <option value="창고">창고</option>
@@ -452,34 +432,29 @@ button{
                     <option value="투룸">투룸</option>
                     <option value="아파트">아파트</option>
                     <option value="기타">기타</option>
+
                 </select>
 
                 <button
                     id="addBtn"
-                    class="btn btn-primary admin-only"
+                    class="btn btn-primary admin-area"
                     onclick="openAddModal()">
                     + 매물등록
                 </button>
 
             </div>
 
-            <div id="adminPanel"
-                 class="admin-panel admin-only">
-
-                <div class="admin-title">
-                    🔐 관리자 모드
-                </div>
-
-                <div id="adminEmail"
-                     style="font-size:12px;color:#555;">
-                </div>
-
+            <div
+                id="adminBadge"
+                class="admin-badge admin-area">
+                🔐 관리자 모드
             </div>
 
         </div>
 
-        <div id="propertyList"
-             class="property-list">
+        <div
+            id="propertyList"
+            class="property-list">
         </div>
 
     </aside>
@@ -487,26 +462,24 @@ button{
 
     <main class="map-area">
 
-        <div class="map-placeholder">
+        <div class="map-box">
 
-            <div class="map-message">
+            <h2>📍 현지공인중개사 매물지도</h2>
 
-                <h2>📍 현지공인중개사 매물지도</h2>
+            <div>
+                등록된 매물을 확인할 수 있습니다.
+            </div>
 
-                <div>
-                    등록된 매물을 확인할 수 있습니다.
-                </div>
-
-                <div style="margin-top:8px;color:#999;font-size:13px;">
-                    Firebase Firestore 연동 완료
-                </div>
-
+            <div
+                style="margin-top:8px;font-size:13px;color:#999;">
+                Firebase Firestore 연결
             </div>
 
         </div>
 
-        <div id="status"
-             class="status">
+        <div
+            id="status"
+            class="status">
             Firebase 연결 중...
         </div>
 
@@ -515,10 +488,11 @@ button{
 </div>
 
 
-<!-- 매물 등록 / 수정 모달 -->
+<!-- 매물 등록 / 수정 -->
 
-<div id="modalBg"
-     class="modal-bg">
+<div
+    id="modalBg"
+    class="modal-bg">
 
     <div class="modal">
 
@@ -529,9 +503,11 @@ button{
         <div class="form-grid">
 
             <div class="form-group">
+
                 <label>매물 종류</label>
 
                 <select id="pType">
+
                     <option value="상가">상가</option>
                     <option value="공장">공장</option>
                     <option value="창고">창고</option>
@@ -540,17 +516,20 @@ button{
                     <option value="투룸">투룸</option>
                     <option value="아파트">아파트</option>
                     <option value="기타">기타</option>
+
                 </select>
+
             </div>
 
 
             <div class="form-group">
+
                 <label>매물명</label>
 
                 <input
                     id="pTitle"
-                    placeholder="예: 신부동 1층 상가"
-                >
+                    placeholder="예: 신부동 1층 상가">
+
             </div>
 
 
@@ -560,34 +539,31 @@ button{
 
                 <input
                     id="pAddress"
-                    placeholder="예: 천안시 동남구 신부동 123-4"
-                >
+                    placeholder="예: 천안시 동남구 신부동 123-4">
 
             </div>
 
 
             <div class="form-group">
 
-                <label>보증금</label>
+                <label>보증금 (만원)</label>
 
                 <input
                     id="pDeposit"
                     type="number"
-                    placeholder="만원"
-                >
+                    placeholder="2000">
 
             </div>
 
 
             <div class="form-group">
 
-                <label>월세</label>
+                <label>월세 (만원)</label>
 
                 <input
                     id="pRent"
                     type="number"
-                    placeholder="만원"
-                >
+                    placeholder="100">
 
             </div>
 
@@ -598,8 +574,7 @@ button{
 
                 <input
                     id="pManagement"
-                    placeholder="예: 10만원 / 없음"
-                >
+                    placeholder="10만원">
 
             </div>
 
@@ -610,8 +585,7 @@ button{
 
                 <input
                     id="pArea"
-                    placeholder="예: 89.9㎡ (27.1평)"
-                >
+                    placeholder="89.9㎡ (27.1평)">
 
             </div>
 
@@ -622,8 +596,7 @@ button{
 
                 <input
                     id="pFloor"
-                    placeholder="예: 1층"
-                >
+                    placeholder="1층">
 
             </div>
 
@@ -634,8 +607,7 @@ button{
 
                 <input
                     id="pRooms"
-                    placeholder="예: 방 2개 / 화장실 1개"
-                >
+                    placeholder="방 2개 / 화장실 1개">
 
             </div>
 
@@ -646,8 +618,7 @@ button{
 
                 <input
                     id="pParking"
-                    placeholder="예: 5대"
-                >
+                    placeholder="5대">
 
             </div>
 
@@ -658,8 +629,7 @@ button{
 
                 <input
                     id="pMove"
-                    placeholder="예: 즉시입주"
-                >
+                    placeholder="즉시입주">
 
             </div>
 
@@ -670,8 +640,7 @@ button{
 
                 <input
                     id="pPremium"
-                    placeholder="예: 1,500만원 / 없음"
-                >
+                    placeholder="없음 / 1,500만원">
 
             </div>
 
@@ -682,8 +651,7 @@ button{
 
                 <textarea
                     id="pDescription"
-                    placeholder="매물 특징 및 상세 설명을 입력하세요."
-                ></textarea>
+                    placeholder="매물 특징 및 상세 설명"></textarea>
 
             </div>
 
@@ -713,9 +681,9 @@ button{
 
 <script type="module">
 
-/* =========================================================
-   Firebase
-========================================================= */
+/* ======================================================
+   [Firebase] Firebase SDK
+====================================================== */
 
 import {
     initializeApp
@@ -732,67 +700,64 @@ import {
 import {
     getFirestore,
     collection,
-    addDoc,
     getDocs,
-    doc,
+    addDoc,
     updateDoc,
     deleteDoc,
+    doc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 
-/* =========================================================
-   Firebase 설정
-========================================================= */
+/* ======================================================
+   [Firebase] 프로젝트 설정
+====================================================== */
 
 const firebaseConfig = {
 
-    apiKey: "AIzaSyAC9YI780LAKD4KJNJZTT6KRrheVG5GpVM",
+    apiKey:
+        "AIzaSyAC9YI780LAKD4KJNJZTT6KRrheVG5GpVM",
 
-    authDomain: "hyunji-8fc9c.firebaseapp.com",
+    authDomain:
+        "hyunji-8fc9c.firebaseapp.com",
 
-    projectId: "hyunji-8fc9c",
+    projectId:
+        "hyunji-8fc9c",
 
-    storageBucket: "hyunji-8fc9c.firebasestorage.app",
+    storageBucket:
+        "hyunji-8fc9c.firebasestorage.app",
 
-    messagingSenderId: "659657503337",
+    messagingSenderId:
+        "659657503337",
 
-    appId: "1:659657503337:web:aa2e24ae4d37ed29d6a8f8",
+    appId:
+        "1:659657503337:web:aa2e24ae4d37ed29d6a8f8",
 
-    measurementId: "G-1LPMGC6317"
-
+    measurementId:
+        "G-1LPMGC6317"
 };
 
 
-const app = initializeApp(firebaseConfig);
+const app =
+    initializeApp(firebaseConfig);
 
-const auth = getAuth(app);
+const auth =
+    getAuth(app);
 
-const db = getFirestore(app);
+const db =
+    getFirestore(app);
 
-const provider = new GoogleAuthProvider();
-
-
-/* =========================================================
-   관리자 이메일
-========================================================= */
-
-/*
-   중요:
-   여기에 Google 로그인에 사용할 관리자 계정 이메일을 넣어주세요.
-
-   현재 Firebase Authentication에 등록되어 있는
-   계정을 우선 사용하도록 설정했습니다.
-*/
-
-const ADMIN_EMAILS = [
-    "khj0108279@gmail.com"
-];
+const googleProvider =
+    new GoogleAuthProvider();
 
 
-/* =========================================================
-   전역 변수
-========================================================= */
+/* ======================================================
+   [관리자] Google 계정
+====================================================== */
+
+const ADMIN_EMAIL =
+    "khj0107776@gmail.com";
+
 
 let currentUser = null;
 
@@ -801,24 +766,42 @@ let properties = [];
 let editingId = null;
 
 
-/* =========================================================
-   Google 로그인
-========================================================= */
+/* ======================================================
+   [관리자] 관리자 확인
+====================================================== */
+
+function isAdmin(user){
+
+    return !!user &&
+        (user.email || "").toLowerCase()
+        === ADMIN_EMAIL.toLowerCase();
+
+}
+
+
+/* ======================================================
+   [Google 로그인]
+====================================================== */
 
 window.googleLogin = async function(){
 
     try{
 
         const result =
-            await signInWithPopup(auth, provider);
+            await signInWithPopup(
+                auth,
+                googleProvider
+            );
 
-        const user = result.user;
+        const user =
+            result.user;
+
 
         if(!isAdmin(user)){
 
             alert(
                 "관리자 계정이 아닙니다.\n\n" +
-                "관리자로 등록된 Google 계정으로 로그인해주세요."
+                "관리자 Google 계정으로 로그인해주세요."
             );
 
             await signOut(auth);
@@ -826,14 +809,16 @@ window.googleLogin = async function(){
             return;
         }
 
-        alert("관리자 로그인 성공!");
 
-    }catch(error){
+        alert("관리자 Google 로그인 성공!");
+
+    }
+    catch(error){
 
         console.error(error);
 
         alert(
-            "Google 로그인 중 오류가 발생했습니다.\n\n" +
+            "Google 로그인 오류\n\n" +
             error.message
         );
 
@@ -842,138 +827,136 @@ window.googleLogin = async function(){
 };
 
 
-/* =========================================================
-   로그아웃
-========================================================= */
+/* ======================================================
+   [로그아웃]
+====================================================== */
 
 window.logout = async function(){
 
-    try{
-
-        await signOut(auth);
-
-    }catch(error){
-
-        console.error(error);
-
-    }
+    await signOut(auth);
 
 };
 
 
-/* =========================================================
-   관리자 확인
-========================================================= */
+/* ======================================================
+   [로그인 상태]
+====================================================== */
 
-function isAdmin(user){
+onAuthStateChanged(
+    auth,
+    async(user)=>{
 
-    if(!user){
-        return false;
-    }
+        currentUser = user;
 
-    return ADMIN_EMAILS
-        .map(email => email.toLowerCase())
-        .includes(
-            (user.email || "").toLowerCase()
-        );
+        const loginBtn =
+            document.getElementById("loginBtn");
 
-}
+        const logoutBtn =
+            document.getElementById("logoutBtn");
 
-
-/* =========================================================
-   로그인 상태 감시
-========================================================= */
-
-onAuthStateChanged(auth, async(user) => {
-
-    currentUser = user;
-
-    const loginBtn =
-        document.getElementById("loginBtn");
-
-    const logoutBtn =
-        document.getElementById("logoutBtn");
-
-    const loginUser =
-        document.getElementById("loginUser");
-
-    const adminEmail =
-        document.getElementById("adminEmail");
-
-    document.body.classList.remove("admin-mode");
+        const loginUser =
+            document.getElementById("loginUser");
 
 
-    if(user && isAdmin(user)){
+        document.body
+            .classList
+            .remove("admin-mode");
 
-        document.body.classList.add("admin-mode");
 
-        loginBtn.style.display = "none";
+        if(user && isAdmin(user)){
 
-        logoutBtn.style.display = "block";
+            document.body
+                .classList
+                .add("admin-mode");
 
-        loginUser.textContent =
-            "관리자 · " + user.email;
 
-        adminEmail.textContent =
-            user.email;
+            loginBtn.style.display =
+                "none";
 
-    }else{
+            logoutBtn.style.display =
+                "block";
 
-        loginBtn.style.display = "block";
+            loginUser.textContent =
+                "관리자 · " + user.email;
 
-        logoutBtn.style.display = "none";
+        }
+        else{
 
-        loginUser.textContent = "";
+            loginBtn.style.display =
+                "block";
+
+            logoutBtn.style.display =
+                "none";
+
+            loginUser.textContent =
+                "";
+
+        }
+
+
+        await loadProperties();
 
     }
+);
 
 
-    await loadProperties();
-
-});
-
-
-/* =========================================================
-   Firestore 매물 불러오기
-========================================================= */
+/* ======================================================
+   [Firestore] 매물 불러오기
+====================================================== */
 
 async function loadProperties(){
 
     setStatus("매물 불러오는 중...");
 
+
     try{
 
         const snapshot =
             await getDocs(
-                collection(db,"properties")
+                collection(
+                    db,
+                    "properties"
+                )
             );
+
 
         properties = [];
 
-        snapshot.forEach(item => {
+
+        snapshot.forEach(item=>{
 
             properties.push({
+
                 id:item.id,
+
                 ...item.data()
+
             });
 
         });
 
+
         renderList();
 
+
         setStatus(
-            "매물 " + properties.length + "개"
+            "등록 매물 " +
+            properties.length +
+            "개"
         );
 
-    }catch(error){
+    }
+    catch(error){
 
         console.error(error);
 
-        setStatus("Firestore 연결 오류");
+        setStatus(
+            "Firestore 연결 오류"
+        );
 
         alert(
-            "매물을 불러오지 못했습니다.\n\n" +
-            "Firestore 규칙을 확인해주세요."
+            "Firestore에서 매물을 불러오지 못했습니다.\n\n" +
+            error.message
         );
 
     }
@@ -981,52 +964,66 @@ async function loadProperties(){
 }
 
 
-/* =========================================================
-   매물 목록 표시
-========================================================= */
+/* ======================================================
+   [매물 목록]
+====================================================== */
 
 window.renderList = function(){
 
     const list =
-        document.getElementById("propertyList");
+        document.getElementById(
+            "propertyList"
+        );
+
 
     const search =
-        document
-        .getElementById("searchInput")
-        .value
+        document.getElementById(
+            "searchInput"
+        ).value
         .trim()
         .toLowerCase();
 
+
     const type =
-        document
-        .getElementById("typeFilter")
-        .value;
+        document.getElementById(
+            "typeFilter"
+        ).value;
 
 
-    let filtered =
-        properties.filter(property => {
+    const filtered =
+        properties.filter(property=>{
 
             const text = (
 
-                (property.title || "") +
-                " " +
-                (property.address || "") +
-                " " +
-                (property.type || "") +
-                " " +
-                (property.description || "")
+                property.title || ""
 
-            ).toLowerCase();
+            ) + " " + (
+
+                property.address || ""
+
+            ) + " " + (
+
+                property.type || ""
+
+            ) + " " + (
+
+                property.description || ""
+
+            );
 
 
-            const matchSearch =
-                !search || text.includes(search);
+            const searchOK =
+                !search ||
+                text.toLowerCase()
+                    .includes(search);
 
-            const matchType =
-                !type || property.type === type;
+
+            const typeOK =
+                !type ||
+                property.type === type;
 
 
-            return matchSearch && matchType;
+            return searchOK && typeOK;
 
         });
 
@@ -1044,17 +1041,18 @@ window.renderList = function(){
 
 
     list.innerHTML =
-        filtered.map(property => {
+        filtered.map(property=>{
 
             const deposit =
-                property.deposit ?
-                Number(property.deposit).toLocaleString() :
-                "0";
+                Number(
+                    property.deposit || 0
+                ).toLocaleString();
+
 
             const rent =
-                property.rent ?
-                Number(property.rent).toLocaleString() :
-                "0";
+                Number(
+                    property.rent || 0
+                ).toLocaleString();
 
 
             return `
@@ -1062,15 +1060,21 @@ window.renderList = function(){
                 <div class="property-card">
 
                     <div class="property-type">
-                        ${escapeHtml(property.type || "기타")}
+                        ${escapeHtml(
+                            property.type || "기타"
+                        )}
                     </div>
 
                     <div class="property-title">
-                        ${escapeHtml(property.title || "매물")}
+                        ${escapeHtml(
+                            property.title || "매물"
+                        )}
                     </div>
 
                     <div class="property-address">
-                        📍 ${escapeHtml(property.address || "")}
+                        📍 ${escapeHtml(
+                            property.address || ""
+                        )}
                     </div>
 
                     <div class="property-price">
@@ -1079,24 +1083,81 @@ window.renderList = function(){
 
                     <div class="property-info">
 
-                        ${escapeHtml(property.area || "")}
+                        ${escapeHtml(
+                            property.area || ""
+                        )}
 
-                        ${property.floor
-                            ? " · " + escapeHtml(property.floor)
-                            : ""}
+                        ${
+                            property.floor
+                            ? " · " +
+                              escapeHtml(
+                                  property.floor
+                              )
+                            : ""
+                        }
 
-                        ${property.parking
-                            ? " · 주차 " + escapeHtml(property.parking)
-                            : ""}
+                        ${
+                            property.parking
+                            ? " · 주차 " +
+                              escapeHtml(
+                                  property.parking
+                              )
+                            : ""
+                        }
 
                     </div>
+
+                    ${
+                        property.management
+                        ? `
+                        <div class="property-info">
+                            관리비 : ${
+                                escapeHtml(
+                                    property.management
+                                )
+                            }
+                        </div>
+                        `
+                        : ""
+                    }
+
+                    ${
+                        property.premium
+                        ? `
+                        <div class="property-info">
+                            권리금 : ${
+                                escapeHtml(
+                                    property.premium
+                                )
+                            }
+                        </div>
+                        `
+                        : ""
+                    }
+
+                    ${
+                        property.description
+                        ? `
+                        <div class="property-description">
+                            ${
+                                escapeHtml(
+                                    property.description
+                                )
+                            }
+                        </div>
+                        `
+                        : ""
+                    }
 
 
                     ${
                         isAdmin(currentUser)
+
                         ?
 
-                        `<div class="card-buttons">
+                        `
+
+                        <div class="card-buttons">
 
                             <button
                                 class="edit-btn"
@@ -1110,7 +1171,9 @@ window.renderList = function(){
                                 🗑️ 삭제
                             </button>
 
-                        </div>`
+                        </div>
+
+                        `
 
                         : ""
 
@@ -1125,15 +1188,17 @@ window.renderList = function(){
 };
 
 
-/* =========================================================
-   매물 등록창
-========================================================= */
+/* ======================================================
+   [매물 등록]
+====================================================== */
 
 window.openAddModal = function(){
 
     if(!isAdmin(currentUser)){
 
-        alert("관리자만 매물을 등록할 수 있습니다.");
+        alert(
+            "관리자만 매물을 등록할 수 있습니다."
+        );
 
         return;
 
@@ -1142,28 +1207,33 @@ window.openAddModal = function(){
 
     editingId = null;
 
-    document.getElementById("modalTitle")
-        .textContent = "매물 등록";
+    document.getElementById(
+        "modalTitle"
+    ).textContent =
+        "매물 등록";
 
 
     clearForm();
 
-    document
-        .getElementById("modalBg")
-        .classList.add("show");
+
+    document.getElementById(
+        "modalBg"
+    ).classList.add("show");
 
 };
 
 
-/* =========================================================
-   수정
-========================================================= */
+/* ======================================================
+   [매물 수정]
+====================================================== */
 
 window.editProperty = function(id){
 
     if(!isAdmin(currentUser)){
 
-        alert("관리자만 수정할 수 있습니다.");
+        alert(
+            "관리자만 수정할 수 있습니다."
+        );
 
         return;
 
@@ -1171,77 +1241,81 @@ window.editProperty = function(id){
 
 
     const property =
-        properties.find(item => item.id === id);
+        properties.find(
+            item => item.id === id
+        );
 
 
-    if(!property){
-        return;
-    }
+    if(!property) return;
 
 
     editingId = id;
 
 
-    document.getElementById("modalTitle")
-        .textContent = "매물 수정";
+    document.getElementById(
+        "modalTitle"
+    ).textContent =
+        "매물 수정";
 
 
-    document.getElementById("pType")
-        .value = property.type || "상가";
+    document.getElementById("pType").value =
+        property.type || "상가";
 
-    document.getElementById("pTitle")
-        .value = property.title || "";
+    document.getElementById("pTitle").value =
+        property.title || "";
 
-    document.getElementById("pAddress")
-        .value = property.address || "";
+    document.getElementById("pAddress").value =
+        property.address || "";
 
-    document.getElementById("pDeposit")
-        .value = property.deposit || "";
+    document.getElementById("pDeposit").value =
+        property.deposit || "";
 
-    document.getElementById("pRent")
-        .value = property.rent || "";
+    document.getElementById("pRent").value =
+        property.rent || "";
 
-    document.getElementById("pManagement")
-        .value = property.management || "";
+    document.getElementById("pManagement").value =
+        property.management || "";
 
-    document.getElementById("pArea")
-        .value = property.area || "";
+    document.getElementById("pArea").value =
+        property.area || "";
 
-    document.getElementById("pFloor")
-        .value = property.floor || "";
+    document.getElementById("pFloor").value =
+        property.floor || "";
 
-    document.getElementById("pRooms")
-        .value = property.rooms || "";
+    document.getElementById("pRooms").value =
+        property.rooms || "";
 
-    document.getElementById("pParking")
-        .value = property.parking || "";
+    document.getElementById("pParking").value =
+        property.parking || "";
 
-    document.getElementById("pMove")
-        .value = property.move || "";
+    document.getElementById("pMove").value =
+        property.move || "";
 
-    document.getElementById("pPremium")
-        .value = property.premium || "";
+    document.getElementById("pPremium").value =
+        property.premium || "";
 
-    document.getElementById("pDescription")
-        .value = property.description || "";
+    document.getElementById("pDescription").value =
+        property.description || "";
 
 
-    document
-        .getElementById("modalBg")
-        .classList.add("show");
+    document.getElementById(
+        "modalBg"
+    ).classList.add("show");
 
 };
 
 
-/* =========================================================
-   저장
-========================================================= */
+/* ======================================================
+   [Firestore] 저장
+====================================================== */
 
 window.saveProperty = async function(){
 
     if(!isAdmin(currentUser)){
 
-        alert("관리자만 저장할 수 있습니다.");
+        alert(
+            "관리자만 저장할 수 있습니다."
+        );
 
         return;
 
@@ -1251,47 +1325,73 @@ window.saveProperty = async function(){
     const data = {
 
         type:
-            document.getElementById("pType").value,
+            document.getElementById(
+                "pType"
+            ).value,
 
         title:
-            document.getElementById("pTitle").value.trim(),
+            document.getElementById(
+                "pTitle"
+            ).value.trim(),
 
         address:
-            document.getElementById("pAddress").value.trim(),
+            document.getElementById(
+                "pAddress"
+            ).value.trim(),
 
         deposit:
             Number(
-                document.getElementById("pDeposit").value || 0
+                document.getElementById(
+                    "pDeposit"
+                ).value || 0
             ),
 
         rent:
             Number(
-                document.getElementById("pRent").value || 0
+                document.getElementById(
+                    "pRent"
+                ).value || 0
             ),
 
         management:
-            document.getElementById("pManagement").value.trim(),
+            document.getElementById(
+                "pManagement"
+            ).value.trim(),
 
         area:
-            document.getElementById("pArea").value.trim(),
+            document.getElementById(
+                "pArea"
+            ).value.trim(),
 
         floor:
-            document.getElementById("pFloor").value.trim(),
+            document.getElementById(
+                "pFloor"
+            ).value.trim(),
 
         rooms:
-            document.getElementById("pRooms").value.trim(),
+            document.getElementById(
+                "pRooms"
+            ).value.trim(),
 
         parking:
-            document.getElementById("pParking").value.trim(),
+            document.getElementById(
+                "pParking"
+            ).value.trim(),
 
         move:
-            document.getElementById("pMove").value.trim(),
+            document.getElementById(
+                "pMove"
+            ).value.trim(),
 
         premium:
-            document.getElementById("pPremium").value.trim(),
+            document.getElementById(
+                "pPremium"
+            ).value.trim(),
 
         description:
-            document.getElementById("pDescription").value.trim(),
+            document.getElementById(
+                "pDescription"
+            ).value.trim(),
 
         updatedBy:
             currentUser.email,
@@ -1304,7 +1404,9 @@ window.saveProperty = async function(){
 
     if(!data.title){
 
-        alert("매물명을 입력해주세요.");
+        alert(
+            "매물명을 입력해주세요."
+        );
 
         return;
 
@@ -1313,7 +1415,9 @@ window.saveProperty = async function(){
 
     if(!data.address){
 
-        alert("주소를 입력해주세요.");
+        alert(
+            "주소를 입력해주세요."
+        );
 
         return;
 
@@ -1325,13 +1429,23 @@ window.saveProperty = async function(){
         if(editingId){
 
             await updateDoc(
-                doc(db,"properties",editingId),
+
+                doc(
+                    db,
+                    "properties",
+                    editingId
+                ),
+
                 data
+
             );
 
-            alert("매물이 수정되었습니다.");
+            alert(
+                "매물이 수정되었습니다."
+            );
 
-        }else{
+        }
+        else{
 
             data.createdBy =
                 currentUser.email;
@@ -1341,11 +1455,19 @@ window.saveProperty = async function(){
 
 
             await addDoc(
-                collection(db,"properties"),
+
+                collection(
+                    db,
+                    "properties"
+                ),
+
                 data
+
             );
 
-            alert("매물이 등록되었습니다.");
+            alert(
+                "매물이 등록되었습니다."
+            );
 
         }
 
@@ -1354,14 +1476,13 @@ window.saveProperty = async function(){
 
         await loadProperties();
 
-
-    }catch(error){
+    }
+    catch(error){
 
         console.error(error);
 
         alert(
-            "저장에 실패했습니다.\n\n" +
-            "Firestore 규칙에서 현재 관리자 이메일을 허용했는지 확인해주세요.\n\n" +
+            "Firestore 저장 오류입니다.\n\n" +
             error.message
         );
 
@@ -1370,15 +1491,17 @@ window.saveProperty = async function(){
 };
 
 
-/* =========================================================
-   삭제
-========================================================= */
+/* ======================================================
+   [Firestore] 삭제
+====================================================== */
 
 window.deleteProperty = async function(id){
 
     if(!isAdmin(currentUser)){
 
-        alert("관리자만 삭제할 수 있습니다.");
+        alert(
+            "관리자만 삭제할 수 있습니다."
+        );
 
         return;
 
@@ -1386,41 +1509,50 @@ window.deleteProperty = async function(id){
 
 
     const property =
-        properties.find(item => item.id === id);
-
-
-    if(!property){
-        return;
-    }
-
-
-    const ok =
-        confirm(
-            `"${property.title || "이 매물"}"을 삭제할까요?`
+        properties.find(
+            item => item.id === id
         );
 
 
-    if(!ok){
+    if(!property) return;
+
+
+    if(!confirm(
+        `"${property.title || "이 매물"}"을 삭제할까요?`
+    )){
+
         return;
+
     }
 
 
     try{
 
         await deleteDoc(
-            doc(db,"properties",id)
+
+            doc(
+                db,
+                "properties",
+                id
+            )
+
         );
 
-        alert("삭제되었습니다.");
+
+        alert(
+            "매물이 삭제되었습니다."
+        );
+
 
         await loadProperties();
 
-    }catch(error){
+    }
+    catch(error){
 
         console.error(error);
 
         alert(
-            "삭제에 실패했습니다.\n\n" +
+            "삭제 오류입니다.\n\n" +
             error.message
         );
 
@@ -1429,89 +1561,98 @@ window.deleteProperty = async function(id){
 };
 
 
-/* =========================================================
-   모달 닫기
-========================================================= */
+/* ======================================================
+   [모달]
+====================================================== */
 
 window.closeModal = function(){
 
-    document
-        .getElementById("modalBg")
-        .classList.remove("show");
+    document.getElementById(
+        "modalBg"
+    ).classList.remove("show");
 
 };
 
 
-/* =========================================================
-   폼 초기화
-========================================================= */
-
 function clearForm(){
 
-    document.getElementById("pType").value = "상가";
+    document.getElementById("pType").value =
+        "상가";
 
-    document.getElementById("pTitle").value = "";
+    document.getElementById("pTitle").value =
+        "";
 
-    document.getElementById("pAddress").value = "";
+    document.getElementById("pAddress").value =
+        "";
 
-    document.getElementById("pDeposit").value = "";
+    document.getElementById("pDeposit").value =
+        "";
 
-    document.getElementById("pRent").value = "";
+    document.getElementById("pRent").value =
+        "";
 
-    document.getElementById("pManagement").value = "";
+    document.getElementById("pManagement").value =
+        "";
 
-    document.getElementById("pArea").value = "";
+    document.getElementById("pArea").value =
+        "";
 
-    document.getElementById("pFloor").value = "";
+    document.getElementById("pFloor").value =
+        "";
 
-    document.getElementById("pRooms").value = "";
+    document.getElementById("pRooms").value =
+        "";
 
-    document.getElementById("pParking").value = "";
+    document.getElementById("pParking").value =
+        "";
 
-    document.getElementById("pMove").value = "";
+    document.getElementById("pMove").value =
+        "";
 
-    document.getElementById("pPremium").value = "";
+    document.getElementById("pPremium").value =
+        "";
 
-    document.getElementById("pDescription").value = "";
+    document.getElementById("pDescription").value =
+        "";
 
 }
 
 
-/* =========================================================
-   상태 표시
-========================================================= */
+/* ======================================================
+   [보조]
+====================================================== */
 
 function setStatus(text){
 
-    document.getElementById("status")
-        .textContent = text;
+    document.getElementById(
+        "status"
+    ).textContent = text;
 
 }
 
-
-/* =========================================================
-   HTML 보안 처리
-========================================================= */
 
 function escapeHtml(value){
 
     return String(value)
+
         .replace(/&/g,"&amp;")
+
         .replace(/</g,"&lt;")
+
         .replace(/>/g,"&gt;")
+
         .replace(/"/g,"&quot;")
+
         .replace(/'/g,"&#039;");
 
 }
 
 
-/* =========================================================
-   모달 바깥 클릭
-========================================================= */
-
-document
-    .getElementById("modalBg")
-    .addEventListener("click", function(event){
+document.getElementById(
+    "modalBg"
+).addEventListener(
+    "click",
+    function(event){
 
         if(event.target === this){
 
@@ -1519,8 +1660,8 @@ document
 
         }
 
-    });
-
+    }
+);
 
 </script>
 
