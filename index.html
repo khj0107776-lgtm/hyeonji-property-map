@@ -199,33 +199,34 @@ button{cursor:pointer}
 }
 
 .list{
-    padding:12px;
+    padding:10px;
 }
 
+/* 매물 표시 칸을 기존보다 조금 작게 */
 .propertyCard{
     border:1px solid #e5e7ec;
-    border-radius:16px;
-    margin-bottom:12px;
+    border-radius:13px;
+    margin-bottom:8px;
     overflow:hidden;
     background:#fff;
     transition:.15s;
 }
 
 .propertyCard:hover{
-    box-shadow:0 8px 25px rgba(0,0,0,.08);
+    box-shadow:0 6px 18px rgba(0,0,0,.07);
     transform:translateY(-1px);
 }
 
 .cardImg{
     width:100%;
-    height:190px;
+    height:145px;
     object-fit:cover;
     background:#f1f2f6;
 }
 
 .noImg{
     width:100%;
-    height:190px;
+    height:145px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -235,48 +236,48 @@ button{cursor:pointer}
 }
 
 .cardBody{
-    padding:15px;
+    padding:11px 12px;
 }
 
 .badge{
     display:inline-block;
-    padding:6px 10px;
-    border-radius:8px;
+    padding:5px 8px;
+    border-radius:7px;
     background:#eef1ff;
     color:#5368df;
-    font-size:13px;
+    font-size:12px;
     font-weight:900;
 }
 
 .cardTitle{
-    margin:9px 0 5px;
-    font-size:18px;
+    margin:7px 0 4px;
+    font-size:16px;
     font-weight:900;
 }
 
 .cardAddress{
     color:#737887;
-    font-size:14px;
+    font-size:13px;
 }
 
 .price{
-    margin-top:12px;
+    margin-top:9px;
     font-weight:900;
-    font-size:17px;
+    font-size:15px;
 }
 
 .premium{
     color:#c45b2e;
-    margin-left:8px;
+    margin-left:6px;
 }
 
 .cardBottom{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-top:12px;
+    margin-top:9px;
     color:#707583;
-    font-size:13px;
+    font-size:12px;
 }
 
 .dongCount{
@@ -592,13 +593,13 @@ button{cursor:pointer}
         height:calc(100vh - 68px);
     }
 
-    /* 모바일에서 지도 높이를 줄여 아래 매물 메뉴를 더 크게 표시 */
+    /* 모바일 지도는 작게 */
     .mapArea{
         height:38%;
         min-height:260px;
     }
 
-    /* 모바일에서 카테고리와 매물목록을 더 넓게 사용 */
+    /* 아래 매물 영역은 크게 */
     .side{
         width:100%;
         height:62%;
@@ -617,6 +618,49 @@ button{cursor:pointer}
 
     .detailImg{
         height:260px;
+    }
+
+    /* 모바일 매물 카드 추가 축소 */
+    .cardImg,
+    .noImg{
+        height:115px;
+    }
+
+    .cardBody{
+        padding:9px 10px;
+    }
+
+    .cardTitle{
+        font-size:15px;
+        margin:6px 0 3px;
+    }
+
+    .cardAddress{
+        font-size:12px;
+    }
+
+    .price{
+        font-size:14px;
+        margin-top:7px;
+    }
+
+    .cardBottom{
+        margin-top:7px;
+        font-size:11px;
+    }
+
+    .badge{
+        font-size:11px;
+        padding:4px 7px;
+    }
+
+    .propertyCard{
+        border-radius:11px;
+        margin-bottom:7px;
+    }
+
+    .list{
+        padding:8px;
     }
 }
 </style>
@@ -674,12 +718,9 @@ button{cursor:pointer}
 
             <div class="categories">
 
-                <button class="cat active"
-                    onclick="selectCategory('전체',this)">
-                    전체
-                </button>
+                <!-- 전체 버튼 삭제 -->
 
-                <button class="cat"
+                <button class="cat active"
                     onclick="selectCategory('상가',this)">
                     상가
                 </button>
@@ -749,6 +790,8 @@ button{cursor:pointer}
 </div>
 
 
+<!-- 상세 -->
+
 <div
     class="modalBg"
     id="detailModal"
@@ -763,6 +806,8 @@ button{cursor:pointer}
 
 </div>
 
+
+<!-- 등록 / 수정 -->
 
 <div
     class="modalBg"
@@ -989,6 +1034,8 @@ button{cursor:pointer}
 </div>
 
 
+<!-- 고객 매물접수 -->
+
 <div
     class="modalBg"
     id="requestModal"
@@ -1089,6 +1136,8 @@ button{cursor:pointer}
 
 </div>
 
+
+<!-- 관리자 접수 -->
 
 <div
     class="modalBg"
@@ -1205,10 +1254,11 @@ const db =
 const ADMIN_EMAIL =
     "khj0107776@gmail.com";
 
+/* 전체 대신 상가를 기본 선택 */
 let currentUser = null;
 let properties = [];
 let filteredProperties = [];
-let currentCategory = "전체";
+let currentCategory = "상가";
 let map = null;
 let markers = [];
 let overlays = [];
@@ -2694,65 +2744,18 @@ function openPropertyForm(
             p.id;
 
 
-        setValue(
-            "fTitle",
-            p.title
-        );
-
-        setValue(
-            "fAddress",
-            p.address
-        );
-
-        setValue(
-            "fType",
-            p.type || "상가"
-        );
-
-        setValue(
-            "fDeposit",
-            p.deposit
-        );
-
-        setValue(
-            "fRent",
-            p.rent
-        );
-
-        setValue(
-            "fSale",
-            p.sale
-        );
-
-        setValue(
-            "fPremium",
-            p.premium
-        );
-
-        setValue(
-            "fArea",
-            p.area
-        );
-
-        setValue(
-            "fFloor",
-            p.floor
-        );
-
-        setValue(
-            "fMaintenance",
-            p.maintenance
-        );
-
-        setValue(
-            "fDetailUrl",
-            p.detailUrl
-        );
-
-        setValue(
-            "fDescription",
-            p.description
-        );
+        setValue("fTitle",p.title);
+        setValue("fAddress",p.address);
+        setValue("fType",p.type || "상가");
+        setValue("fDeposit",p.deposit);
+        setValue("fRent",p.rent);
+        setValue("fSale",p.sale);
+        setValue("fPremium",p.premium);
+        setValue("fArea",p.area);
+        setValue("fFloor",p.floor);
+        setValue("fMaintenance",p.maintenance);
+        setValue("fDetailUrl",p.detailUrl);
+        setValue("fDescription",p.description);
 
 
         if(p.imageData){
@@ -3157,74 +3160,21 @@ document
 
             const data = {
 
-                title:
-                    getValue(
-                        "fTitle"
-                    ),
-
-                address:
-                    getValue(
-                        "fAddress"
-                    ),
-
-                type:
-                    getValue(
-                        "fType"
-                    ),
-
-                deposit:
-                    numberValue(
-                        "fDeposit"
-                    ),
-
-                rent:
-                    numberValue(
-                        "fRent"
-                    ),
-
-                sale:
-                    numberValue(
-                        "fSale"
-                    ),
-
-                premium:
-                    numberValue(
-                        "fPremium"
-                    ),
-
-                area:
-                    getValue(
-                        "fArea"
-                    ),
-
-                floor:
-                    getValue(
-                        "fFloor"
-                    ),
-
-                maintenance:
-                    numberValue(
-                        "fMaintenance"
-                    ),
-
-                detailUrl:
-                    getValue(
-                        "fDetailUrl"
-                    ),
-
-                description:
-                    getValue(
-                        "fDescription"
-                    ),
-
-                imageData:
-                    imageData,
-
-                updatedAt:
-                    serverTimestamp(),
-
-                updatedBy:
-                    currentUser.email
+                title:getValue("fTitle"),
+                address:getValue("fAddress"),
+                type:getValue("fType"),
+                deposit:numberValue("fDeposit"),
+                rent:numberValue("fRent"),
+                sale:numberValue("fSale"),
+                premium:numberValue("fPremium"),
+                area:getValue("fArea"),
+                floor:getValue("fFloor"),
+                maintenance:numberValue("fMaintenance"),
+                detailUrl:getValue("fDetailUrl"),
+                description:getValue("fDescription"),
+                imageData:imageData,
+                updatedAt:serverTimestamp(),
+                updatedBy:currentUser.email
 
             };
 
@@ -3345,36 +3295,13 @@ document
 
             const data = {
 
-                name:
-                    getValue(
-                        "rName"
-                    ),
-
-                phone:
-                    getValue(
-                        "rPhone"
-                    ),
-
-                type:
-                    getValue(
-                        "rType"
-                    ),
-
-                address:
-                    getValue(
-                        "rAddress"
-                    ),
-
-                description:
-                    getValue(
-                        "rDescription"
-                    ),
-
-                createdAt:
-                    serverTimestamp(),
-
-                status:
-                    "접수"
+                name:getValue("rName"),
+                phone:getValue("rPhone"),
+                type:getValue("rType"),
+                address:getValue("rAddress"),
+                description:getValue("rDescription"),
+                createdAt:serverTimestamp(),
+                status:"접수"
 
             };
 
@@ -3502,9 +3429,7 @@ async function loadRequests(){
             .map(
                 r => `
 
-                    <div
-                        class="requestItem"
-                    >
+                    <div class="requestItem">
 
                         <strong>
                             ${escapeHtml(
@@ -3625,26 +3550,11 @@ function escapeHtml(value){
     return String(
         value ?? ""
     )
-    .replace(
-        /&/g,
-        "&amp;"
-    )
-    .replace(
-        /</g,
-        "&lt;"
-    )
-    .replace(
-        />/g,
-        "&gt;"
-    )
-    .replace(
-        /"/g,
-        "&quot;"
-    )
-    .replace(
-        /'/g,
-        "&#039;"
-    );
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
 
 }
 
