@@ -914,6 +914,51 @@ window.addEventListener(
 renderList();
 
 </script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    updateDoc,
+    deleteDoc,
+    doc
+  } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
+  import {
+    getAuth,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAC9YI780LAKD4KJNJZTT6KRrhevG5GpVM",
+    authDomain: "hyunji-8fc9c.firebaseapp.com",
+    projectId: "hyunji-8fc9c",
+    storageBucket: "hyunji-8fc9c.firebasestorage.app",
+    messagingSenderId: "659657503337",
+    appId: "1:659657503337:web:aa2e24ae4d37ed29d6a8f8",
+    measurementId: "G-1LPMGC6317"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  // 다른 코드에서 사용할 수 있도록 전역으로 연결
+  window.firebaseApp = app;
+  window.firebaseDB = db;
+  window.firebaseAuth = auth;
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("로그인 사용자:", user.email);
+    } else {
+      console.log("로그인하지 않음");
+    }
+  });
+
+  console.log("Firebase 연결 완료");
+</script>
 </body>
 </html>
