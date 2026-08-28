@@ -3,1666 +3,1453 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>현지공인중개사 매물지도</title>
 
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
-*{box-sizing:border-box}
-
-html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    font-family:Arial,"Malgun Gothic","Noto Sans KR",sans-serif;
-    background:#f4f6f8;
-    color:#222;
+*{
+  box-sizing:border-box;
 }
 
-button,input,select,textarea{
-    font-family:inherit;
+body{
+  margin:0;
+  font-family:Arial,"Malgun Gothic","Noto Sans KR",sans-serif;
+  background:#f4f6f8;
+  color:#222;
 }
 
-button{cursor:pointer}
-
-.header{
-    height:64px;
-    background:#fff;
-    border-bottom:1px solid #ddd;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 22px;
+header{
+  height:64px;
+  background:#fff;
+  border-bottom:1px solid #ddd;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 22px;
+  position:relative;
+  z-index:1000;
 }
 
 .logo{
-    font-size:20px;
-    font-weight:800;
-}
-
-.logo span{
-    color:#4d73ff;
+  font-size:21px;
+  font-weight:700;
 }
 
 .header-right{
-    display:flex;
-    align-items:center;
-    gap:10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
 }
 
-.login-user{
-    color:#666;
-    font-size:13px;
+button{
+  border:0;
+  border-radius:9px;
+  padding:10px 15px;
+  cursor:pointer;
+  font-size:14px;
 }
 
-.btn{
-    border:0;
-    border-radius:8px;
-    padding:10px 15px;
-    font-size:14px;
-    font-weight:700;
+.login-btn{
+  background:#4285f4;
+  color:white;
 }
 
-.btn-google{
-    background:#fff;
-    border:1px solid #ddd;
-}
-
-.btn-primary{
-    background:#4d73ff;
-    color:#fff;
-}
-
-.btn-danger{
-    background:#e74c3c;
-    color:#fff;
-}
-
-.btn-gray{
-    background:#eee;
-    color:#333;
-}
-
-.layout{
-    display:flex;
-    height:calc(100vh - 64px);
-}
-
-.sidebar{
-    width:410px;
-    min-width:410px;
-    background:#fff;
-    border-right:1px solid #ddd;
-    display:flex;
-    flex-direction:column;
-}
-
-.sidebar-top{
-    padding:15px;
-    border-bottom:1px solid #eee;
-}
-
-.search{
-    width:100%;
-    padding:12px;
-    border:1px solid #ddd;
-    border-radius:9px;
-    outline:none;
-}
-
-.filter-row{
-    display:flex;
-    gap:8px;
-    margin-top:9px;
-}
-
-.filter-row select{
-    flex:1;
-    padding:10px;
-    border:1px solid #ddd;
-    border-radius:8px;
-    background:#fff;
-}
-
-.property-list{
-    flex:1;
-    overflow-y:auto;
-    padding:10px;
-}
-
-.property-card{
-    border:1px solid #e1e1e1;
-    border-radius:11px;
-    padding:14px;
-    margin-bottom:9px;
-    background:#fff;
-}
-
-.property-type{
-    display:inline-block;
-    padding:4px 7px;
-    background:#edf1ff;
-    color:#4264d8;
-    border-radius:5px;
-    font-size:11px;
-    font-weight:800;
-}
-
-.property-title{
-    font-size:16px;
-    font-weight:800;
-    margin:8px 0;
-}
-
-.property-address{
-    font-size:13px;
-    color:#666;
-    line-height:1.5;
-}
-
-.property-price{
-    margin-top:9px;
-    font-size:15px;
-    font-weight:800;
-}
-
-.property-info{
-    margin-top:7px;
-    font-size:12px;
-    color:#777;
-}
-
-.property-description{
-    margin-top:9px;
-    font-size:13px;
-    line-height:1.5;
-    color:#555;
-    white-space:pre-line;
-}
-
-.card-buttons{
-    display:flex;
-    gap:6px;
-    margin-top:11px;
-}
-
-.card-buttons button{
-    flex:1;
-    border:0;
-    border-radius:7px;
-    padding:8px;
-    font-size:12px;
-    font-weight:700;
-}
-
-.edit-btn{
-    background:#edf1ff;
-    color:#4264d8;
-}
-
-.delete-btn{
-    background:#fff0ee;
-    color:#d63d2e;
-}
-
-.empty{
-    padding:50px 15px;
-    text-align:center;
-    color:#999;
-}
-
-.map-area{
-    flex:1;
-    position:relative;
-    background:
-        linear-gradient(90deg,#fff 1px,transparent 1px),
-        linear-gradient(#fff 1px,transparent 1px);
-    background-size:45px 45px;
-    background-color:#e9edf2;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.map-box{
-    background:#fff;
-    padding:30px;
-    border-radius:15px;
-    text-align:center;
-    box-shadow:0 5px 25px rgba(0,0,0,.12);
-}
-
-.map-box h2{
-    margin:0 0 10px;
-}
-
-.status{
-    position:absolute;
-    bottom:15px;
-    left:15px;
-    background:#fff;
-    padding:9px 13px;
-    border-radius:8px;
-    box-shadow:0 2px 8px rgba(0,0,0,.1);
-    font-size:12px;
-}
-
-.modal-bg{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.5);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-    z-index:9999;
-}
-
-.modal-bg.show{
-    display:flex;
-}
-
-.modal{
-    width:650px;
-    max-width:100%;
-    max-height:90vh;
-    overflow-y:auto;
-    background:#fff;
-    border-radius:15px;
-    padding:22px;
-}
-
-.modal h2{
-    margin:0 0 18px;
-}
-
-.form-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-}
-
-.form-group{
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-}
-
-.form-group.full{
-    grid-column:1/-1;
-}
-
-.form-group label{
-    font-size:12px;
-    font-weight:800;
-    color:#555;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea{
-    width:100%;
-    padding:10px;
-    border:1px solid #ddd;
-    border-radius:8px;
-    outline:none;
-    font-size:14px;
-}
-
-.form-group textarea{
-    min-height:100px;
-    resize:vertical;
-}
-
-.modal-buttons{
-    display:flex;
-    justify-content:flex-end;
-    gap:8px;
-    margin-top:18px;
-}
-
-.admin-area{
-    display:none;
-}
-
-.admin-mode .admin-area{
-    display:block;
+.logout-btn{
+  background:#eee;
 }
 
 .admin-badge{
-    margin-top:10px;
-    padding:10px;
-    background:#f1f4ff;
-    border:1px solid #dce3ff;
-    border-radius:8px;
-    font-size:12px;
-    color:#4264d8;
-    font-weight:700;
+  display:none;
+  background:#e8f0fe;
+  color:#1967d2;
+  padding:8px 12px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:bold;
+}
+
+.layout{
+  height:calc(100vh - 64px);
+  display:flex;
+}
+
+.sidebar{
+  width:390px;
+  background:#fff;
+  border-right:1px solid #ddd;
+  overflow-y:auto;
+  padding:18px;
+}
+
+.map-wrap{
+  flex:1;
+  position:relative;
+}
+
+#map{
+  width:100%;
+  height:100%;
+}
+
+.search{
+  width:100%;
+  height:43px;
+  border:1px solid #ddd;
+  border-radius:9px;
+  padding:0 13px;
+  margin-bottom:10px;
+  font-size:14px;
+}
+
+.filters{
+  display:flex;
+  gap:7px;
+  margin-bottom:15px;
+}
+
+.filters select{
+  flex:1;
+  height:40px;
+  border:1px solid #ddd;
+  border-radius:8px;
+  background:white;
+}
+
+.property{
+  border:1px solid #e2e5e8;
+  border-radius:12px;
+  padding:15px;
+  margin-bottom:10px;
+  background:#fff;
+  cursor:pointer;
+  transition:.15s;
+}
+
+.property:hover{
+  box-shadow:0 3px 12px rgba(0,0,0,.08);
+}
+
+.property-title{
+  font-weight:bold;
+  font-size:16px;
+  margin-bottom:8px;
+}
+
+.property-price{
+  color:#d93025;
+  font-weight:bold;
+  margin-bottom:7px;
+}
+
+.property-address{
+  color:#555;
+  font-size:13px;
+  line-height:1.5;
+}
+
+.property-info{
+  color:#777;
+  font-size:12px;
+  margin-top:7px;
+}
+
+.admin-panel{
+  display:none;
+  margin-bottom:18px;
+  padding:16px;
+  border-radius:12px;
+  background:#f8faff;
+  border:1px solid #d8e5ff;
+}
+
+.admin-panel h3{
+  margin:0 0 12px;
+  font-size:16px;
+}
+
+.input{
+  width:100%;
+  height:40px;
+  border:1px solid #d8dce0;
+  border-radius:8px;
+  padding:0 10px;
+  margin-bottom:8px;
+  background:white;
+}
+
+textarea.input{
+  height:70px;
+  padding:10px;
+  resize:vertical;
+}
+
+.add-btn{
+  width:100%;
+  background:#1a73e8;
+  color:#fff;
+  font-weight:bold;
+}
+
+.edit-btn{
+  background:#f1f3f4;
+  margin-top:8px;
+  margin-right:5px;
+}
+
+.delete-btn{
+  background:#fce8e6;
+  color:#c5221f;
+  margin-top:8px;
+}
+
+.empty{
+  text-align:center;
+  color:#888;
+  padding:40px 10px;
+}
+
+.status{
+  font-size:12px;
+  color:#777;
+  margin:8px 0 12px;
 }
 
 @media(max-width:800px){
 
-    .header{
-        height:58px;
-        padding:0 12px;
-    }
+  header{
+    height:58px;
+    padding:0 12px;
+  }
 
-    .layout{
-        height:calc(100vh - 58px);
-    }
+  .logo{
+    font-size:16px;
+  }
 
-    .sidebar{
-        width:100%;
-        min-width:0;
-    }
+  .layout{
+    height:calc(100vh - 58px);
+    flex-direction:column;
+  }
 
-    .map-area{
-        display:none;
-    }
+  .sidebar{
+    width:100%;
+    height:48%;
+    border-right:0;
+    border-bottom:1px solid #ddd;
+  }
 
-    .login-user{
-        display:none;
-    }
-
-    .form-grid{
-        grid-template-columns:1fr;
-    }
-
-    .form-group.full{
-        grid-column:auto;
-    }
+  .map-wrap{
+    height:52%;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<header class="header">
+<header>
 
-    <div class="logo">
-        현지<span>공인중개사</span> 매물지도
-    </div>
+  <div class="logo">
+    📍 현지공인중개사 매물지도
+  </div>
 
-    <div class="header-right">
+  <div class="header-right">
 
-        <div id="loginUser" class="login-user"></div>
+    <span id="adminBadge" class="admin-badge">
+      관리자
+    </span>
 
-        <button
-            id="loginBtn"
-            class="btn btn-google"
-            onclick="googleLogin()">
-            🔐 관리자 Google 로그인
-        </button>
+    <span id="userEmail"
+          style="font-size:12px;color:#777;"></span>
 
-        <button
-            id="logoutBtn"
-            class="btn btn-gray"
-            style="display:none"
-            onclick="logout()">
-            로그아웃
-        </button>
+    <button id="loginBtn"
+            class="login-btn">
+      🔐 Google 로그인
+    </button>
 
-    </div>
+    <button id="logoutBtn"
+            class="logout-btn"
+            style="display:none;">
+      로그아웃
+    </button>
+
+  </div>
 
 </header>
 
 
 <div class="layout">
 
-    <aside class="sidebar">
-
-        <div class="sidebar-top">
-
-            <input
-                id="searchInput"
-                class="search"
-                placeholder="주소, 매물명, 종류 검색"
-                oninput="renderList()">
-
-            <div class="filter-row">
-
-                <select
-                    id="typeFilter"
-                    onchange="renderList()">
-
-                    <option value="">전체 매물</option>
-                    <option value="상가">상가</option>
-                    <option value="공장">공장</option>
-                    <option value="창고">창고</option>
-                    <option value="사무실">사무실</option>
-                    <option value="원룸">원룸</option>
-                    <option value="투룸">투룸</option>
-                    <option value="아파트">아파트</option>
-                    <option value="기타">기타</option>
-
-                </select>
-
-                <button
-                    id="addBtn"
-                    class="btn btn-primary admin-area"
-                    onclick="openAddModal()">
-                    + 매물등록
-                </button>
-
-            </div>
-
-            <div
-                id="adminBadge"
-                class="admin-badge admin-area">
-                🔐 관리자 모드
-            </div>
-
-        </div>
-
-        <div
-            id="propertyList"
-            class="property-list">
-        </div>
-
-    </aside>
-
-
-    <main class="map-area">
-
-        <div class="map-box">
-
-            <h2>📍 현지공인중개사 매물지도</h2>
-
-            <div>
-                등록된 매물을 확인할 수 있습니다.
-            </div>
-
-            <div
-                style="margin-top:8px;font-size:13px;color:#999;">
-                Firebase Firestore 연결
-            </div>
-
-        </div>
-
-        <div
-            id="status"
-            class="status">
-            Firebase 연결 중...
-        </div>
-
-    </main>
-
-</div>
-
-
-<!-- 매물 등록 / 수정 -->
-
-<div
-    id="modalBg"
-    class="modal-bg">
-
-    <div class="modal">
-
-        <h2 id="modalTitle">
-            매물 등록
-        </h2>
-
-        <div class="form-grid">
-
-            <div class="form-group">
-
-                <label>매물 종류</label>
-
-                <select id="pType">
-
-                    <option value="상가">상가</option>
-                    <option value="공장">공장</option>
-                    <option value="창고">창고</option>
-                    <option value="사무실">사무실</option>
-                    <option value="원룸">원룸</option>
-                    <option value="투룸">투룸</option>
-                    <option value="아파트">아파트</option>
-                    <option value="기타">기타</option>
-
-                </select>
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>매물명</label>
-
-                <input
-                    id="pTitle"
-                    placeholder="예: 신부동 1층 상가">
-
-            </div>
-
-
-            <div class="form-group full">
-
-                <label>주소</label>
-
-                <input
-                    id="pAddress"
-                    placeholder="예: 천안시 동남구 신부동 123-4">
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>보증금 (만원)</label>
-
-                <input
-                    id="pDeposit"
-                    type="number"
-                    placeholder="2000">
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>월세 (만원)</label>
-
-                <input
-                    id="pRent"
-                    type="number"
-                    placeholder="100">
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>관리비</label>
-
-                <input
-                    id="pManagement"
-                    placeholder="10만원">
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>면적</label>
-
-                <input
-                    id="pArea"
-                    placeholder="89.9㎡ (27.1평)">
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>층수</label>
-
-                <input
-                    id="pFloor"
-                    placeholder="1층">
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>방 / 화장실</label>
-
-                <input
-                    id="pRooms"
-                    placeholder="방 2개 / 화장실 1개">
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>주차</label>
-
-                <input
-                    id="pParking"
-                    placeholder="5대">
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>입주 가능일</label>
-
-                <input
-                    id="pMove"
-                    placeholder="즉시입주">
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>권리금</label>
-
-                <input
-                    id="pPremium"
-                    placeholder="없음 / 1,500만원">
-
-            </div>
-
-
-            <div class="form-group full">
-
-                <label>상세 설명</label>
-
-                <textarea
-                    id="pDescription"
-                    placeholder="매물 특징 및 상세 설명"></textarea>
-
-            </div>
-
-        </div>
-
-
-        <div class="modal-buttons">
-
-            <button
-                class="btn btn-gray"
-                onclick="closeModal()">
-                취소
-            </button>
-
-            <button
-                class="btn btn-primary"
-                onclick="saveProperty()">
-                저장
-            </button>
-
-        </div>
+  <aside class="sidebar">
+
+    <!-- 관리자 등록 -->
+    <div id="adminPanel"
+         class="admin-panel">
+
+      <h3>➕ 매물 등록</h3>
+
+      <input
+        id="title"
+        class="input"
+        placeholder="매물 제목">
+
+      <input
+        id="address"
+        class="input"
+        placeholder="주소">
+
+      <select
+        id="type"
+        class="input">
+
+        <option value="상가">상가</option>
+        <option value="공장">공장</option>
+        <option value="사무실">사무실</option>
+        <option value="원룸">원룸</option>
+        <option value="아파트">아파트</option>
+        <option value="기타">기타</option>
+
+      </select>
+
+      <input
+        id="deposit"
+        class="input"
+        placeholder="보증금 (만원)">
+
+      <input
+        id="rent"
+        class="input"
+        placeholder="월세 (만원)">
+
+      <input
+        id="area"
+        class="input"
+        placeholder="면적">
+
+      <input
+        id="floor"
+        class="input"
+        placeholder="층">
+
+      <textarea
+        id="description"
+        class="input"
+        placeholder="매물 설명"></textarea>
+
+      <button
+        id="addBtn"
+        class="add-btn">
+        매물 등록하기
+      </button>
+
+      <div id="adminStatus"
+           class="status"></div>
 
     </div>
+
+
+    <input
+      id="search"
+      class="search"
+      placeholder="🔎 주소·매물명 검색">
+
+
+    <div class="filters">
+
+      <select id="typeFilter">
+        <option value="">전체</option>
+        <option value="상가">상가</option>
+        <option value="공장">공장</option>
+        <option value="사무실">사무실</option>
+        <option value="원룸">원룸</option>
+        <option value="아파트">아파트</option>
+        <option value="기타">기타</option>
+      </select>
+
+    </div>
+
+
+    <div id="propertyList">
+      <div class="empty">
+        매물을 불러오는 중입니다.
+      </div>
+    </div>
+
+  </aside>
+
+
+  <main class="map-wrap">
+    <div id="map"></div>
+  </main>
 
 </div>
 
 
 <script type="module">
 
-/* ======================================================
-   [Firebase] Firebase SDK
-====================================================== */
+/* =====================================================
+   🔥 FIREBASE 설정
+===================================================== */
 
 import {
-    initializeApp
+  initializeApp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
 import {
-    getAuth,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signOut,
-    onAuthStateChanged
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
-    getFirestore,
-    collection,
-    getDocs,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    doc,
-    serverTimestamp
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 
-/* ======================================================
-   [Firebase] 프로젝트 설정
-====================================================== */
-
 const firebaseConfig = {
 
-    apiKey:
-        "AIzaSyAC9YI780LAKD4KJNJZTT6KRrheVG5GpVM",
+  apiKey:
+  "AIzaSyAC9YI78OLAKD4KJNJZTT6KRrhevG5GpVM",
 
-    authDomain:
-        "hyunji-8fc9c.firebaseapp.com",
+  authDomain:
+  "hyunji-8fc9c.firebaseapp.com",
 
-    projectId:
-        "hyunji-8fc9c",
+  projectId:
+  "hyunji-8fc9c",
 
-    storageBucket:
-        "hyunji-8fc9c.firebasestorage.app",
+  storageBucket:
+  "hyunji-8fc9c.firebasestorage.app",
 
-    messagingSenderId:
-        "659657503337",
+  messagingSenderId:
+  "659657503337",
 
-    appId:
-        "1:659657503337:web:aa2e24ae4d37ed29d6a8f8",
+  appId:
+  "1:659657503337:web:aa2e24ae4d37ed29d6a8f8",
 
-    measurementId:
-        "G-1LPMGC6317"
+  measurementId:
+  "G-1LPMGC6317"
 };
 
 
 const app =
-    initializeApp(firebaseConfig);
+  initializeApp(firebaseConfig);
 
 const auth =
-    getAuth(app);
+  getAuth(app);
 
 const db =
-    getFirestore(app);
+  getFirestore(app);
 
-const googleProvider =
-    new GoogleAuthProvider();
+const provider =
+  new GoogleAuthProvider();
 
 
-/* ======================================================
-   [관리자] Google 계정
-====================================================== */
+/* =====================================================
+   관리자 이메일
+===================================================== */
 
 const ADMIN_EMAIL =
-    "khj0107776@gmail.com";
+  "khj0107776@gmail.com";
 
 
-let currentUser = null;
+/* =====================================================
+   지도
+===================================================== */
+
+const map =
+  L.map("map").setView(
+    [36.8151,127.1139],
+    13
+  );
+
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    attribution:
+      '&copy; OpenStreetMap contributors'
+  }
+).addTo(map);
+
+
+let markers = {};
 
 let properties = [];
 
-let editingId = null;
+
+/* =====================================================
+   DOM
+===================================================== */
+
+const loginBtn =
+  document.getElementById("loginBtn");
+
+const logoutBtn =
+  document.getElementById("logoutBtn");
+
+const userEmail =
+  document.getElementById("userEmail");
+
+const adminBadge =
+  document.getElementById("adminBadge");
+
+const adminPanel =
+  document.getElementById("adminPanel");
+
+const propertyList =
+  document.getElementById("propertyList");
+
+const search =
+  document.getElementById("search");
+
+const typeFilter =
+  document.getElementById("typeFilter");
 
 
-/* ======================================================
-   [관리자] 관리자 확인
-====================================================== */
+/* =====================================================
+   Google 로그인
+===================================================== */
 
-function isAdmin(user){
+loginBtn.addEventListener(
+  "click",
+  async () => {
 
-    return !!user &&
-        (user.email || "").toLowerCase()
-        === ADMIN_EMAIL.toLowerCase();
+    try {
 
-}
+      await signInWithPopup(
+        auth,
+        provider
+      );
 
+    } catch(error) {
 
-/* ======================================================
-   [Google 로그인]
-====================================================== */
+      console.error(error);
 
-window.googleLogin = async function(){
-
-    try{
-
-        const result =
-            await signInWithPopup(
-                auth,
-                googleProvider
-            );
-
-        const user =
-            result.user;
-
-
-        if(!isAdmin(user)){
-
-            alert(
-                "관리자 계정이 아닙니다.\n\n" +
-                "관리자 Google 계정으로 로그인해주세요."
-            );
-
-            await signOut(auth);
-
-            return;
-        }
-
-
-        alert("관리자 Google 로그인 성공!");
-
-    }
-    catch(error){
-
-        console.error(error);
-
-        alert(
-            "Google 로그인 오류\n\n" +
-            error.message
-        );
-
+      alert(
+        "Google 로그인 중 오류가 발생했습니다.\n\n"
+        + error.message
+      );
     }
 
-};
+  }
+);
 
 
-/* ======================================================
-   [로그아웃]
-====================================================== */
+/* =====================================================
+   로그아웃
+===================================================== */
 
-window.logout = async function(){
+logoutBtn.addEventListener(
+  "click",
+  async () => {
 
     await signOut(auth);
 
-};
-
-
-/* ======================================================
-   [로그인 상태]
-====================================================== */
-
-onAuthStateChanged(
-    auth,
-    async(user)=>{
-
-        currentUser = user;
-
-        const loginBtn =
-            document.getElementById("loginBtn");
-
-        const logoutBtn =
-            document.getElementById("logoutBtn");
-
-        const loginUser =
-            document.getElementById("loginUser");
-
-
-        document.body
-            .classList
-            .remove("admin-mode");
-
-
-        if(user && isAdmin(user)){
-
-            document.body
-                .classList
-                .add("admin-mode");
-
-
-            loginBtn.style.display =
-                "none";
-
-            logoutBtn.style.display =
-                "block";
-
-            loginUser.textContent =
-                "관리자 · " + user.email;
-
-        }
-        else{
-
-            loginBtn.style.display =
-                "block";
-
-            logoutBtn.style.display =
-                "none";
-
-            loginUser.textContent =
-                "";
-
-        }
-
-
-        await loadProperties();
-
-    }
+  }
 );
 
 
-/* ======================================================
-   [Firestore] 매물 불러오기
-====================================================== */
+/* =====================================================
+   로그인 상태 확인
+===================================================== */
+
+onAuthStateChanged(
+  auth,
+  user => {
+
+    if(user){
+
+      userEmail.textContent =
+        user.email;
+
+      loginBtn.style.display =
+        "none";
+
+      logoutBtn.style.display =
+        "block";
+
+      if(
+        user.email.toLowerCase()
+        === ADMIN_EMAIL.toLowerCase()
+      ){
+
+        adminBadge.style.display =
+          "inline-block";
+
+        adminPanel.style.display =
+          "block";
+
+      }else{
+
+        adminBadge.style.display =
+          "none";
+
+        adminPanel.style.display =
+          "none";
+
+      }
+
+    }else{
+
+      userEmail.textContent =
+        "";
+
+      loginBtn.style.display =
+        "block";
+
+      logoutBtn.style.display =
+        "none";
+
+      adminBadge.style.display =
+        "none";
+
+      adminPanel.style.display =
+        "none";
+
+    }
+
+    renderList();
+
+  }
+);
+
+
+/* =====================================================
+   주소 → 좌표
+   OpenStreetMap Nominatim
+===================================================== */
+
+async function geocodeAddress(address){
+
+  const url =
+    "https://nominatim.openstreetmap.org/search?"
+    + new URLSearchParams({
+
+      q: address + ", 대한민국",
+
+      format:"json",
+
+      limit:"1"
+
+    });
+
+  const response =
+    await fetch(url);
+
+  const data =
+    await response.json();
+
+  if(!data.length){
+
+    throw new Error(
+      "주소의 위치를 찾지 못했습니다."
+    );
+
+  }
+
+  return {
+
+    lat:
+      Number(data[0].lat),
+
+    lng:
+      Number(data[0].lon)
+
+  };
+
+}
+
+
+/* =====================================================
+   매물 등록
+===================================================== */
+
+document
+.getElementById("addBtn")
+.addEventListener(
+  "click",
+  async () => {
+
+    const user =
+      auth.currentUser;
+
+    if(!user){
+
+      alert(
+        "먼저 관리자 Google 로그인을 해주세요."
+      );
+
+      return;
+
+    }
+
+
+    if(
+      user.email.toLowerCase()
+      !== ADMIN_EMAIL.toLowerCase()
+    ){
+
+      alert(
+        "관리자 계정만 매물을 등록할 수 있습니다."
+      );
+
+      return;
+
+    }
+
+
+    const title =
+      document.getElementById("title").value.trim();
+
+    const address =
+      document.getElementById("address").value.trim();
+
+    const type =
+      document.getElementById("type").value;
+
+    const deposit =
+      document.getElementById("deposit").value.trim();
+
+    const rent =
+      document.getElementById("rent").value.trim();
+
+    const area =
+      document.getElementById("area").value.trim();
+
+    const floor =
+      document.getElementById("floor").value.trim();
+
+    const description =
+      document
+      .getElementById("description")
+      .value.trim();
+
+
+    if(!title || !address){
+
+      alert(
+        "매물명과 주소를 입력해주세요."
+      );
+
+      return;
+
+    }
+
+
+    const status =
+      document.getElementById("adminStatus");
+
+    status.textContent =
+      "📍 주소 위치를 찾는 중입니다...";
+
+
+    try{
+
+      const position =
+        await geocodeAddress(address);
+
+
+      await addDoc(
+        collection(db,"properties"),
+        {
+
+          title,
+
+          address,
+
+          type,
+
+          deposit,
+
+          rent,
+
+          area,
+
+          floor,
+
+          description,
+
+          lat:
+            position.lat,
+
+          lng:
+            position.lng,
+
+          createdAt:
+            serverTimestamp(),
+
+          createdBy:
+            user.email
+
+        }
+      );
+
+
+      status.textContent =
+        "✅ 매물이 등록되었습니다.";
+
+
+      document
+      .getElementById("title")
+      .value = "";
+
+      document
+      .getElementById("address")
+      .value = "";
+
+      document
+      .getElementById("deposit")
+      .value = "";
+
+      document
+      .getElementById("rent")
+      .value = "";
+
+      document
+      .getElementById("area")
+      .value = "";
+
+      document
+      .getElementById("floor")
+      .value = "";
+
+      document
+      .getElementById("description")
+      .value = "";
+
+
+      await loadProperties();
+
+
+    }catch(error){
+
+      console.error(error);
+
+      status.textContent =
+        "❌ 등록 오류";
+
+      alert(
+        "매물 등록 중 오류가 발생했습니다.\n\n"
+        + error.message
+      );
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   Firestore 매물 불러오기
+===================================================== */
 
 async function loadProperties(){
 
-    setStatus("매물 불러오는 중...");
+  try{
+
+    const q =
+      query(
+        collection(db,"properties"),
+        orderBy("createdAt","desc")
+      );
+
+    const snapshot =
+      await getDocs(q);
+
+    properties =
+      snapshot.docs.map(
+        item => ({
+
+          id:
+            item.id,
+
+          ...item.data()
+
+        })
+      );
 
 
-    try{
+    renderList();
 
-        const snapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "properties"
-                )
-            );
+  }catch(error){
 
+    console.error(error);
 
-        properties = [];
+    propertyList.innerHTML =
+      `
+      <div class="empty">
+        매물을 불러오지 못했습니다.<br>
+        Firestore 보안 규칙을 확인해주세요.
+      </div>
+      `;
 
-
-        snapshot.forEach(item=>{
-
-            properties.push({
-
-                id:item.id,
-
-                ...item.data()
-
-            });
-
-        });
-
-
-        renderList();
-
-
-        setStatus(
-            "등록 매물 " +
-            properties.length +
-            "개"
-        );
-
-    }
-    catch(error){
-
-        console.error(error);
-
-        setStatus(
-            "Firestore 연결 오류"
-        );
-
-        alert(
-            "Firestore에서 매물을 불러오지 못했습니다.\n\n" +
-            error.message
-        );
-
-    }
+  }
 
 }
 
 
-/* ======================================================
-   [매물 목록]
-====================================================== */
+/* =====================================================
+   목록 표시
+===================================================== */
 
-window.renderList = function(){
+function renderList(){
 
-    const list =
-        document.getElementById(
-            "propertyList"
+  const keyword =
+    search.value
+    .trim()
+    .toLowerCase();
+
+  const type =
+    typeFilter.value;
+
+
+  const filtered =
+    properties.filter(
+      item => {
+
+        const matchKeyword =
+          !keyword
+          ||
+          String(item.title || "")
+          .toLowerCase()
+          .includes(keyword)
+          ||
+          String(item.address || "")
+          .toLowerCase()
+          .includes(keyword);
+
+        const matchType =
+          !type
+          ||
+          item.type === type;
+
+        return (
+          matchKeyword
+          &&
+          matchType
         );
 
-
-    const search =
-        document.getElementById(
-            "searchInput"
-        ).value
-        .trim()
-        .toLowerCase();
+      }
+    );
 
 
-    const type =
-        document.getElementById(
-            "typeFilter"
-        ).value;
+  if(!filtered.length){
+
+    propertyList.innerHTML =
+      `
+      <div class="empty">
+        등록된 매물이 없습니다.
+      </div>
+      `;
+
+    return;
+
+  }
 
 
-    const filtered =
-        properties.filter(property=>{
+  propertyList.innerHTML =
+    filtered.map(
+      item => {
 
-            const text = (
+        const price =
+          item.deposit || item.rent
+          ?
+          `${item.deposit || 0} / ${item.rent || 0}만원`
+          :
+          "가격 문의";
 
-                property.title || ""
 
-            ) + " " + (
+        return `
 
-                property.address || ""
+        <div
+          class="property"
+          data-id="${item.id}">
 
-            ) + " " + (
+          <div class="property-title">
+            ${escapeHtml(item.title || "")}
+          </div>
 
-                property.type || ""
+          <div class="property-price">
+            ${price}
+          </div>
 
-            ) + " " + (
+          <div class="property-address">
+            📍 ${escapeHtml(item.address || "")}
+          </div>
 
-                property.description || ""
+          <div class="property-info">
 
+            ${escapeHtml(item.type || "")}
+
+            ${item.area
+              ? " · " + escapeHtml(item.area)
+              : ""}
+
+            ${item.floor
+              ? " · " + escapeHtml(item.floor)
+              : ""}
+
+          </div>
+
+          ${
+            isAdmin()
+            ?
+            `
+            <button
+              class="edit-btn"
+              data-edit="${item.id}">
+              ✏️ 수정
+            </button>
+
+            <button
+              class="delete-btn"
+              data-delete="${item.id}">
+              🗑️ 삭제
+            </button>
+            `
+            :
+            ""
+          }
+
+        </div>
+
+        `;
+
+      }
+    ).join("");
+
+
+  document
+  .querySelectorAll(".property")
+  .forEach(
+    element => {
+
+      element.addEventListener(
+        "click",
+        event => {
+
+          if(
+            event.target.dataset.edit
+            ||
+            event.target.dataset.delete
+          ){
+            return;
+          }
+
+          const id =
+            element.dataset.id;
+
+          const item =
+            properties.find(
+              x => x.id === id
             );
 
-
-            const searchOK =
-                !search ||
-                text.toLowerCase()
-                    .includes(search);
+          if(!item) return;
 
 
-            const typeOK =
-                !type ||
-                property.type === type;
+          if(
+            item.lat
+            &&
+            item.lng
+          ){
+
+            map.setView(
+              [
+                item.lat,
+                item.lng
+              ],
+              17
+            );
+
+            if(
+              markers[id]
+            ){
+
+              markers[id].openPopup();
+
+            }
+
+          }
+
+        }
+      );
+
+    }
+  );
 
 
-            return searchOK && typeOK;
+  document
+  .querySelectorAll("[data-delete]")
+  .forEach(
+    button => {
 
-        });
+      button.addEventListener(
+        "click",
+        () => {
+
+          deleteProperty(
+            button.dataset.delete
+          );
+
+        }
+      );
+
+    }
+  );
 
 
-    if(filtered.length === 0){
+  document
+  .querySelectorAll("[data-edit]")
+  .forEach(
+    button => {
 
-        list.innerHTML =
-            `<div class="empty">
-                등록된 매물이 없습니다.
-            </div>`;
+      button.addEventListener(
+        "click",
+        () => {
 
+          editProperty(
+            button.dataset.edit
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+  drawMarkers(filtered);
+
+}
+
+
+/* =====================================================
+   지도 마커
+===================================================== */
+
+function drawMarkers(list){
+
+  Object.values(markers)
+  .forEach(
+    marker => {
+
+      map.removeLayer(marker);
+
+    }
+  );
+
+  markers = {};
+
+
+  list.forEach(
+    item => {
+
+      if(
+        item.lat == null
+        ||
+        item.lng == null
+      ){
         return;
+      }
+
+
+      const marker =
+        L.marker([
+          item.lat,
+          item.lng
+        ]).addTo(map);
+
+
+      marker.bindPopup(`
+
+        <strong>
+          ${escapeHtml(item.title || "")}
+        </strong>
+
+        <br>
+
+        ${escapeHtml(item.address || "")}
+
+        <br><br>
+
+        ${
+          item.deposit || item.rent
+          ?
+          `💰 ${item.deposit || 0} / ${item.rent || 0}만원`
+          :
+          ""
+        }
+
+      `);
+
+
+      markers[item.id] =
+        marker;
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   관리자 확인
+===================================================== */
+
+function isAdmin(){
+
+  const user =
+    auth.currentUser;
+
+  return !!(
+    user
+    &&
+    user.email
+    &&
+    user.email.toLowerCase()
+    === ADMIN_EMAIL.toLowerCase()
+  );
+
+}
+
+
+/* =====================================================
+   매물 삭제
+===================================================== */
+
+async function deleteProperty(id){
+
+  if(!isAdmin()){
+
+    alert(
+      "관리자만 삭제할 수 있습니다."
+    );
+
+    return;
+
+  }
+
+
+  if(
+    !confirm(
+      "이 매물을 삭제하시겠습니까?"
+    )
+  ){
+    return;
+  }
+
+
+  try{
+
+    await deleteDoc(
+      doc(
+        db,
+        "properties",
+        id
+      )
+    );
+
+    await loadProperties();
+
+  }catch(error){
+
+    console.error(error);
+
+    alert(
+      "삭제 중 오류가 발생했습니다.\n"
+      + error.message
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   매물 수정
+===================================================== */
+
+async function editProperty(id){
+
+  if(!isAdmin()){
+
+    alert(
+      "관리자만 수정할 수 있습니다."
+    );
+
+    return;
+
+  }
+
+
+  const item =
+    properties.find(
+      x => x.id === id
+    );
+
+  if(!item) return;
+
+
+  const title =
+    prompt(
+      "매물명",
+      item.title || ""
+    );
+
+  if(title === null) return;
+
+
+  const address =
+    prompt(
+      "주소",
+      item.address || ""
+    );
+
+  if(address === null) return;
+
+
+  const deposit =
+    prompt(
+      "보증금(만원)",
+      item.deposit || ""
+    );
+
+  if(deposit === null) return;
+
+
+  const rent =
+    prompt(
+      "월세(만원)",
+      item.rent || ""
+    );
+
+  if(rent === null) return;
+
+
+  try{
+
+    let lat =
+      item.lat;
+
+    let lng =
+      item.lng;
+
+
+    if(address !== item.address){
+
+      const position =
+        await geocodeAddress(address);
+
+      lat =
+        position.lat;
+
+      lng =
+        position.lng;
 
     }
 
 
-    list.innerHTML =
-        filtered.map(property=>{
+    await updateDoc(
+      doc(
+        db,
+        "properties",
+        id
+      ),
+      {
 
-            const deposit =
-                Number(
-                    property.deposit || 0
-                ).toLocaleString();
+        title,
 
+        address,
 
-            const rent =
-                Number(
-                    property.rent || 0
-                ).toLocaleString();
+        deposit,
 
+        rent,
 
-            return `
+        lat,
 
-                <div class="property-card">
-
-                    <div class="property-type">
-                        ${escapeHtml(
-                            property.type || "기타"
-                        )}
-                    </div>
-
-                    <div class="property-title">
-                        ${escapeHtml(
-                            property.title || "매물"
-                        )}
-                    </div>
-
-                    <div class="property-address">
-                        📍 ${escapeHtml(
-                            property.address || ""
-                        )}
-                    </div>
-
-                    <div class="property-price">
-                        💰 ${deposit} / ${rent}
-                    </div>
-
-                    <div class="property-info">
-
-                        ${escapeHtml(
-                            property.area || ""
-                        )}
-
-                        ${
-                            property.floor
-                            ? " · " +
-                              escapeHtml(
-                                  property.floor
-                              )
-                            : ""
-                        }
-
-                        ${
-                            property.parking
-                            ? " · 주차 " +
-                              escapeHtml(
-                                  property.parking
-                              )
-                            : ""
-                        }
-
-                    </div>
-
-                    ${
-                        property.management
-                        ? `
-                        <div class="property-info">
-                            관리비 : ${
-                                escapeHtml(
-                                    property.management
-                                )
-                            }
-                        </div>
-                        `
-                        : ""
-                    }
-
-                    ${
-                        property.premium
-                        ? `
-                        <div class="property-info">
-                            권리금 : ${
-                                escapeHtml(
-                                    property.premium
-                                )
-                            }
-                        </div>
-                        `
-                        : ""
-                    }
-
-                    ${
-                        property.description
-                        ? `
-                        <div class="property-description">
-                            ${
-                                escapeHtml(
-                                    property.description
-                                )
-                            }
-                        </div>
-                        `
-                        : ""
-                    }
-
-
-                    ${
-                        isAdmin(currentUser)
-
-                        ?
-
-                        `
-
-                        <div class="card-buttons">
-
-                            <button
-                                class="edit-btn"
-                                onclick="editProperty('${property.id}')">
-                                ✏️ 수정
-                            </button>
-
-                            <button
-                                class="delete-btn"
-                                onclick="deleteProperty('${property.id}')">
-                                🗑️ 삭제
-                            </button>
-
-                        </div>
-
-                        `
-
-                        : ""
-
-                    }
-
-                </div>
-
-            `;
-
-        }).join("");
-
-};
-
-
-/* ======================================================
-   [매물 등록]
-====================================================== */
-
-window.openAddModal = function(){
-
-    if(!isAdmin(currentUser)){
-
-        alert(
-            "관리자만 매물을 등록할 수 있습니다."
-        );
-
-        return;
-
-    }
-
-
-    editingId = null;
-
-    document.getElementById(
-        "modalTitle"
-    ).textContent =
-        "매물 등록";
-
-
-    clearForm();
-
-
-    document.getElementById(
-        "modalBg"
-    ).classList.add("show");
-
-};
-
-
-/* ======================================================
-   [매물 수정]
-====================================================== */
-
-window.editProperty = function(id){
-
-    if(!isAdmin(currentUser)){
-
-        alert(
-            "관리자만 수정할 수 있습니다."
-        );
-
-        return;
-
-    }
-
-
-    const property =
-        properties.find(
-            item => item.id === id
-        );
-
-
-    if(!property) return;
-
-
-    editingId = id;
-
-
-    document.getElementById(
-        "modalTitle"
-    ).textContent =
-        "매물 수정";
-
-
-    document.getElementById("pType").value =
-        property.type || "상가";
-
-    document.getElementById("pTitle").value =
-        property.title || "";
-
-    document.getElementById("pAddress").value =
-        property.address || "";
-
-    document.getElementById("pDeposit").value =
-        property.deposit || "";
-
-    document.getElementById("pRent").value =
-        property.rent || "";
-
-    document.getElementById("pManagement").value =
-        property.management || "";
-
-    document.getElementById("pArea").value =
-        property.area || "";
-
-    document.getElementById("pFloor").value =
-        property.floor || "";
-
-    document.getElementById("pRooms").value =
-        property.rooms || "";
-
-    document.getElementById("pParking").value =
-        property.parking || "";
-
-    document.getElementById("pMove").value =
-        property.move || "";
-
-    document.getElementById("pPremium").value =
-        property.premium || "";
-
-    document.getElementById("pDescription").value =
-        property.description || "";
-
-
-    document.getElementById(
-        "modalBg"
-    ).classList.add("show");
-
-};
-
-
-/* ======================================================
-   [Firestore] 저장
-====================================================== */
-
-window.saveProperty = async function(){
-
-    if(!isAdmin(currentUser)){
-
-        alert(
-            "관리자만 저장할 수 있습니다."
-        );
-
-        return;
-
-    }
-
-
-    const data = {
-
-        type:
-            document.getElementById(
-                "pType"
-            ).value,
-
-        title:
-            document.getElementById(
-                "pTitle"
-            ).value.trim(),
-
-        address:
-            document.getElementById(
-                "pAddress"
-            ).value.trim(),
-
-        deposit:
-            Number(
-                document.getElementById(
-                    "pDeposit"
-                ).value || 0
-            ),
-
-        rent:
-            Number(
-                document.getElementById(
-                    "pRent"
-                ).value || 0
-            ),
-
-        management:
-            document.getElementById(
-                "pManagement"
-            ).value.trim(),
-
-        area:
-            document.getElementById(
-                "pArea"
-            ).value.trim(),
-
-        floor:
-            document.getElementById(
-                "pFloor"
-            ).value.trim(),
-
-        rooms:
-            document.getElementById(
-                "pRooms"
-            ).value.trim(),
-
-        parking:
-            document.getElementById(
-                "pParking"
-            ).value.trim(),
-
-        move:
-            document.getElementById(
-                "pMove"
-            ).value.trim(),
-
-        premium:
-            document.getElementById(
-                "pPremium"
-            ).value.trim(),
-
-        description:
-            document.getElementById(
-                "pDescription"
-            ).value.trim(),
-
-        updatedBy:
-            currentUser.email,
+        lng,
 
         updatedAt:
-            serverTimestamp()
+          serverTimestamp(),
 
-    };
+        updatedBy:
+          auth.currentUser.email
 
+      }
+    );
 
-    if(!data.title){
 
-        alert(
-            "매물명을 입력해주세요."
-        );
+    await loadProperties();
 
-        return;
 
-    }
+  }catch(error){
 
+    console.error(error);
 
-    if(!data.address){
+    alert(
+      "수정 중 오류가 발생했습니다.\n"
+      + error.message
+    );
 
-        alert(
-            "주소를 입력해주세요."
-        );
-
-        return;
-
-    }
-
-
-    try{
-
-        if(editingId){
-
-            await updateDoc(
-
-                doc(
-                    db,
-                    "properties",
-                    editingId
-                ),
-
-                data
-
-            );
-
-            alert(
-                "매물이 수정되었습니다."
-            );
-
-        }
-        else{
-
-            data.createdBy =
-                currentUser.email;
-
-            data.createdAt =
-                serverTimestamp();
-
-
-            await addDoc(
-
-                collection(
-                    db,
-                    "properties"
-                ),
-
-                data
-
-            );
-
-            alert(
-                "매물이 등록되었습니다."
-            );
-
-        }
-
-
-        closeModal();
-
-        await loadProperties();
-
-    }
-    catch(error){
-
-        console.error(error);
-
-        alert(
-            "Firestore 저장 오류입니다.\n\n" +
-            error.message
-        );
-
-    }
-
-};
-
-
-/* ======================================================
-   [Firestore] 삭제
-====================================================== */
-
-window.deleteProperty = async function(id){
-
-    if(!isAdmin(currentUser)){
-
-        alert(
-            "관리자만 삭제할 수 있습니다."
-        );
-
-        return;
-
-    }
-
-
-    const property =
-        properties.find(
-            item => item.id === id
-        );
-
-
-    if(!property) return;
-
-
-    if(!confirm(
-        `"${property.title || "이 매물"}"을 삭제할까요?`
-    )){
-
-        return;
-
-    }
-
-
-    try{
-
-        await deleteDoc(
-
-            doc(
-                db,
-                "properties",
-                id
-            )
-
-        );
-
-
-        alert(
-            "매물이 삭제되었습니다."
-        );
-
-
-        await loadProperties();
-
-    }
-    catch(error){
-
-        console.error(error);
-
-        alert(
-            "삭제 오류입니다.\n\n" +
-            error.message
-        );
-
-    }
-
-};
-
-
-/* ======================================================
-   [모달]
-====================================================== */
-
-window.closeModal = function(){
-
-    document.getElementById(
-        "modalBg"
-    ).classList.remove("show");
-
-};
-
-
-function clearForm(){
-
-    document.getElementById("pType").value =
-        "상가";
-
-    document.getElementById("pTitle").value =
-        "";
-
-    document.getElementById("pAddress").value =
-        "";
-
-    document.getElementById("pDeposit").value =
-        "";
-
-    document.getElementById("pRent").value =
-        "";
-
-    document.getElementById("pManagement").value =
-        "";
-
-    document.getElementById("pArea").value =
-        "";
-
-    document.getElementById("pFloor").value =
-        "";
-
-    document.getElementById("pRooms").value =
-        "";
-
-    document.getElementById("pParking").value =
-        "";
-
-    document.getElementById("pMove").value =
-        "";
-
-    document.getElementById("pPremium").value =
-        "";
-
-    document.getElementById("pDescription").value =
-        "";
+  }
 
 }
 
 
-/* ======================================================
-   [보조]
-====================================================== */
+/* =====================================================
+   검색
+===================================================== */
 
-function setStatus(text){
+search.addEventListener(
+  "input",
+  renderList
+);
 
-    document.getElementById(
-        "status"
-    ).textContent = text;
+typeFilter.addEventListener(
+  "change",
+  renderList
+);
 
-}
 
+/* =====================================================
+   HTML 문자 처리
+===================================================== */
 
 function escapeHtml(value){
 
-    return String(value)
-
-        .replace(/&/g,"&amp;")
-
-        .replace(/</g,"&lt;")
-
-        .replace(/>/g,"&gt;")
-
-        .replace(/"/g,"&quot;")
-
-        .replace(/'/g,"&#039;");
+  return String(value)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
 
 }
 
 
-document.getElementById(
-    "modalBg"
-).addEventListener(
-    "click",
-    function(event){
+/* =====================================================
+   시작
+===================================================== */
 
-        if(event.target === this){
+loadProperties();
 
-            closeModal();
+</script>
 
-        }
 
-    }
-);
-
+<script
+src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 </script>
 
 </body>
