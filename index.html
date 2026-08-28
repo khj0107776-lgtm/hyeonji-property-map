@@ -589,17 +589,22 @@ button{cursor:pointer}
     .layout{
         display:block;
         position:relative;
+        height:calc(100vh - 68px);
     }
 
+    /* 모바일에서 지도 높이를 줄여 아래 매물 메뉴를 더 크게 표시 */
     .mapArea{
-        height:55%;
+        height:38%;
+        min-height:260px;
     }
 
+    /* 모바일에서 카테고리와 매물목록을 더 넓게 사용 */
     .side{
         width:100%;
-        height:45%;
+        height:62%;
         border-left:0;
         border-top:1px solid #ddd;
+        overflow-y:auto;
     }
 
     .formGrid{
@@ -744,8 +749,6 @@ button{cursor:pointer}
 </div>
 
 
-<!-- 상세 -->
-
 <div
     class="modalBg"
     id="detailModal"
@@ -760,8 +763,6 @@ button{cursor:pointer}
 
 </div>
 
-
-<!-- 등록 / 수정 -->
 
 <div
     class="modalBg"
@@ -988,8 +989,6 @@ button{cursor:pointer}
 </div>
 
 
-<!-- 고객 매물접수 -->
-
 <div
     class="modalBg"
     id="requestModal"
@@ -1091,8 +1090,6 @@ button{cursor:pointer}
 </div>
 
 
-<!-- 관리자 접수 -->
-
 <div
     class="modalBg"
     id="adminRequestModal"
@@ -1168,14 +1165,9 @@ import {
     orderBy,
     limit,
     startAfter,
-    where,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-
-/* =========================================================
-   FIREBASE
-========================================================= */
 
 const firebaseConfig = {
 
@@ -1210,41 +1202,22 @@ const auth =
 const db =
     getFirestore(app);
 
-
-/* =========================================================
-   관리자
-========================================================= */
-
 const ADMIN_EMAIL =
     "khj0107776@gmail.com";
 
-
 let currentUser = null;
-
 let properties = [];
-
 let filteredProperties = [];
-
 let currentCategory = "전체";
-
 let map = null;
-
 let markers = [];
-
 let overlays = [];
-
 let lastVisible = null;
-
 let isLoadingMore = false;
-
 let hasMoreProperties = true;
 
 const PAGE_SIZE = 30;
 
-
-/* =========================================================
-   전역
-========================================================= */
 
 window.googleLogin = googleLogin;
 window.selectCategory = selectCategory;
@@ -1258,10 +1231,6 @@ window.closeModal = closeModal;
 window.backgroundClose = backgroundClose;
 window.previewPhoto = previewPhoto;
 
-
-/* =========================================================
-   로그인
-========================================================= */
 
 async function googleLogin(){
 
@@ -1389,10 +1358,6 @@ async function(){
 };
 
 
-/* =========================================================
-   카카오맵
-========================================================= */
-
 window.initMap =
 function(){
 
@@ -1418,11 +1383,6 @@ function(){
 };
 
 
-/* =========================================================
-   초기 매물
-   ★ 기존 전체 불러오기 → 30개씩
-========================================================= */
-
 async function loadInitialProperties(){
 
     properties = [];
@@ -1447,10 +1407,6 @@ async function loadInitialProperties(){
 
 }
 
-
-/* =========================================================
-   다음 30개만 가져오기
-========================================================= */
 
 async function loadNextPage(){
 
@@ -1521,11 +1477,6 @@ async function loadNextPage(){
 
         }
         catch(error){
-
-            /*
-               createdAt이 없는 기존 매물이 있는 경우
-               기존 데이터도 읽을 수 있도록 보완
-            */
 
             const fallback =
                 await getDocs(
@@ -1660,10 +1611,6 @@ async function loadNextPage(){
 }
 
 
-/* =========================================================
-   중복 제거
-========================================================= */
-
 function mergeProperties(
     oldList,
     newList
@@ -1697,10 +1644,6 @@ function mergeProperties(
 
 }
 
-
-/* =========================================================
-   필터
-========================================================= */
 
 function selectCategory(
     type,
@@ -1741,20 +1684,11 @@ async function searchProperties(){
         .toLowerCase();
 
 
-    /*
-       현재 가져온 30개에서 먼저 검색
-    */
-
     let result =
         filterLocal(
             keyword
         );
 
-
-    /*
-       검색어가 있는데 현재 데이터에 없고
-       추가 데이터가 있으면 페이지를 계속 불러옴
-    */
 
     if(
         keyword &&
@@ -1876,10 +1810,6 @@ function applyFilter(){
 }
 
 
-/* =========================================================
-   무한 스크롤
-========================================================= */
-
 document.addEventListener(
     "DOMContentLoaded",
     function(){
@@ -1917,10 +1847,6 @@ document.addEventListener(
 );
 
 
-/* =========================================================
-   동 추출
-========================================================= */
-
 function getDong(address){
 
     if(!address){
@@ -1940,10 +1866,6 @@ function getDong(address){
 
 }
 
-
-/* =========================================================
-   개수
-========================================================= */
 
 function updateCount(){
 
@@ -1970,10 +1892,6 @@ function updateCount(){
 
 }
 
-
-/* =========================================================
-   리스트
-========================================================= */
 
 function renderList(){
 
@@ -2169,10 +2087,6 @@ function propertyCardHTML(p){
 }
 
 
-/* =========================================================
-   지도 마커
-========================================================= */
-
 function renderMarkers(){
 
     if(!map){
@@ -2200,11 +2114,6 @@ function renderMarkers(){
     const geocoder =
         new kakao.maps.services.Geocoder();
 
-
-    /*
-       지도에서는 현재 로드된 매물만 표시.
-       수천 개를 한꺼번에 지오코딩하지 않음.
-    */
 
     filteredProperties
     .slice(0,50)
@@ -2266,12 +2175,6 @@ function renderMarkers(){
         }
     );
 
-
-    /*
-       동별 개수는 현재 브라우저에 로드된 데이터 기준.
-       실제 전체 개수 집계는 Firestore 집계 컬렉션을
-       별도로 두면 더 정확하게 운영 가능.
-    */
 
     const dongMap = {};
 
@@ -2400,10 +2303,6 @@ function renderMarkers(){
 
 }
 
-
-/* =========================================================
-   상세
-========================================================= */
 
 function openDetail(
     property
@@ -2699,10 +2598,6 @@ window.openDetail =
 openDetail;
 
 
-/* =========================================================
-   등록 / 수정
-========================================================= */
-
 function openPropertyForm(
     id=null
 ){
@@ -2886,10 +2781,6 @@ function openPropertyForm(
 }
 
 
-/* =========================================================
-   관리자
-========================================================= */
-
 function openAdminPanel(){
 
     if(
@@ -2919,10 +2810,6 @@ function openAdminPanel(){
 
 }
 
-
-/* =========================================================
-   삭제
-========================================================= */
 
 async function removePropertyFromDetail(
     id
@@ -3023,10 +2910,6 @@ async function removePropertyFromDetail(
 
 }
 
-
-/* =========================================================
-   사진 압축
-========================================================= */
 
 function compressImage(
     file
@@ -3193,10 +3076,6 @@ async function previewPhoto(
 
 }
 
-
-/* =========================================================
-   저장
-========================================================= */
 
 document
     .getElementById(
@@ -3441,10 +3320,6 @@ document
     );
 
 
-/* =========================================================
-   고객 접수
-========================================================= */
-
 function openRequestModal(){
 
     document
@@ -3549,10 +3424,6 @@ document
         }
     );
 
-
-/* =========================================================
-   접수 내역
-========================================================= */
 
 async function loadRequests(){
 
@@ -3696,10 +3567,6 @@ async function loadRequests(){
 
 }
 
-
-/* =========================================================
-   유틸
-========================================================= */
 
 function getValue(id){
 
@@ -3893,7 +3760,6 @@ document.addEventListener(
 </script>
 
 
-<!-- 카카오맵 -->
 <script
     src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services&autoload=false"
 ></script>
