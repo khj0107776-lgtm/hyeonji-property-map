@@ -1941,12 +1941,6 @@ photo.innerHTML=
 }
 
 
-/*
-=========================================================
-매물마다 각각 다른 상세정보 주소 연결
-=========================================================
-*/
-
 const externalLink=
 document
 .getElementById(
@@ -2891,6 +2885,7 @@ error.message
 
 /* =====================================================
    고객 매물접수
+   기존 Firestore의 inquiries 컬렉션 사용
 ===================================================== */
 
 function openReception(){
@@ -2988,12 +2983,13 @@ button.textContent=
 try{
 
 /*
+  기존 Rules의 inquiries 컬렉션 사용
   로그인하지 않은 고객도 접수 가능
 */
 
 await db
 .collection(
-"propertyRequests"
+"inquiries"
 )
 .add({
 
@@ -3278,6 +3274,7 @@ error.message
 
 /* =====================================================
    접수 확인
+   기존 inquiries 컬렉션 사용
 ===================================================== */
 
 async function openRequests(){
@@ -3322,7 +3319,7 @@ try{
 const snapshot=
 await db
 .collection(
-"propertyRequests"
+"inquiries"
 )
 .get();
 
@@ -3497,7 +3494,7 @@ try{
 
 await db
 .collection(
-"propertyRequests"
+"inquiries"
 )
 .doc(id)
 .delete();
