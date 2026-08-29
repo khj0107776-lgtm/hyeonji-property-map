@@ -3470,6 +3470,8 @@ continue;
 
 const data={
 propertyNumber:String(excelNextNumber+i),
+importSource:"excel",
+excelRow:i+2,
 title:title,
 address:address,
 type:type,
@@ -3509,6 +3511,7 @@ await excelSleep(180);
 
 await loadProperties();
 window.refreshDongCount();
+window.showDongDiagnostic();
 closeExcelImport();
 renderAdminList();
 
@@ -4886,6 +4889,88 @@ window.geocodeProperty=function(p){
 };
 
 window.extractDong=neighborhood;
+
+
+window.showDongDiagnostic=function(){
+
+  const list=Array.isArray(properties)?properties:[];
+  const groups={};
+  let noAddress=0;
+  let noDong=0;
+  let noCoords=0;
+  let excelCount=0;
+  let normalCount=0;
+
+  list.forEach(function(p){
+
+    if(String(p.importSource||"").toLowerCase()==="excel"){
+      excelCount++;
+    }else{
+      normalCount++;
+    }
+
+    const address=String(p.address||"").trim();
+
+    if(!address){
+      noAddress++;
+      return;
+    }
+
+    let dong=String(p.dong||"").trim();
+
+    if(!dong && typeof neighborhood==="function"){
+      dong=String(neighborhood(address)||"").trim();
+    }
+
+    if(!dong && typeof extractDong==="function"){
+      dong=String(extractDong(address)||"").trim();
+    }
+
+    if(!dong){
+      noDong++;
+      return;
+    }
+
+    groups[dong]=(groups[dong]||0)+1;
+
+    const lat=Number(p.lat);
+    const lng=Number(p.lng);
+
+    if(!isFinite(lat)||!isFinite(lng)||lat===0||lng===0){
+      noCoords++;
+    }
+
+  });
+
+  const dongText=Object.keys(groups)
+    .sort()
+    .map(d=>d+" "+groups[d]+"개")
+    .join("\n");
+
+  const message=
+    "===== 동별 개수 진단 =====\n"+
+    "전체 매물: "+list.length+"개\n"+
+    "엑셀 등록 표시: "+excelCount+"개\n"+
+    "일반 등록: "+normalCount+"개\n"+
+    "주소 없음: "+noAddress+"개\n"+
+    "동 추출 실패: "+noDong+"개\n"+
+    "좌표 없음: "+noCoords+"개\n\n"+
+    "동별 집계\n"+
+    (dongText||"집계된 동 없음");
+
+  console.log(message);
+  alert(message);
+
+  return {
+    total:list.length,
+    excelCount:excelCount,
+    normalCount:normalCount,
+    noAddress:noAddress,
+    noDong:noDong,
+    noCoords:noCoords,
+    groups:groups
+  };
+};
 
 window.refreshDongCount=function(){
 
