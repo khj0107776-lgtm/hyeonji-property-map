@@ -2832,92 +2832,113 @@ error.message
 }
 
 
-function addressToCoords(
-address
-){
+function addressToCoords(address){
 
-return new Promise(
-function(resolve,reject){
+  return new Promise(function(resolve,reject){
 
-geocoder.addressSearch(
-address,
-function(
-result,
-status
-){
+    const addr=String(address||"").trim();
 
-if(
-status===
-kakao.maps.services.Status.OK
-){
+    if(!addr){
+      reject(new Error("주소가 없습니다."));
+      return;
+    }
 
-resolve({
+    if(
+      !window.kakao ||
+      !kakao.maps ||
+      !kakao.maps.services
+    ){
+      reject(new Error("Kakao 지도 서비스가 준비되지 않았습니다."));
+      return;
+    }
 
-lat:
-Number(
-result[0].y
-),
+    const service=new kakao.maps.services.Geocoder();
 
-lng:
-Number(
-result[0].x
-)
+    /* 1순위: 주소 검색 */
+    service.addressSearch(
+      addr,
+      function(result,status){
 
-});
+        if(
+          status===kakao.maps.services.Status.OK &&
+          result &&
+          result.length
+        ){
 
-}else{
+          resolve({
+            lat:Number(result[0].y),
+            lng:Number(result[0].x)
+          });
 
-const places=
-new kakao.maps.services.Places();
+          return;
+        }
 
+        /* 2순위: 장소/키워드 검색 */
+        const places=new kakao.maps.services.Places();
 
-places.keywordSearch(
-address,
-function(
-result,
-status
-){
+        places.keywordSearch(
+          addr,
+          function(result,status){
 
-if(
-status===
-kakao.maps.services.Status.OK &&
-result.length
-){
+            if(
+              status===kakao.maps.services.Status.OK &&
+              result &&
+              result.length
+            ){
 
-resolve({
+              resolve({
+                lat:Number(result[0].y),
+                lng:Number(result[0].x)
+              });
 
-lat:
-Number(
-result[0].y
-),
+              return;
+            }
 
-lng:
-Number(
-result[0].x
-)
+            /* 3순위: 주소에서 건물번호까지 남겨 재검색 */
+            const simplified=addr
+              .replace(/\([^)]*\)/g," ")
+              .replace(/\s+/g," ")
+              .trim();
 
-});
+            if(simplified!==addr){
 
-}else{
+              service.addressSearch(
+                simplified,
+                function(r,s){
 
-reject(
-new Error(
-"주소를 찾을 수 없습니다."
-)
-);
+                  if(
+                    s===kakao.maps.services.Status.OK &&
+                    r &&
+                    r.length
+                  ){
 
-}
+                    resolve({
+                      lat:Number(r[0].y),
+                      lng:Number(r[0].x)
+                    });
 
-}
-);
+                  }else{
 
-}
+                    reject(new Error("주소 위치를 찾을 수 없습니다."));
 
-}
-);
+                  }
 
-}
-);
+                }
+              );
+
+            }else{
+
+              reject(new Error("주소 위치를 찾을 수 없습니다."));
+
+            }
+
+          }
+        );
+
+      }
+    );
+
+  });
 
 }
 
@@ -4862,30 +4883,81 @@ function showDetailSplitMap(p){
 
 function moveDetailMapToProperty(p){
 
-  const address=p.mapAddress||p.address||"";
+  const address=
+    String(
+      p.mapAddress ||
+      p.address ||
+      ""
+    ).trim();
 
-  if(p.lat!=null && p.lng!=null){
+  /*
+    상세 매물에서는 기존 좌표를 먼저 사용하지 않는다.
+    엑셀/기존 데이터의 잘못된 좌표가 남아 있어도
+    현재 매물의 주소를 기준으로 다시 위치를 찾는다.
+  */
+  if(address){
 
-    showDetailSplitMap(p);
+    addressToCoords(address)
+      .then(function(coords){
+
+        p.lat=Number(coords.lat);
+        p.lng=Number(coords.lng);
+
+        if(!p.dong){
+          p.dong=extractDong(p.address||address);
+        }
+
+        showDetailSplitMap(p);
+
+      })
+      .catch(function(error){
+
+        console.warn(
+          "상세 매물 주소 검색 실패:",
+          error
+        );
+
+        /* 주소 검색 실패시에만 저장된 좌표를 보조적으로 사용 */
+        if(
+          p.lat!=null &&
+          p.lng!=null
+        ){
+
+          showDetailSplitMap(p);
+
+        }else{
+
+          const container=
+            document.getElementById("detailSplitMap");
+
+          if(container){
+
+            container.innerHTML=
+              '<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:#777;font-weight:700">'+
+              '📍 이 매물의 주소 위치를 찾지 못했습니다.<br>'+
+              '<span style="font-size:12px;font-weight:500;margin-top:6px">'+
+              escapeHtml(address)+
+              '</span>'+
+              '</div>';
+
+          }
+
+        }
+
+      });
+
     return;
 
   }
 
-  if(!address || typeof addressToCoords!=="function")return;
+  if(
+    p.lat!=null &&
+    p.lng!=null
+  ){
 
-  addressToCoords(address)
-    .then(function(coords){
+    showDetailSplitMap(p);
 
-      p.lat=coords.lat;
-      p.lng=coords.lng;
-      p.dong=p.dong||neighborhood(p.address||address);
-
-      showDetailSplitMap(p);
-
-    })
-    .catch(function(error){
-      console.warn("상세 지도 주소 변환 실패:",error);
-    });
+  }
 
 }
 
@@ -5750,3 +5822,38 @@ document.addEventListener("click",function(e){
   display:contents;
 }
 </style>
+
+<script>
+(function(){
+
+  const originalOpen=window.openDetailPage;
+
+  if(typeof originalOpen==="function"){
+
+    window.openDetailPage=function(id){
+
+      originalOpen(id);
+
+      setTimeout(function(){
+
+        try{
+
+          if(
+            window.detailSplitMapInstance &&
+            typeof window.detailSplitMapInstance.relayout==="function"
+          ){
+
+            window.detailSplitMapInstance.relayout();
+
+          }
+
+        }catch(e){}
+
+      },500);
+
+    };
+
+  }
+
+})();
+</script>
