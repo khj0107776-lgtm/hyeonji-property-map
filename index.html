@@ -3332,31 +3332,18 @@ function normalizeExcelKey(key){
 return String(key||"").trim().replace(/\s+/g,"").replace(/[()\[\]{}]/g,"").toLowerCase();
 }
 
-function normalizeExcelKey(v){
-return String(v??"").trim().toLowerCase()
-.replace(/\\s+/g,"")
-.replace(/[()（）]/g,"")
-.replace(/㎡/g,"m²")
-.replace(/[._-]/g,"");
-}
-
-function getExcelValue(row,names,fallbackIndex){
-const keys=Object.keys(row||{});
-for(const name of names||[]){
+function getExcelValue(row,names){
+const keys=Object.keys(row);
+for(const name of names){
 const target=normalizeExcelKey(name);
 const found=keys.find(k=>normalizeExcelKey(k)===target);
-if(found!==undefined && row[found]!==undefined && row[found]!==null && String(row[found]).trim()!==""){
+if(found!==undefined && row[found]!==undefined && row[found]!==null){
 return String(row[found]).trim();
-}
-}
-if(Number.isInteger(fallbackIndex) && fallbackIndex>=0){
-const key=keys[fallbackIndex];
-if(key!==undefined && row[key]!==undefined && row[key]!==null){
-return String(row[key]).trim();
 }
 }
 return "";
 }
+
 
 function normalizeImportedRows(rows){
 
@@ -3538,7 +3525,7 @@ preview.length+
 
 html+=
 '<div style="font-size:11px;color:#777;margin-bottom:8px">'+
-'주소(소재지)는 2번째 열, 지도주소는 3번째 열, 설명은 14번째 열을 우선 사용합니다. 주소와 설명이 섞이지 않도록 고정 열도 함께 확인합니다.</div>';
+'주소가 다음 행으로 나뉜 경우 자동으로 앞 매물에 합쳐집니다.</div>';
 
 html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
 
@@ -3620,9 +3607,9 @@ const errors=[];
 try{
 for(let i=0;i<excelRows.length;i++){
 const row=excelRows[i];
-const title=getExcelValue(row,["제목","매물명","title"],0);
-const address=getExcelValue(row,["주소(소재지)","주소","소재지","address"],1);
-const type=getExcelValue(row,["종류(매물종류)","종류","매물종류","type"],3)||"상가";
+const title=getExcelValue(row,["제목","매물명","title"]);
+const address=getExcelValue(row,["주소","소재지","address"]);
+const type=getExcelValue(row,["종류","매물종류","type"])||"상가";
 
 if(!title || !address){
 failed++;
@@ -3630,9 +3617,9 @@ errors.push((i+2)+"행: 제목 또는 주소 없음");
 continue;
 }
 
-let excelDeposit=getExcelValue(row,["보증금(만원)","보증금","deposit"],4);
-let excelRent=getExcelValue(row,["월세(만원)","월세","rent"],5);
-let excelSale=getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"],6);
+let excelDeposit=getExcelValue(row,["보증금(만원)","보증금","deposit"]);
+let excelRent=getExcelValue(row,["월세(만원)","월세","rent"]);
+let excelSale=getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"]);
 
 /* 기존 매물장처럼 매물가 칸에 5000/340이 들어온 경우 임대로 변환 */
 const excelCombined=String(excelSale||"")
@@ -3663,8 +3650,8 @@ premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음"
 area:getExcelValue(row,["면적","area"]),
 floor:getExcelValue(row,["층","층수","floor"]),
 detailUrl:getExcelValue(row,["상세주소","상세페이지주소","상세정보","detailUrl","url"]),
-description:getExcelValue(row,["설명","매물설명","description"],13),
-image:getExcelValue(row,["사진URL","사진 URL","사진주소","image","imageUrl"],14),
+description:getExcelValue(row,["설명","매물설명","description"]),
+image:getExcelValue(row,["사진URL","사진주소","image","imageUrl"]),
 dong:extractDong(address),
 createdBy:auth.currentUser.email,
 createdAt:firebase.firestore.FieldValue.serverTimestamp(),
@@ -3672,7 +3659,7 @@ updatedAt:firebase.firestore.FieldValue.serverTimestamp()
 };
 
 try{
-const coords=await addressToCoords(data.mapAddress||data.address);
+const coords=await addressToCoords(address);
 if(coords){data.lat=coords.lat;data.lng=coords.lng;}
 }catch(e){}
 
@@ -5054,22 +5041,8 @@ window.geocodeProperty=function(p){
 
   if(!geocoder || !map)return;
 
-  const addr=
-    String(
-      p.mapAddress ||
-      p.address ||
-      ""
-    )
-    .replace(/\s+/g," ")
-    .trim();
-
+  const addr=p.mapAddress||p.address;
   if(!addr)return;
-
-  p.dong=
-    neighborhood(
-      String(p.address||addr)
-    ) ||
-    String(p.dong||"").trim();
 
   geocoder.addressSearch(
     addr,
@@ -5082,12 +5055,7 @@ window.geocodeProperty=function(p){
 
         p.lat=Number(result[0].y);
         p.lng=Number(result[0].x);
-
-        p.dong=
-          neighborhood(
-            String(p.address||addr)
-          ) ||
-          String(p.dong||"").trim();
+        p.dong=neighborhood(p.address||addr);
 
         createMarker(p);
         refreshDongCount();
@@ -5108,22 +5076,9 @@ window.geocodeProperty=function(p){
 
             p.lat=Number(result[0].y);
             p.lng=Number(result[0].x);
-
-            p.dong=
-              neighborhood(
-                String(p.address||addr)
-              ) ||
-              String(p.dong||"").trim();
+            p.dong=neighborhood(p.address||addr);
 
             createMarker(p);
-            refreshDongCount();
-
-          }else{
-
-            /*
-              위치를 못 찾은 매물도 동 정보 자체는 유지.
-              나중에 주소를 수정하면 다시 drawMarkers에서 검색한다.
-            */
             refreshDongCount();
 
           }
@@ -5149,61 +5104,24 @@ window.refreshDongCount=function(){
 
   list.forEach(p=>{
 
-    /*
-      엑셀 일괄등록 매물은 Firebase에 저장된 dong 값이 없거나
-      이전 형식으로 들어온 경우가 있을 수 있으므로,
-      매번 주소에서 다시 동/읍/면을 계산한다.
-    */
-    const sourceAddress=
-      String(
-        p.address ||
-        p.mapAddress ||
-        ""
-      )
-      .replace(/\s+/g," ")
-      .trim();
+    if(p.lat==null||p.lng==null)return;
 
-    const dong=
-      neighborhood(sourceAddress) ||
-      String(p.dong||"").trim();
-
+    const dong=p.dong||neighborhood(p.address||p.mapAddress);
     if(!dong)return;
 
-    /*
-      좌표가 아직 없는 매물은 아래 drawMarkers의 비동기 주소검색이
-      끝난 뒤 다시 refreshDongCount()가 호출된다.
-    */
-    if(
-      p.lat==null ||
-      p.lng==null ||
-      !isFinite(Number(p.lat)) ||
-      !isFinite(Number(p.lng))
-    ){
-      return;
-    }
-
     if(!groups[dong]){
-      groups[dong]={
-        count:0,
-        lat:0,
-        lng:0
-      };
+      groups[dong]={count:0,lat:0,lng:0};
     }
 
     groups[dong].count++;
     groups[dong].lat+=Number(p.lat);
     groups[dong].lng+=Number(p.lng);
 
-    /* 화면 계산뿐 아니라 현재 객체에도 동 정보를 보정 */
-    p.dong=dong;
-
   });
 
   Object.keys(groups).forEach(dong=>{
 
     const g=groups[dong];
-
-    if(!g.count)return;
 
     const overlay=new kakao.maps.CustomOverlay({
       map:map,
@@ -5212,64 +5130,20 @@ window.refreshDongCount=function(){
         g.lng/g.count
       ),
       content:
-        '<div class="count-overlay" '+
-        'data-dong="'+escapeAttr(dong)+'">'+
-        '<strong>'+
+        '<div class="count-overlay"><strong>'+
         g.count+
         '</strong> '+
         escapeHtml(dong)+
         '</div>',
       yAnchor:1.7,
-      zIndex:100
+      zIndex:10
     });
 
     dongOverlays.push(overlay);
 
-    /*
-      동별 숫자를 클릭하면 그 동의 매물들이 보이는 범위로 이동.
-    */
-    const node=
-      overlay.getContent() instanceof HTMLElement
-        ? overlay.getContent()
-        : null;
-
-    if(node){
-      node.addEventListener("click",function(e){
-        e.stopPropagation();
-
-        const dongList=list.filter(p=>{
-          const d=
-            neighborhood(
-              String(p.address||p.mapAddress||"")
-            ) ||
-            String(p.dong||"").trim();
-
-          return d===dong &&
-            p.lat!=null &&
-            p.lng!=null;
-        });
-
-        if(dongList.length){
-          const bounds=new kakao.maps.LatLngBounds();
-
-          dongList.forEach(p=>{
-            bounds.extend(
-              new kakao.maps.LatLng(
-                Number(p.lat),
-                Number(p.lng)
-              )
-            );
-          });
-
-          map.setBounds(bounds);
-        }
-      });
-    }
-
   });
 
 };
-
 
 window.drawMarkers=function(){
 
@@ -5277,68 +5151,20 @@ window.drawMarkers=function(){
 
   clearMarkers();
 
-  const list=getFilteredProperties();
-
-  /*
-    엑셀 일괄등록 직후에도 동 정보가 즉시 생기도록
-    주소에서 동/읍/면을 먼저 계산한다.
-  */
-  list.forEach(p=>{
-
-    const sourceAddress=
-      String(
-        p.address ||
-        p.mapAddress ||
-        ""
-      )
-      .replace(/\s+/g," ")
-      .trim();
-
-    const dong=
-      neighborhood(sourceAddress) ||
-      String(p.dong||"").trim();
-
-    if(dong)p.dong=dong;
+  getFilteredProperties().forEach(p=>{
 
     if(
       p.lat!=null &&
-      p.lng!=null &&
-      isFinite(Number(p.lat)) &&
-      isFinite(Number(p.lng))
+      p.lng!=null
     ){
-
       createMarker(p);
-
     }else{
-
-      /*
-        좌표가 없는 엑셀 매물은 주소로 비동기 검색.
-        검색이 끝나면 geocodeProperty 안에서
-        refreshDongCount()를 다시 실행한다.
-      */
       geocodeProperty(p);
-
     }
 
   });
 
-  /*
-    주소검색이 완료되기 전 기존 좌표가 있는 매물부터
-    동별 개수를 먼저 표시한다.
-  */
-  refreshDongCount();
-
-  /*
-    여러 엑셀 매물이 동시에 주소검색되는 경우를 대비해
-    충분한 시간을 두고 한 번 더 계산한다.
-  */
-  setTimeout(function(){
-    refreshDongCount();
-  },1200);
-
-  setTimeout(function(){
-    refreshDongCount();
-  },2500);
+  setTimeout(refreshDongCount,700);
 
 };
 
@@ -5844,10 +5670,7 @@ window.saveProperty=async function(){
 
   const area=document.getElementById("fArea").value.trim();
 
-  const safeAddress=String(address||"").replace(/\\s+/g," ").trim();
-const safeMapAddress=String(mapAddress||safeAddress).replace(/\\s+/g," ").trim();
-
-const data={
+  const data={
     title:title,
     address:address,
     mapAddress:
@@ -6027,7 +5850,10 @@ for(let i=0;i<excelRows.length;i++){
 
 const row=excelRows[i];
 
-const title=getExcelValue(row,["제목","매물명","title"],0);
+const title=getExcelValue(
+row,
+["제목","매물명","title"]
+);
 
 const address=getExcelValue(
 row,
@@ -6048,9 +5874,17 @@ continue;
 
 }
 
-const rawMapAddress=getExcelValue(row,["지도주소","mapAddress","지도 주소"],2);
+const rawMapAddress=
+getExcelValue(
+row,
+["지도주소","mapAddress","지도 주소"]
+);
 
-const detailAddress=getExcelValue(row,["상세주소","상세"],12);
+const detailAddress=
+getExcelValue(
+row,
+["상세주소","상세"]
+);
 
 const mapAddress=
 buildExactMapAddress(
@@ -6068,7 +5902,10 @@ row,
 type=normalizedType(type);
 
 const rawArea=
-getExcelValue(row,["면적(m²)","면적(㎡)","면적","area"],8);
+getExcelValue(
+row,
+["면적(m²)","면적(㎡)","면적","area"]
+);
 
 const data={
 
@@ -6079,18 +5916,24 @@ title:
 String(title).trim(),
 
 address:
-safeAddress,
+String(address).replace(/\s+/g," ").trim(),
 
 mapAddress:
-safeMapAddress,
+String(mapAddress).replace(/\s+/g," ").trim(),
 
 type:type,
 
 deposit:
-getExcelValue(row,["보증금(만원)","보증금","deposit"],4),
+getExcelValue(
+row,
+["보증금(만원)","보증금","deposit"]
+),
 
 rent:
-getExcelValue(row,["월세(만원)","월세","rent"],5),
+getExcelValue(
+row,
+["월세(만원)","월세","rent"]
+),
 
 salePrice:
 getExcelValue(
@@ -6111,19 +5954,31 @@ row,
 ),
 
 premium:
-getExcelValue(row,["권리금(만원)","권리금","premium"],7)||"없음",
+getExcelValue(
+row,
+["권리금(만원)","권리금","premium"]
+)||"없음",
 
 area:
 normalizeImportedArea(rawArea),
 
 floor:
-getExcelValue(row,["해당층/총층","해당층","층","층수","floor"],9),
+getExcelValue(
+row,
+["해당층/총층","해당층","층","층수","floor"]
+),
 
 approvalDate:
-getExcelValue(row,["사용승인일","approvalDate","사용승인"],10),
+getExcelValue(
+row,
+["사용승인일","approvalDate","사용승인"]
+),
 
 direction:
-getExcelValue(row,["방향","direction"],11),
+getExcelValue(
+row,
+["방향","direction"]
+),
 
 detailAddress:
 getExcelValue(
@@ -6138,7 +5993,10 @@ row,
 ),
 
 description:
-getExcelValue(row,["설명","매물설명","description"],13),
+getExcelValue(
+row,
+["설명","매물설명","description"]
+),
 
 image:
 getExcelValue(
@@ -6208,19 +6066,6 @@ await excelSleep(80);
 }
 
 await loadProperties();
-
-/* 엑셀 일괄등록 완료 후 모든 매물의 동/읍/면을 주소에서 즉시 보정 */
-properties.forEach(function(p){
-  const addr=String(p.address||p.mapAddress||"")
-    .replace(/\s+/g," ")
-    .trim();
-
-  const d=neighborhood(addr);
-  if(d)p.dong=d;
-});
-
-drawMarkers();
-refreshDongCount();
 
 closeExcelImport();
 
