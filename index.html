@@ -3722,106 +3722,363 @@ reader.readAsArrayBuffer(file);
 function excelSleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
 async function importExcelProperties(){
-if(!auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
-alert("관리자만 엑셀 매물을 등록할 수 있습니다.");
-return;
-}
-if(!excelRows.length){
-alert("먼저 엑셀 파일을 선택해주세요.");
-return;
-}
 
-const btn=document.getElementById("excelImportBtn");
-btn.disabled=true;
-let success=0;
-let failed=0;
-const errors=[];
+  if(
+    !auth.currentUser ||
+    auth.currentUser.email!==ADMIN_EMAIL
+  ){
+    alert("관리자만 엑셀 매물을 등록할 수 있습니다.");
+    return;
+  }
 
-try{
-for(let i=0;i<excelRows.length;i++){
-const row=excelRows[i];
-const title=getExcelValue(row,["제목","매물명","title"]);
-const address=getExcelValue(row,["주소","소재지","address"]);
-const type=getExcelValue(row,["종류","매물종류","type"])||"상가";
+  if(!excelRows.length){
+    alert("먼저 엑셀 파일을 선택해주세요.");
+    return;
+  }
 
-if(!title || !address){
-failed++;
-errors.push((i+2)+"행: 제목 또는 주소 없음");
-continue;
-}
+  const btn=document.getElementById("excelImportBtn");
+  if(!btn)return;
 
-let excelDeposit=getExcelValue(row,["보증금(만원)","보증금","deposit"]);
-let excelRent=getExcelValue(row,["월세(만원)","월세","rent"]);
-let excelSale=getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"]);
+  btn.disabled=true;
 
-/* 기존 매물장처럼 매물가 칸에 5000/340이 들어온 경우 임대로 변환 */
-const excelCombined=String(excelSale||"")
-  .replace(/,/g,"")
-  .replace(/\s+/g,"")
-  .match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
+  let success=0;
+  let failed=0;
+  const errors=[];
 
-if(excelCombined){
-  if(!excelDeposit) excelDeposit=excelCombined[1];
-  if(!excelRent) excelRent=excelCombined[2];
-  excelSale="";
-}
+  try{
 
-/* 보증금/월세가 있으면 매매가는 비워 임대 매물로 저장 */
-if(excelDeposit || excelRent){
-  excelSale="";
-}
+    /*
+      새 엑셀 서식은 지도주소/상세주소 열이 없다.
+      주소(소재지) 한 칸에 지번 등 상세주소까지 들어온다.
+    */
+    let nextNo=nextPropertyNumber(properties);
 
-const data={
-title:title,
-address:address,
-type:type,
-deposit:excelDeposit,
-rent:excelRent,
-salePrice:excelSale,
+    for(let i=0;i<excelRows.length;i++){
 
-premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음",
-area:getExcelValue(row,["면적","area"]),
-floor:getExcelValue(row,["층","층수","floor"]),
-detailUrl:getExcelValue(row,["상세페이지주소","상세정보","detailUrl","url"]),
-description:getExcelValue(row,["설명","매물설명","description"]),
-image:getExcelValue(row,["사진URL","사진주소","image","imageUrl"]),
-dong:extractDong(address),
-createdBy:auth.currentUser.email,
-createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-};
+      const row=excelRows[i];
 
-try{
-const coords=await addressToCoords(address);
-if(coords){data.lat=coords.lat;data.lng=coords.lng;}
-}catch(e){}
+      /* 반드시 주소를 먼저 읽는다. */
+      const title=String(
+        getExcelValue(
+          row,
+          ["제목","매물명","title"]
+        )||""
+      ).trim();
 
-try{
-await db.collection("properties").add(data);
-success++;
-}catch(e){
-failed++;
-errors.push((i+2)+"행: "+e.message);
-}
+      const address=String(
+        getExcelValue(
+          row,
+          [
+            "주소(소재지)",
+            "주소",
+            "소재지",
+            "소재지 주소",
+            "address"
+          ]
+        )||""
+      ).replace(/\s+/g," ").trim();
 
-btn.textContent="등록 중... "+(i+1)+" / "+excelRows.length;
-await excelSleep(180);
-}
+      if(!title || !address){
 
-await loadProperties();
-closeExcelImport();
-renderAdminList();
+        failed++;
 
-let message="엑셀 등록 완료\n\n성공: "+success+"개\n실패: "+failed+"개";
-if(errors.length){message+="\n\n실패 내역\n"+errors.slice(0,15).join("\n");if(errors.length>15)message+="\n외 "+(errors.length-15)+"건";}
-alert(message);
-}catch(error){
-console.error(error);
-alert("엑셀 등록 중 오류가 발생했습니다.\n\n"+error.message);
-}finally{
-btn.disabled=false;
-btn.textContent="엑셀 매물 등록하기";
-}
+        errors.push(
+          (i+2)+"행: 제목 또는 주소 없음"
+        );
+
+        continue;
+      }
+
+      let deposit=getExcelValue(
+        row,
+        ["보증금(만원)","보증금","deposit"]
+      );
+
+      let rent=getExcelValue(
+        row,
+        ["월세(만원)","월세","rent"]
+      );
+
+      let salePrice=getExcelValue(
+        row,
+        [
+          "매매가(만원)",
+          "매매가",
+          "매매가격(만원)",
+          "매매가격",
+          "매매금액(만원)",
+          "매매금액",
+          "가격",
+          "price",
+          "salePrice"
+        ]
+      );
+
+      /*
+        사용자가 정한 새 서식에는 매매가 열이 없지만
+        기존 엑셀을 올리는 경우를 위해 기존 열도 읽어준다.
+      */
+      const combined=String(
+        salePrice||""
+      )
+      .replace(/,/g,"")
+      .replace(/\s+/g,"")
+      .match(
+        /^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/
+      );
+
+      if(combined){
+
+        if(!deposit)deposit=combined[1];
+        if(!rent)rent=combined[2];
+
+        salePrice="";
+
+      }
+
+      /* 보증금/월세가 있으면 임대 매물 */
+      if(deposit || rent){
+        salePrice="";
+      }
+
+      let type=getExcelValue(
+        row,
+        [
+          "종류(매물종류)",
+          "종류",
+          "매물종류",
+          "type"
+        ]
+      )||"상가";
+
+      type=normalizedType(type);
+
+      const rawArea=getExcelValue(
+        row,
+        [
+          "면적(m²)",
+          "면적(㎡)",
+          "면적",
+          "area"
+        ]
+      );
+
+      const data={
+
+        propertyNumber:
+          String(nextNo++),
+
+        title:title,
+
+        /*
+          지도주소는 별도 필드로 입력하지 않는다.
+          기존 지도 코드와의 호환을 위해 같은 주소를
+          내부 mapAddress 값으로만 복사한다.
+        */
+        address:address,
+
+        mapAddress:address,
+
+        type:type,
+
+        deposit:deposit||"",
+
+        rent:rent||"",
+
+        salePrice:salePrice||"",
+
+        premium:getExcelValue(
+          row,
+          ["권리금(만원)","권리금","premium"]
+        )||"없음",
+
+        area:normalizeImportedArea(rawArea),
+
+        floor:getExcelValue(
+          row,
+          [
+            "해당층/총층",
+            "해당층",
+            "층",
+            "층수",
+            "floor"
+          ]
+        )||"",
+
+        approvalDate:getExcelValue(
+          row,
+          [
+            "사용승인일",
+            "approvalDate",
+            "사용승인"
+          ]
+        )||"",
+
+        direction:getExcelValue(
+          row,
+          ["방향","direction"]
+        )||"",
+
+        /*
+          상세주소 열은 사용하지 않는다.
+          주소(소재지)에 이미 합쳐져 있다.
+        */
+        detailAddress:"",
+
+        detailUrl:getExcelValue(
+          row,
+          [
+            "상세페이지주소",
+            "상세정보",
+            "detailUrl",
+            "url"
+          ]
+        )||"",
+
+        description:getExcelValue(
+          row,
+          [
+            "설명",
+            "매물설명",
+            "description"
+          ]
+        )||"",
+
+        image:getExcelValue(
+          row,
+          [
+            "사진URL",
+            "사진 URL",
+            "사진주소",
+            "image",
+            "imageUrl"
+          ]
+        )||"",
+
+        dong:extractDong(address),
+
+        createdBy:auth.currentUser.email,
+
+        createdAt:
+          firebase.firestore.FieldValue.serverTimestamp(),
+
+        updatedAt:
+          firebase.firestore.FieldValue.serverTimestamp()
+
+      };
+
+      /*
+        지도 좌표도 주소 하나만 이용한다.
+        여기서 mapAddress라는 별도 엑셀 변수를 참조하지 않는다.
+      */
+      try{
+
+        const coords=
+          await addressToCoords(address);
+
+        if(coords){
+
+          data.lat=coords.lat;
+          data.lng=coords.lng;
+
+        }
+
+      }catch(e){
+
+        console.warn(
+          "주소 좌표 검색 실패:",
+          address,
+          e
+        );
+
+      }
+
+      try{
+
+        await db
+          .collection("properties")
+          .add(data);
+
+        success++;
+
+      }catch(e){
+
+        failed++;
+
+        errors.push(
+          (i+2)+"행: "+e.message
+        );
+
+      }
+
+      btn.textContent=
+        "등록 중... "+
+        (i+1)+
+        " / "+
+        excelRows.length;
+
+      await excelSleep(180);
+
+    }
+
+    await loadProperties();
+
+    closeExcelImport();
+
+    renderAdminList();
+
+    /*
+      일괄등록 직후 지도/동별 개수를 강제로 다시 계산.
+    */
+    if(typeof drawMarkers==="function"){
+      drawMarkers();
+    }
+
+    if(typeof refreshDongCount==="function"){
+      refreshDongCount();
+    }
+
+    let message=
+      "엑셀 등록 완료\n\n"+
+      "성공: "+success+"개\n"+
+      "실패: "+failed+"개";
+
+    if(errors.length){
+
+      message+=
+        "\n\n실패 내역\n"+
+        errors.slice(0,15).join("\n");
+
+      if(errors.length>15){
+        message+=
+          "\n외 "+
+          (errors.length-15)+
+          "건";
+      }
+
+    }
+
+    alert(message);
+
+  }catch(error){
+
+    console.error(
+      "엑셀 일괄등록 오류:",
+      error
+    );
+
+    alert(
+      "엑셀 등록 중 오류가 발생했습니다.\n\n"+
+      error.message
+    );
+
+  }finally{
+
+    btn.disabled=false;
+    btn.textContent="엑셀 매물 등록하기";
+
+  }
+
 }
 
 /* =====================================================
@@ -6104,303 +6361,7 @@ window.renderAdminList=function(){
 
 /* ---------- 엑셀: 최종 14열 모두 지원 ---------- */
 
-window.importExcelProperties=async function(){
-
-if(
-!auth.currentUser ||
-auth.currentUser.email!==ADMIN_EMAIL
-){
-
-alert("관리자만 엑셀 매물을 등록할 수 있습니다.");
-return;
-
-}
-
-if(!excelRows.length){
-
-alert("먼저 엑셀 파일을 선택해주세요.");
-return;
-
-}
-
-const btn=document.getElementById("excelImportBtn");
-
-btn.disabled=true;
-
-let success=0;
-let failed=0;
-
-const errors=[];
-
-try{
-
-let nextNo=nextPropertyNumber(properties);
-
-for(let i=0;i<excelRows.length;i++){
-
-const row=excelRows[i];
-
-const title=getExcelValue(
-row,
-["제목","매물명","title"]
-);
-if(!title&&!address)continue;
-
-if(!title||!address){
-
-failed++;
-
-errors.push(
-(i+2)+"행: 제목 또는 주소 없음"
-);
-
-continue;
-
-}
-
-const detailAddress=
-getExcelValue(
-row,
-["상세주소","상세"]
-);
-
-const address=
-buildExactMapAddress(
-  address,
-  detailAddress
-);
-
-let type=
-getExcelValue(
-row,
-["종류(매물종류)","종류","매물종류","type"]
-)||"상가";
-
-type=normalizedType(type);
-
-const rawArea=
-getExcelValue(
-row,
-["면적(m²)","면적(㎡)","면적","area"]
-);
-
-const data={
-
-propertyNumber:
-String(nextNo++),
-
-title:
-String(title).trim(),
-
-address:
-String(address).replace(/\s+/g," ").trim(),
-
-mapAddress: String(address||"").replace(/\s+/g," ").trim()," ").trim(),
-
-type:type,
-
-deposit:
-getExcelValue(
-row,
-["보증금(만원)","보증금","deposit"]
-),
-
-rent:
-getExcelValue(
-row,
-["월세(만원)","월세","rent"]
-),
-
-salePrice:
-getExcelValue(
-row,
-[
-"매물가(만원)",
-"매물가",
-"매매가(만원)",
-"매매가",
-"매매가격(만원)",
-"매매가격",
-"매매금액(만원)",
-"매매금액",
-"가격",
-"price",
-"salePrice"
-]
-),
-
-premium:
-getExcelValue(
-row,
-["권리금(만원)","권리금","premium"]
-)||"없음",
-
-area:
-normalizeImportedArea(rawArea),
-
-floor:
-getExcelValue(
-row,
-["해당층/총층","해당층","층","층수","floor"]
-),
-
-approvalDate:
-getExcelValue(
-row,
-["사용승인일","approvalDate","사용승인"]
-),
-
-direction:
-getExcelValue(
-row,
-["방향","direction"]
-),
-
-detailAddress:
-getExcelValue(
-row,
-["상세주소","상세"]
-),
-
-detailUrl:
-getExcelValue(
-row,
-["상세페이지주소","상세정보","detailUrl","url"]
-),
-
-description:
-getExcelValue(
-row,
-["설명","매물설명","description"]
-),
-
-image:
-getExcelValue(
-row,
-["사진URL","사진 URL","사진주소","image","imageUrl"]
-),
-
-dong:
-extractDong(address),
-
-createdBy:
-auth.currentUser.email,
-
-createdAt:
-firebase.firestore.FieldValue.serverTimestamp(),
-
-updatedAt:
-firebase.firestore.FieldValue.serverTimestamp()
-
-};
-
-try{
-
-const coords=
-await addressToCoords(
-data.mapAddress||data.address
-);
-
-if(coords){
-
-data.lat=coords.lat;
-data.lng=coords.lng;
-
-}
-
-}catch(e){
-
-/* 주소 좌표 실패는 매물 등록 실패로 처리하지 않음 */
-
-}
-
-try{
-
-await db
-.collection("properties")
-.add(data);
-
-success++;
-
-}catch(e){
-
-failed++;
-
-errors.push(
-(i+2)+"행: "+e.message
-);
-
-}
-
-btn.textContent=
-"등록 중... "+
-(i+1)+" / "+
-excelRows.length;
-
-await excelSleep(80);
-
-}
-
-await loadProperties();
-
-/* 엑셀 일괄등록 완료 직후 동/읍/면을 주소에서 다시 계산 */
-properties.forEach(function(p){
-  const a=String(p.address||"").replace(/\s+/g," ").trim();
-  const d=neighborhood(a);
-  if(d)p.dong=d;
-});
-
-drawMarkers();
-refreshDongCount();
-
-
-closeExcelImport();
-
-renderAdminList();
-
-let message=
-"엑셀 등록 완료\n\n"+
-"성공: "+success+"개\n"+
-"실패: "+failed+"개";
-
-if(errors.length){
-
-message+=
-"\n\n실패 내역\n"+
-errors.slice(0,15).join("\n");
-
-if(errors.length>15){
-
-message+=
-"\n외 "+
-(errors.length-15)+
-"건";
-
-}
-
-}
-
-alert(message);
-
-}catch(error){
-
-console.error(error);
-
-alert(
-"엑셀 등록 중 오류가 발생했습니다.\n\n"+
-error.message
-);
-
-}finally{
-
-btn.disabled=false;
-
-btn.textContent=
-"엑셀 매물 등록하기";
-
-}
-
-};
+;
 
 /* ---------- 엑셀 안내 문구 ---------- */
 
@@ -6415,9 +6376,7 @@ function upgradeExcelGuide(){
 
     p.innerHTML=
       '엑셀 첫 행의 열 이름을 아래 순서대로 사용하면 가장 정확합니다.<br>'+
-      '<b>제목 / 주소(소재지) / 종류(매물종류) / '+
-      '보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / '+
-      '해당층/총층 / 사용승인일 / 방향 / 설명 / 사진URL</b>';
+      '<b>제목 / 주소(소재지) / 종류(매물종류) / 보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / 해당층/총층 / 사용승인일 / 방향 / 설명 / 사진URL</b>';
 
   }
 
