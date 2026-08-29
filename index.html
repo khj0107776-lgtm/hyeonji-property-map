@@ -196,6 +196,56 @@ body{overflow:auto}
 .form-grid{grid-template-columns:1fr}
 .form-group.full{grid-column:auto}
 }
+
+/* 상세매물 + 지도 분할 보기 */
+.detail-page-split{
+display:flex;
+width:100%;
+min-height:calc(100vh - 64px);
+}
+.detail-map-panel{
+width:42%;
+min-width:360px;
+position:sticky;
+top:64px;
+height:calc(100vh - 64px);
+background:#f0f1f5;
+}
+#detailMap{
+width:100%;
+height:100%;
+}
+.detail-info-panel{
+width:58%;
+height:calc(100vh - 64px);
+overflow-y:auto;
+background:#fff;
+}
+.detail-info-panel .detail-page-content{
+padding:25px;
+}
+
+@media(max-width:900px){
+.detail-page-split{
+display:block;
+}
+.detail-map-panel{
+width:100%;
+min-width:0;
+height:32vh;
+min-height:220px;
+position:relative;
+top:auto;
+}
+.detail-info-panel{
+width:100%;
+height:auto;
+overflow:visible;
+}
+.detail-info-panel .detail-page-content{
+padding:15px;
+}
+}
 </style>
 </head>
 
@@ -303,6 +353,14 @@ Google 로그인
 </div>
 
 
+<div class="detail-page-split">
+
+<div class="detail-map-panel">
+<div id="detailMap"></div>
+</div>
+
+<div class="detail-info-panel">
+
 <div class="detail-page-content">
 
 <div class="detail-main-photo" id="detailPhoto">
@@ -400,6 +458,8 @@ class="detail-delete"
 onclick="deleteCurrentProperty()">
 🗑 삭제
 </button>
+
+</div>
 
 </div>
 
@@ -968,6 +1028,9 @@ let currentProperty=null;
 let editingId=null;
 
 let currentImageData="";
+let detailMap=null;
+let detailMarker=null;
+
 
 
 window.addEventListener(
@@ -2215,6 +2278,61 @@ overlay
 }
 
 
+function initDetailMap(property){
+
+const container=document.getElementById("detailMap");
+
+if(!container || typeof kakao==="undefined")return;
+
+const lat=Number(property.lat);
+const lng=Number(property.lng);
+
+if(!Number.isFinite(lat)||!Number.isFinite(lng)){
+
+return;
+
+}
+
+const position=new kakao.maps.LatLng(lat,lng);
+
+if(!detailMap){
+
+detailMap=new kakao.maps.Map(
+container,
+{
+center:position,
+level:4
+}
+);
+
+}else{
+
+detailMap.relayout();
+detailMap.setCenter(position);
+detailMap.setLevel(4);
+
+}
+
+if(detailMarker){
+
+detailMarker.setMap(null);
+
+}
+
+detailMarker=new kakao.maps.Marker({
+map:detailMap,
+position:position
+});
+
+setTimeout(function(){
+
+detailMap.relayout();
+detailMap.setCenter(position);
+
+},100);
+
+}
+
 function openDetailPage(id){
 
 const property=
@@ -2237,6 +2355,34 @@ return;
 
 currentProperty=
 property;
+
+setTimeout(function(){
+
+if(property.lat && property.lng){
+
+initDetailMap(property);
+
+}else if(property.address){
+
+geocoder.addressSearch(
+property.address,
+function(result,status){
+
+if(status===kakao.maps.services.Status.OK){
+
+property.lat=Number(result[0].y);
+property.lng=Number(result[0].x);
+
+initDetailMap(property);
+
+}
+
+}
+);
+
+}
+
+},50);
 
 
 document
