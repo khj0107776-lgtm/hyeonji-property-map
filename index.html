@@ -203,6 +203,28 @@ body{overflow:auto}
 .card-price{line-height:1.45}
 </style>
 
+
+<style>
+/* 매물번호는 상세페이지에서만 표시 */
+.property-number,
+.admin-property-number{
+  display:none !important;
+}
+
+/* 상세페이지 매물번호 */
+.detail-property-number{
+  display:inline-block !important;
+  margin:0 0 8px 0;
+  padding:4px 8px;
+  border-radius:7px;
+  background:#171925;
+  color:#fff;
+  font-size:12px;
+  line-height:1.2;
+  font-weight:900;
+}
+</style>
+
 </head>
 
 <body>
@@ -326,6 +348,8 @@ Google 로그인
 <div class="detail-badge" id="detailType">
 상가
 </div>
+
+<div class="detail-property-number" id="detailPropertyNumber" style="display:none"></div>
 
 <h1 id="detailTitle">
 매물
@@ -970,6 +994,12 @@ let properties=[];
 let currentCategory="상가";
 
 let currentProperty=null;
+
+const detailNumberEl=document.getElementById("detailPropertyNumber");
+if(detailNumberEl){
+  detailNumberEl.textContent="";
+  detailNumberEl.style.display="none";
+}
 
 let editingId=null;
 
@@ -2140,6 +2170,38 @@ return;
 
 currentProperty=
 property;
+
+/* 매물번호는 상세페이지를 열었을 때만 표시 */
+const detailNumberEl=document.getElementById("detailPropertyNumber");
+
+if(detailNumberEl){
+
+  const numberValue=
+    property.propertyNumber ??
+    property.listingNumber ??
+    property.매물번호 ??
+    property.number ??
+    property.id ??
+    "";
+
+  if(String(numberValue).trim()){
+
+    const displayNumber=
+      String(numberValue).trim().startsWith("#")
+        ? String(numberValue).trim()
+        : "#"+String(numberValue).trim();
+
+    detailNumberEl.textContent=displayNumber;
+    detailNumberEl.style.display="inline-block";
+
+  }else{
+
+    detailNumberEl.textContent="";
+    detailNumberEl.style.display="none";
+
+  }
+
+}
 
 
 document
