@@ -5054,8 +5054,22 @@ window.geocodeProperty=function(p){
 
   if(!geocoder || !map)return;
 
-  const addr=p.mapAddress||p.address;
+  const addr=
+    String(
+      p.mapAddress ||
+      p.address ||
+      ""
+    )
+    .replace(/\s+/g," ")
+    .trim();
+
   if(!addr)return;
+
+  p.dong=
+    neighborhood(
+      String(p.address||addr)
+    ) ||
+    String(p.dong||"").trim();
 
   geocoder.addressSearch(
     addr,
@@ -5068,7 +5082,12 @@ window.geocodeProperty=function(p){
 
         p.lat=Number(result[0].y);
         p.lng=Number(result[0].x);
-        p.dong=neighborhood(p.address||addr);
+
+        p.dong=
+          neighborhood(
+            String(p.address||addr)
+          ) ||
+          String(p.dong||"").trim();
 
         createMarker(p);
         refreshDongCount();
@@ -5089,9 +5108,22 @@ window.geocodeProperty=function(p){
 
             p.lat=Number(result[0].y);
             p.lng=Number(result[0].x);
-            p.dong=neighborhood(p.address||addr);
+
+            p.dong=
+              neighborhood(
+                String(p.address||addr)
+              ) ||
+              String(p.dong||"").trim();
 
             createMarker(p);
+            refreshDongCount();
+
+          }else{
+
+            /*
+              위치를 못 찾은 매물도 동 정보 자체는 유지.
+              나중에 주소를 수정하면 다시 drawMarkers에서 검색한다.
+            */
             refreshDongCount();
 
           }
@@ -5117,24 +5149,61 @@ window.refreshDongCount=function(){
 
   list.forEach(p=>{
 
-    if(p.lat==null||p.lng==null)return;
+    /*
+      엑셀 일괄등록 매물은 Firebase에 저장된 dong 값이 없거나
+      이전 형식으로 들어온 경우가 있을 수 있으므로,
+      매번 주소에서 다시 동/읍/면을 계산한다.
+    */
+    const sourceAddress=
+      String(
+        p.address ||
+        p.mapAddress ||
+        ""
+      )
+      .replace(/\s+/g," ")
+      .trim();
 
-    const dong=p.dong||neighborhood(p.address||p.mapAddress);
+    const dong=
+      neighborhood(sourceAddress) ||
+      String(p.dong||"").trim();
+
     if(!dong)return;
 
+    /*
+      좌표가 아직 없는 매물은 아래 drawMarkers의 비동기 주소검색이
+      끝난 뒤 다시 refreshDongCount()가 호출된다.
+    */
+    if(
+      p.lat==null ||
+      p.lng==null ||
+      !isFinite(Number(p.lat)) ||
+      !isFinite(Number(p.lng))
+    ){
+      return;
+    }
+
     if(!groups[dong]){
-      groups[dong]={count:0,lat:0,lng:0};
+      groups[dong]={
+        count:0,
+        lat:0,
+        lng:0
+      };
     }
 
     groups[dong].count++;
     groups[dong].lat+=Number(p.lat);
     groups[dong].lng+=Number(p.lng);
 
+    /* 화면 계산뿐 아니라 현재 객체에도 동 정보를 보정 */
+    p.dong=dong;
+
   });
 
   Object.keys(groups).forEach(dong=>{
 
     const g=groups[dong];
+
+    if(!g.count)return;
 
     const overlay=new kakao.maps.CustomOverlay({
       map:map,
@@ -5143,20 +5212,64 @@ window.refreshDongCount=function(){
         g.lng/g.count
       ),
       content:
-        '<div class="count-overlay"><strong>'+
+        '<div class="count-overlay" '+
+        'data-dong="'+escapeAttr(dong)+'">'+
+        '<strong>'+
         g.count+
         '</strong> '+
         escapeHtml(dong)+
         '</div>',
       yAnchor:1.7,
-      zIndex:10
+      zIndex:100
     });
 
     dongOverlays.push(overlay);
 
+    /*
+      동별 숫자를 클릭하면 그 동의 매물들이 보이는 범위로 이동.
+    */
+    const node=
+      overlay.getContent() instanceof HTMLElement
+        ? overlay.getContent()
+        : null;
+
+    if(node){
+      node.addEventListener("click",function(e){
+        e.stopPropagation();
+
+        const dongList=list.filter(p=>{
+          const d=
+            neighborhood(
+              String(p.address||p.mapAddress||"")
+            ) ||
+            String(p.dong||"").trim();
+
+          return d===dong &&
+            p.lat!=null &&
+            p.lng!=null;
+        });
+
+        if(dongList.length){
+          const bounds=new kakao.maps.LatLngBounds();
+
+          dongList.forEach(p=>{
+            bounds.extend(
+              new kakao.maps.LatLng(
+                Number(p.lat),
+                Number(p.lng)
+              )
+            );
+          });
+
+          map.setBounds(bounds);
+        }
+      });
+    }
+
   });
 
 };
+
 
 window.drawMarkers=function(){
 
@@ -5164,20 +5277,68 @@ window.drawMarkers=function(){
 
   clearMarkers();
 
-  getFilteredProperties().forEach(p=>{
+  const list=getFilteredProperties();
+
+  /*
+    엑셀 일괄등록 직후에도 동 정보가 즉시 생기도록
+    주소에서 동/읍/면을 먼저 계산한다.
+  */
+  list.forEach(p=>{
+
+    const sourceAddress=
+      String(
+        p.address ||
+        p.mapAddress ||
+        ""
+      )
+      .replace(/\s+/g," ")
+      .trim();
+
+    const dong=
+      neighborhood(sourceAddress) ||
+      String(p.dong||"").trim();
+
+    if(dong)p.dong=dong;
 
     if(
       p.lat!=null &&
-      p.lng!=null
+      p.lng!=null &&
+      isFinite(Number(p.lat)) &&
+      isFinite(Number(p.lng))
     ){
+
       createMarker(p);
+
     }else{
+
+      /*
+        좌표가 없는 엑셀 매물은 주소로 비동기 검색.
+        검색이 끝나면 geocodeProperty 안에서
+        refreshDongCount()를 다시 실행한다.
+      */
       geocodeProperty(p);
+
     }
 
   });
 
-  setTimeout(refreshDongCount,700);
+  /*
+    주소검색이 완료되기 전 기존 좌표가 있는 매물부터
+    동별 개수를 먼저 표시한다.
+  */
+  refreshDongCount();
+
+  /*
+    여러 엑셀 매물이 동시에 주소검색되는 경우를 대비해
+    충분한 시간을 두고 한 번 더 계산한다.
+  */
+  setTimeout(function(){
+    refreshDongCount();
+  },1200);
+
+  setTimeout(function(){
+    refreshDongCount();
+  },2500);
 
 };
 
@@ -6047,6 +6208,19 @@ await excelSleep(80);
 }
 
 await loadProperties();
+
+/* 엑셀 일괄등록 완료 후 모든 매물의 동/읍/면을 주소에서 즉시 보정 */
+properties.forEach(function(p){
+  const addr=String(p.address||p.mapAddress||"")
+    .replace(/\s+/g," ")
+    .trim();
+
+  const d=neighborhood(addr);
+  if(d)p.dong=d;
+});
+
+drawMarkers();
+refreshDongCount();
 
 closeExcelImport();
 
