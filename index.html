@@ -3295,99 +3295,115 @@ return "";
 
 function normalizeImportedRows(rows){
 
-  const clean=v=>{
-    if(v===undefined||v===null)return "";
-    return String(v)
-      .replace(/\r\n/g,"\n")
-      .replace(/\r/g,"\n")
-      .split("\n")
-      .map(x=>x.trim())
-      .filter(Boolean)
-      .join(" ")
-      .replace(/\s+/g," ")
-      .trim();
-  };
+const clean=v=>{
+if(v===undefined||v===null)return "";
+return String(v)
+.replace(/\r\n/g,"\n")
+.replace(/\r/g,"\n")
+.split("\n")
+.map(x=>x.trim())
+.filter(Boolean)
+.join(" ")
+.replace(/\s+/g," ")
+.trim();
+};
 
-  const key=(obj,names)=>{
-    const keys=Object.keys(obj||{});
-    for(const name of names){
-      const target=normalizeExcelKey(name);
-      const found=keys.find(k=>normalizeExcelKey(k)===target);
-      if(found!==undefined)return found;
-    }
-    return null;
-  };
+const normKey=v=>
+String(v||"")
+.trim()
+.toLowerCase()
+.replace(/\s+/g,"")
+.replace(/[()]/g,"");
 
-  const titleNames=["제목","매물명","title"];
-  const addrNames=["주소(소재지)","주소","소재지","address"];
-  const mapNames=["지도주소","mapAddress","지도 주소"];
+const findKey=(obj,names)=>{
+const keys=Object.keys(obj||{});
+for(const name of names){
+const target=normKey(name);
+const found=keys.find(k=>normKey(k)===target);
+if(found!==undefined)return found;
+}
+return null;
+};
 
-  const result=[];
+const result=[];
 
-  for(let i=0;i<rows.length;i++){
+rows.forEach(raw=>{
 
-    const raw=rows[i]||{};
-    const row={};
+const row={};
 
-    Object.keys(raw).forEach(k=>{
-      row[k]=clean(raw[k]);
-    });
+Object.keys(raw||{}).forEach(k=>{
+row[k]=clean(raw[k]);
+});
 
-    const titleKey=key(row,titleNames);
-    const addrKey=key(row,addrNames);
-    const mapKey=key(row,mapNames);
+const titleKey=findKey(row,["제목","매물명","title"]);
+const addrKey=findKey(row,["주소(소재지)","주소","소재지","address"]);
+const mapKey=findKey(row,["지도주소","mapAddress","지도 주소"]);
 
-    const title=titleKey?row[titleKey]:"";
-    const address=addrKey?row[addrKey]:"";
-    const mapAddress=mapKey?row[mapKey]:"";
+const title=titleKey?row[titleKey]:"";
+const address=addrKey?row[addrKey]:"";
+const mapAddress=mapKey?row[mapKey]:"";
 
-    const meaningful=Object.values(row).some(v=>String(v).trim()!=="");
+const meaningful=
+Object.values(row).some(v=>String(v||"").trim()!=="");
 
-    if(!meaningful)continue;
+if(!meaningful)return;
 
-    /*
-      원본 네이버 매물장처럼 한 매물의 주소가
-      다음 행에 이어지는 경우:
-      제목이 없고 주소만 있으면 바로 앞 매물에 붙인다.
-    */
-    if(
-      !title &&
-      address &&
-      result.length
-    ){
+/* 제목이 없고 주소만 있는 줄은 직전 매물의 주소에 합친다. */
+if(!title && address && result.length){
 
-      const prev=result[result.length-1];
+const prev=result[result.length-1];
 
-      if(addrKey){
+const pk=findKey(prev,["주소(소재지)","주소","소재지","address"]);
+const pmk=findKey(prev,["지도주소","mapAddress","지도 주소"]);
 
-        prev[addrKey]=
-          clean(
-            (prev[addrKey]||"")+" "+address
-          );
+if(pk){
+prev[pk]=clean((prev[pk]||"")+" "+address);
+}
 
-      }
+if(pmk){
+prev[pmk]=clean((prev[pmk]||"")+" "+mapAddress);
+}
 
-      if(mapKey && mapAddress){
+return;
+}
 
-        prev[mapKey]=
-          clean(
-            (prev[mapKey]||"")+" "+mapAddress
-          );
+if(!title && !address)return;
 
-      }
+result.push(row);
 
-      continue;
+});
 
-    }
+return result;
 
-    /* 주소/제목이 모두 없는 완전한 보조행은 제외 */
-    if(!title && !address)continue;
+}
 
-    result.push(row);
+function buildExactMapAddress(address,mapAddress,detailAddress){
 
-  }
+const base=String(mapAddress||address||"")
+.replace(/\s+/g," ")
+.trim();
 
-  return result;
+const detail=String(detailAddress||"")
+.replace(/\s+/g," ")
+.trim();
+
+if(!base)return "";
+
+const lotMatch=detail.match(/^(\d+(?:-\d+)?)(?:\s|$)/);
+
+if(!lotMatch)return base;
+
+const lot=lotMatch[1];
+
+if(
+new RegExp("(^|\\s)"+lot.replace(/[-\/\\^$*+?.()|[\]{}]/g,"\\$&")+"(\\s|$)")
+.test(base)
+){
+return base;
+}
+
+return (base+" "+lot).replace(/\s+/g," ").trim();
+
 }
 
 function normalizeImportedArea(value){
@@ -4847,7 +4863,13 @@ window.searchProperties=function(){
 
   }else if(first.mapAddress||first.address){
 
-    addressToCoords(first.mapAddress||first.address)
+    addressToCoords(
+buildExactMapAddress(
+first.address||"",
+first.mapAddress||"",
+first.detailAddress||first.detailUrl||""
+)
+)
       .then(coords=>{
         first.lat=coords.lat;
         first.lng=coords.lng;
@@ -5147,12 +5169,12 @@ function showDetailSplitMap(p){
 
 function moveDetailMapToProperty(p){
 
-  const address=
-    String(
-      p.mapAddress ||
-      p.address ||
-      ""
-    ).trim();
+const address=
+buildExactMapAddress(
+p.address||"",
+p.mapAddress||"",
+p.detailAddress||p.detailUrl||""
+);
 
   /*
     상세 매물에서는 기존 좌표를 먼저 사용하지 않는다.
@@ -5780,11 +5802,24 @@ continue;
 
 }
 
-const mapAddress=
+const rawMapAddress=
 getExcelValue(
 row,
 ["지도주소","mapAddress","지도 주소"]
-)||address;
+);
+
+const detailAddress=
+getExcelValue(
+row,
+["상세주소","상세"]
+);
+
+const mapAddress=
+buildExactMapAddress(
+address,
+rawMapAddress,
+detailAddress
+);
 
 let type=
 getExcelValue(
@@ -5873,10 +5908,16 @@ row,
 ["방향","direction"]
 ),
 
+detailAddress:
+getExcelValue(
+row,
+["상세주소","상세"]
+),
+
 detailUrl:
 getExcelValue(
 row,
-["상세주소","상세페이지주소","상세정보","detailUrl","url"]
+["상세페이지주소","상세정보","detailUrl","url"]
 ),
 
 description:
