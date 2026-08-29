@@ -4843,6 +4843,17 @@ function areaWithPyeong(value){
     "m² (약 "+(n/3.305785).toLocaleString("ko-KR",{maximumFractionDigits:1})+"평)";
 }
 
+
+/* ---------- 전역 매물 정렬 함수: 일괄등록에서도 사용 ---------- */
+window.propertySort=function(a,b){
+  const aa=parseInt(a?.propertyNumber,10);
+  const bb=parseInt(b?.propertyNumber,10);
+  if(!isNaN(aa)&&!isNaN(bb))return aa-bb;
+  if(!isNaN(aa))return -1;
+  if(!isNaN(bb))return 1;
+  return (a?.createdAt?.seconds||0)-(b?.createdAt?.seconds||0);
+};
+
 function normalizedType(t){
   const x=String(t||"").trim();
   return x==="상가점포" ? "상가" : x;
