@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer&autoload=false"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer"></script>
 
 <style>
 *{box-sizing:border-box}
@@ -121,8 +121,7 @@ z-index:12000 !important;
 }
 
 #adminModal{
-z-index:20000 !important;
-pointer-events:auto;
+z-index:10000 !important;
 }
 
 #propertyFormModal .modal{
@@ -197,72 +196,7 @@ body{overflow:auto}
 .form-grid{grid-template-columns:1fr}
 .form-group.full{grid-column:auto}
 }
-
-/* 상세매물 + 지도 분할 보기 */
-.detail-page-split{
-display:flex;
-width:100%;
-min-height:calc(100vh - 64px);
-}
-.detail-map-panel{
-width:42%;
-min-width:360px;
-position:sticky;
-top:64px;
-height:calc(100vh - 64px);
-background:#f0f1f5;
-}
-#detailMap{
-width:100%;
-height:100%;
-}
-.detail-info-panel{
-width:58%;
-height:calc(100vh - 64px);
-overflow-y:auto;
-background:#fff;
-}
-.detail-info-panel .detail-page-content{
-padding:25px;
-}
-
-@media(max-width:900px){
-.detail-page-split{
-display:block;
-}
-.detail-map-panel{
-width:100%;
-min-width:0;
-height:32vh;
-min-height:220px;
-position:relative;
-top:auto;
-}
-.detail-info-panel{
-width:100%;
-height:auto;
-overflow:visible;
-}
-.detail-info-panel .detail-page-content{
-padding:15px;
-}
-}
-
-
 </style>
-
-<style>
-/* Isolated UI safety layer */
-#receptionOpenBtn,#adminManageBtn{
-  position:relative !important;
-  pointer-events:auto !important;
-  cursor:pointer !important;
-}
-#receptionModal,#adminModal{
-  pointer-events:auto;
-}
-</style>
-
 </head>
 
 <body>
@@ -325,9 +259,13 @@ Google 로그인
 
 </div>
 
-<button class="reception-btn" id="receptionOpenBtn" type="button">📝 매물접수</button>
+<button class="reception-btn" onclick="openReception()">
+📝 매물접수
+</button>
 
-<button class="admin-btn" id="adminManageBtn" type="button" style="display:none">🔐 관리자 매물관리</button>
+<button class="admin-btn" id="adminManageBtn" onclick="openAdminPanel()" style="display:none">
+🔐 관리자 매물관리
+</button>
 
 <div class="count-line" id="countLine">
 현재 0개 매물
@@ -365,14 +303,6 @@ Google 로그인
 </div>
 
 
-<div class="detail-page-split">
-
-<div class="detail-map-panel">
-<div id="detailMap"></div>
-</div>
-
-<div class="detail-info-panel">
-
 <div class="detail-page-content">
 
 <div class="detail-main-photo" id="detailPhoto">
@@ -388,11 +318,6 @@ Google 로그인
 </h1>
 
 <div class="detail-info">
-
-<div class="detail-row">
-<div class="detail-label">매물번호</div>
-<div class="detail-value" id="detailPropertyNumber"></div>
-</div>
 
 <div class="detail-row">
 <div class="detail-label">주소</div>
@@ -417,16 +342,6 @@ Google 로그인
 <div class="detail-row">
 <div class="detail-label">층수</div>
 <div class="detail-value" id="detailFloor"></div>
-</div>
-
-<div class="detail-row">
-<div class="detail-label">사용승인일</div>
-<div class="detail-value" id="detailApprovalDate"></div>
-</div>
-
-<div class="detail-row">
-<div class="detail-label">방향</div>
-<div class="detail-value" id="detailDirection"></div>
 </div>
 
 <div class="detail-row">
@@ -470,8 +385,6 @@ class="detail-delete"
 onclick="deleteCurrentProperty()">
 🗑 삭제
 </button>
-
-</div>
 
 </div>
 
@@ -745,7 +658,7 @@ onclick="closeExcelImport()">
 
 <p style="color:#6f7480;font-size:13px;line-height:1.6;margin-top:-8px">
 엑셀의 첫 번째 행은 제목으로 사용됩니다. 아래 열 이름을 그대로 사용하면 가장 정확합니다.<br>
-제목 / 주소(소재지) / 종류(매물종류) / 보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / 해당층/총층 / 사용승인일 / 방향 / 상세주소 / 설명 / 사진URL
+제목 / 주소 / 종류 / 보증금 / 월세 / 권리금 / 면적 / 층 / 상세주소 / 설명 / 사진URL
 </p>
 
 <div class="file-box">
@@ -786,8 +699,7 @@ id="receptionModal">
 
 <button
 class="modal-x"
-type="button"
-onclick="document.getElementById('receptionModal').style.display='none';document.getElementById('receptionModal').style.visibility='hidden';document.getElementById('receptionModal').style.opacity='0';document.getElementById('receptionModal').style.pointerEvents='none';">
+onclick="closeReception()">
 ×
 </button>
 
@@ -904,8 +816,7 @@ id="adminModal">
 
 <button
 class="modal-x"
-type="button"
-onclick="document.getElementById('adminModal').style.display='none';document.getElementById('adminModal').style.visibility='hidden';document.getElementById('adminModal').style.opacity='0';document.getElementById('adminModal').style.pointerEvents='none';document.body.style.overflow='';">
+onclick="closeAdminPanel()">
 ×
 </button>
 
@@ -1042,48 +953,17 @@ let currentProperty=null;
 let editingId=null;
 
 let currentImageData="";
-let detailMap=null;
-let detailMarker=null;
-
 
 
 window.addEventListener(
 "load",
 function(){
 
-/* 페이지 로딩 직후 버튼 이벤트를 먼저 연결합니다.
-   Firebase 인증 콜백을 기다리지 않아도 매물접수가 클릭됩니다. */
-bindMainActionButtons();
-
-function startApp(){
-
-try{
-
 initMap();
 
-}catch(error){
-
-console.error(
-"카카오지도 초기화 오류:",
-error
-);
-
-const mapBox=
-document.getElementById("map");
-
-if(mapBox){
-
-mapBox.innerHTML=
-'<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#777;font-weight:800;background:#f7f8fb;">지도를 불러오지 못했습니다. 페이지를 새로고침해주세요.</div>';
-
-}
-
-}
 
 auth.onAuthStateChanged(
 async function(user){
-
-bindMainActionButtons();
 
 if(user){
 
@@ -1092,15 +972,18 @@ document
 .textContent=
 user.email||"";
 
+
 document
 .getElementById("loginBtn")
 .style.display=
 "none";
 
+
 document
 .getElementById("logoutBtn")
 .style.display=
 "block";
+
 
 if(
 user.email===
@@ -1128,15 +1011,18 @@ document
 .textContent=
 "";
 
+
 document
 .getElementById("loginBtn")
 .style.display=
 "block";
 
+
 document
 .getElementById("logoutBtn")
 .style.display=
 "none";
+
 
 document
 .getElementById("adminManageBtn")
@@ -1145,36 +1031,12 @@ document
 
 }
 
+
 await loadProperties();
 
 });
 
-}
-
-if(
-typeof kakao!=="undefined" &&
-kakao.maps &&
-typeof kakao.maps.load==="function"
-){
-
-kakao.maps.load(
-function(){
-
-startApp();
-
-}
-);
-
-}else{
-
-console.error(
-"카카오 지도 SDK가 로드되지 않았습니다."
-);
-
-}
-
-}
-);
+});
 
 
 async function googleLogin(){
@@ -1240,19 +1102,6 @@ map=
 new kakao.maps.Map(
 container,
 options
-);
-
-setTimeout(
-function(){
-
-if(map){
-
-map.relayout();
-
-}
-
-},
-100
 );
 
 
@@ -1490,7 +1339,6 @@ function(p){
 
 const text=
 [
-p.propertyNumber,
 p.title,
 p.address,
 p.type,
@@ -1617,7 +1465,6 @@ ${escapeHtml(p.type||"")}
 </span>
 
 <div class="card-title">
-${p.propertyNumber ? '<span style="color:#5968dd;font-size:11px;margin-right:4px">#'+escapeHtml(p.propertyNumber)+'</span>' : ''}
 ${escapeHtml(p.title||"매물")}
 </div>
 
@@ -1659,86 +1506,12 @@ p.id
 }
 
 
-function normalizeAreaDisplay(value){
-
-let text=
-String(value||"").trim();
-
-if(!text){
-
-return "";
-
-}
-
-
-/*
-  기존에 저장된 값에 (m²), ㎡, 평이 있어도
-  숫자 부분만 안전하게 추출해서 다시 표시합니다.
-*/
-const match=
-text.replace(/,/g,"").match(
-/(\d+(?:\.\d+)?)/
-);
-
-if(!match){
-
-return text;
-
-}
-
-const m2=
-Number(match[1]);
-
-if(!Number.isFinite(m2)){
-
-return text;
-
-}
-
-const pyeong=
-(m2/3.3058).toFixed(1);
-
-return m2+" (m², 약 "+pyeong+"평)";
-
-}
-
-
 function formatPrice(p){
 
 let text="";
 
 
-/*
-  매매 매물은 salePrice / price / 매물가 값을
-  우선 표시합니다.
-*/
-const salePrice=
-p.salePrice||
-p.price||
-p.매물가||
-p.매매가||
-"";
-
-
 if(
-salePrice!==""
-){
-
-text=
-"매매가 "+
-numberFormat(
-salePrice
-)+
-"만원";
-
-}
-
-
-/*
-  임대 매물은 기존 보증금 / 월세 표시를 그대로 유지합니다.
-*/
-if(
-!text &&
 p.deposit!==undefined &&
 p.deposit!==""
 ){
@@ -2007,17 +1780,25 @@ refreshDongCount();
 
 function extractDong(address){
 
-const text=String(address||"").trim();
+if(!address){
 
-if(!text)return "";
+return "";
 
-const matches=text.match(/[가-힣0-9]+(?:동|읍|면)(?=\s|$|[0-9-])/g);
+}
 
-if(matches&&matches.length)return matches[matches.length-1];
 
-const compact=text.match(/([가-힣0-9]+(?:동|읍|면))(?:\s*[0-9-]+)?/);
+const match=
+String(address)
+.match(
+/([가-힣0-9]+동)\b/
+);
 
-return compact?compact[1]:"";
+
+return match
+?
+match[1]
+:
+"";
 
 }
 
@@ -2048,6 +1829,7 @@ return;
 
 }
 
+
 clearDongOverlays();
 
 
@@ -2076,8 +1858,7 @@ return;
 const dong=
 p.dong||
 extractDong(
-p.address||
-""
+p.address
 );
 
 
@@ -2088,13 +1869,6 @@ return;
 }
 
 
-const type=
-String(
-p.type||
-""
-).trim();
-
-
 if(!groups[dong]){
 
 groups[dong]={
@@ -2103,9 +1877,7 @@ count:0,
 
 lat:0,
 
-lng:0,
-
-types:{}
+lng:0
 
 };
 
@@ -2120,53 +1892,18 @@ Number(p.lat);
 groups[dong].lng+=
 Number(p.lng);
 
-
-if(!groups[dong].types[type]){
-
-groups[dong].types[type]=0;
-
-}
-
-groups[dong].types[type]++;
-
 }
 );
 
 
-const typeColors={
-
-"상가":"#5968dd",
-
-"공장":"#e53935",
-
-"아파트":"#f2c94c",
-
-"원·투룸":"#8e5bd9",
-
-"원룸":"#8e5bd9",
-
-"투룸":"#8e5bd9",
-
-"주택":"#35a853",
-
-"토지":"#f2994a"
-
-};
-
-
-Object.keys(groups)
+Object.keys(
+groups
+)
 .forEach(
 function(dong){
 
 const group=
 groups[dong];
-
-
-if(!group.count){
-
-return;
-
-}
 
 
 const position=
@@ -2181,146 +1918,12 @@ group.count
 );
 
 
-/*
-  동네별 전체 개수 + 종류별 개수를 표시합니다.
-*/
-let typeHtml="";
-
-
-const typeOrder=[
-"상가",
-"공장",
-"아파트",
-"원·투룸",
-"원룸",
-"투룸",
-"주택",
-"토지"
-];
-
-
-const shownTypes={};
-
-
-typeOrder.forEach(
-function(type){
-
-if(
-shownTypes[type]
-){
-
-return;
-
-}
-
-
-let count=
-group.types[type]||0;
-
-
-if(type==="원룸" || type==="투룸"){
-
-count=
-(group.types["원·투룸"]||0)+
-(group.types["원룸"]||0)+
-(group.types["투룸"]||0);
-
-type="원·투룸";
-
-}
-
-
-if(
-count<=0 ||
-shownTypes[type]
-){
-
-return;
-
-}
-
-
-shownTypes[type]=true;
-
-
-const color=
-typeColors[type]||
-"#777";
-
-
-typeHtml+=
-'<div style="' +
-'display:flex;' +
-'align-items:center;' +
-'justify-content:space-between;' +
-'gap:7px;' +
-'margin-top:2px;' +
-'font-size:10px;' +
-'font-weight:800;' +
-'">' +
-
-'<span style="display:flex;align-items:center;gap:3px;">' +
-
-'<span style="' +
-'display:inline-block;' +
-'width:7px;' +
-'height:7px;' +
-'border-radius:50%;' +
-'background:'+color+';' +
-'"></span>' +
-
-escapeHtml(type)+
-
-'</span>' +
-
-'<span>'+count+'개</span>' +
-
-'</div>';
-
-}
-);
-
-
 const content=
-'<div class="count-overlay" style="' +
-'min-width:90px;' +
-'padding:7px 10px;' +
-'background:#fff;' +
-'border-radius:14px;' +
-'box-shadow:0 5px 15px rgba(0,0,0,.18);' +
-'text-align:center;' +
-'font-weight:900;' +
-'white-space:nowrap;' +
-'">' +
-
-'<div style="' +
-'font-size:12px;' +
-'margin-bottom:4px;' +
-'">' +
-
-'<strong style="' +
-'display:inline-flex;' +
-'align-items:center;' +
-'justify-content:center;' +
-'width:28px;' +
-'height:28px;' +
-'border-radius:50%;' +
-'background:#5968dd;' +
-'color:#fff;' +
-'font-size:12px;' +
-'margin-right:4px;' +
-'">' +
-
+'<div class="count-overlay">'+
+'<strong>'+
 group.count+
-
 '</strong>'+
-
 escapeHtml(dong)+
-
-'</div>' +
-
-typeHtml+
-
 '</div>';
 
 
@@ -2331,14 +1934,16 @@ position:position,
 
 content:content,
 
-yAnchor:1.5,
+yAnchor:1.7,
 
-zIndex:20
+zIndex:10
 
 });
 
 
-overlay.setMap(map);
+overlay.setMap(
+map
+);
 
 
 dongOverlays.push(
@@ -2350,61 +1955,6 @@ overlay
 
 }
 
-
-function initDetailMap(property){
-
-const container=document.getElementById("detailMap");
-
-if(!container || typeof kakao==="undefined")return;
-
-const lat=Number(property.lat);
-const lng=Number(property.lng);
-
-if(!Number.isFinite(lat)||!Number.isFinite(lng)){
-
-return;
-
-}
-
-const position=new kakao.maps.LatLng(lat,lng);
-
-if(!detailMap){
-
-detailMap=new kakao.maps.Map(
-container,
-{
-center:position,
-level:4
-}
-);
-
-}else{
-
-detailMap.relayout();
-detailMap.setCenter(position);
-detailMap.setLevel(4);
-
-}
-
-if(detailMarker){
-
-detailMarker.setMap(null);
-
-}
-
-detailMarker=new kakao.maps.Marker({
-map:detailMap,
-position:position
-});
-
-setTimeout(function(){
-
-detailMap.relayout();
-detailMap.setCenter(position);
-
-},100);
-
-}
 
 function openDetailPage(id){
 
@@ -2429,34 +1979,6 @@ return;
 currentProperty=
 property;
 
-setTimeout(function(){
-
-if(property.lat && property.lng){
-
-initDetailMap(property);
-
-}else if(property.address){
-
-geocoder.addressSearch(
-property.address,
-function(result,status){
-
-if(status===kakao.maps.services.Status.OK){
-
-property.lat=Number(result[0].y);
-property.lng=Number(result[0].x);
-
-initDetailMap(property);
-
-}
-
-}
-);
-
-}
-
-},50);
-
 
 document
 .getElementById("detailType")
@@ -2469,15 +1991,6 @@ document
 .textContent=
 property.title||"매물";
 
-
-document
-.getElementById("detailPropertyNumber")
-.textContent=
-property.propertyNumber
-?
-"#"+property.propertyNumber
-:
-"-";
 
 document
 .getElementById("detailAddress")
@@ -2507,27 +2020,13 @@ property.premium+"만원"
 document
 .getElementById("detailArea")
 .textContent=
-property.area
-?
-normalizeAreaDisplay(property.area)
-:
-"-";
+property.area||"-";
 
 
 document
 .getElementById("detailFloor")
 .textContent=
 property.floor||"-";
-
-document
-.getElementById("detailApprovalDate")
-.textContent=
-property.approvalDate||"-";
-
-document
-.getElementById("detailDirection")
-.textContent=
-property.direction||"-";
 
 
 document
@@ -2986,35 +2485,6 @@ source;
 }
 
 
-async function getNextPropertyNumber(){
-
-let nextNumber=1;
-
-try{
-
-const snap=await db.collection("properties")
-.orderBy("propertyNumber","desc")
-.limit(1).get();
-
-if(!snap.empty){
-
-const latest=Number(snap.docs[0].data().propertyNumber);
-
-if(Number.isFinite(latest))nextNumber=latest+1;
-
-}
-
-}catch(error){
-
-console.warn("매물번호 조회 오류:",error);
-
-}
-
-return nextNumber;
-
-}
-
-
 async function saveProperty(){
 
 if(
@@ -3060,22 +2530,7 @@ return;
 }
 
 
-let nextPropertyNumber=null;
-
-if(!editingId){
-
-nextPropertyNumber=await getNextPropertyNumber();
-
-}
-
 const data={
-
-propertyNumber:
-editingId
-?
-(currentProperty&&currentProperty.propertyNumber)||""
-:
-nextPropertyNumber,
 
 title:title,
 
@@ -3106,12 +2561,10 @@ document
 "없음",
 
 area:
-normalizeAreaDisplay(
 document
 .getElementById("fArea")
 .value
-.trim()
-),
+.trim(),
 
 floor:
 document
@@ -3615,719 +3068,137 @@ document.getElementById("excelModal").classList.remove("show");
 }
 
 function normalizeExcelKey(key){
-
-return String(key||"")
-.replace(/^\uFEFF/,"")
-.trim()
-.replace(/\s+/g,"")
-.replace(/[()\[\]{}]/g,"")
-.replace(/[\/\\]/g,"")
-.replace(/[·ㆍ]/g,"")
-.replace(/㎡/g,"m2")
-.toLowerCase();
-
+return String(key||"").trim().replace(/\s+/g,"").replace(/[()\[\]{}]/g,"").toLowerCase();
 }
 
-
-function getExcelValue(row,names,fallbackIndex){
-
-const keys=Object.keys(row||{});
-
+function getExcelValue(row,names){
+const keys=Object.keys(row);
 for(const name of names){
-
 const target=normalizeExcelKey(name);
-
-const found=keys.find(
-function(k){
-
-return normalizeExcelKey(k)===target;
-
+const found=keys.find(k=>normalizeExcelKey(k)===target);
+if(found!==undefined && row[found]!==undefined && row[found]!==null){
+return String(row[found]).trim();
 }
-);
-
-if(
-found!==undefined &&
-row[found]!==undefined &&
-row[found]!==null
-){
-
-const value=String(row[found]).trim();
-
-if(value!=="")return value;
-
 }
-
-}
-
-if(
-fallbackIndex!==undefined &&
-keys[fallbackIndex]!==undefined
-){
-
-const value=row[keys[fallbackIndex]];
-
-if(value!==undefined && value!==null){
-
-return String(value).trim();
-
-}
-
-}
-
 return "";
-
 }
-
-
-function getExcelNumber(row,names){
-
-const value=
-getExcelValue(row,names);
-
-if(!value)return "";
-
-return value
-.replace(/,/g,"")
-.replace(/만원/g,"")
-.trim();
-
-}
-
-
-function excelDateValue(row,names){
-
-const value=
-getExcelValue(row,names);
-
-if(!value)return "";
-
-return value;
-
-}
-
-
-function normalizeExcelType(value){
-
-const type=
-String(value||"").trim();
-
-if(type==="상가점포")return "상가";
-if(type==="원룸" || type==="투룸")return "원·투룸";
-
-return type;
-
-}
-
 
 function previewExcel(input){
-
-const file=
-input.files&&input.files[0];
-
+const file=input.files&&input.files[0];
 if(!file)return;
 
-
-const reader=
-new FileReader();
-
-
-reader.onload=
-function(e){
-
+const reader=new FileReader();
+reader.onload=function(e){
 try{
-
-const workbook=
-XLSX.read(
-e.target.result,
-{
-type:"array",
-cellDates:true
-}
-);
-
-
-if(
-!workbook.SheetNames ||
-!workbook.SheetNames.length
-){
-
-throw new Error(
-"엑셀 시트를 찾을 수 없습니다."
-);
-
-}
-
-
-const sheet=
-workbook.Sheets[
-workbook.SheetNames[0]
-];
-
-
-excelRows=
-XLSX.utils.sheet_to_json(
-sheet,
-{
-defval:"",
-raw:false
-}
-);
-
+const workbook=XLSX.read(e.target.result,{type:"array"});
+const sheet=workbook.Sheets[workbook.SheetNames[0]];
+excelRows=XLSX.utils.sheet_to_json(sheet,{defval:""});
 
 if(!excelRows.length){
-
 excelRows=[];
-
-document
-.getElementById("excelPreview")
-.innerHTML=
-'<div class="empty">엑셀에 매물 데이터가 없습니다.</div>';
-
-document
-.getElementById("excelImportBtn")
-.disabled=true;
-
+document.getElementById("excelPreview").innerHTML='<div class="empty">엑셀에 매물 데이터가 없습니다.</div>';
+document.getElementById("excelImportBtn").disabled=true;
 return;
-
 }
 
-
-const preview=
-excelRows.slice(0,8);
-
-let html=
-'<div style="font-size:13px;font-weight:900;margin-bottom:7px">'+
-'총 '+excelRows.length+
-'개 매물 / 미리보기 '+
-preview.length+
-'개</div>';
-
-html+=
-'<table style="width:100%;border-collapse:collapse;font-size:11px">';
-
-html+=
-'<tr>'+
-Object.keys(excelRows[0])
-.map(
-function(k){
-
-return '<th style="border:1px solid #ddd;padding:6px;background:#f5f6f8;white-space:nowrap">'+
-escapeHtml(k)+
-'</th>';
-
-}
-)
-.join("")+
-'</tr>';
-
-
-preview.forEach(
-function(row){
-
-html+=
-'<tr>'+
-Object.keys(excelRows[0])
-.map(
-function(k){
-
-return '<td style="border:1px solid #ddd;padding:6px;white-space:nowrap">'+
-escapeHtml(
-row[k]===undefined||
-row[k]===null
-?
-""
-:
-String(row[k])
-)+
-'</td>';
-
-}
-)
-.join("")+
-'</tr>';
-
-}
-);
-
-
-html+="</table>";
-
-document
-.getElementById("excelPreview")
-.innerHTML=html;
-
-document
-.getElementById("excelImportBtn")
-.disabled=false;
-
-
+const preview=excelRows.slice(0,8);
+let html='<div style="font-size:13px;font-weight:900;margin-bottom:7px">총 '+excelRows.length+'개 매물 / 미리보기 '+preview.length+'개</div>';
+html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+html+='<tr>'+Object.keys(excelRows[0]).map(k=>'<th style="border:1px solid #ddd;padding:6px;background:#f5f6f8;white-space:nowrap">'+escapeHtml(k)+'</th>').join('')+'</tr>';
+preview.forEach(row=>{html+='<tr>'+Object.keys(excelRows[0]).map(k=>'<td style="border:1px solid #ddd;padding:6px;white-space:nowrap">'+escapeHtml(row[k])+'</td>').join('')+'</tr>';});
+html+='</table>';
+document.getElementById("excelPreview").innerHTML=html;
+document.getElementById("excelImportBtn").disabled=false;
 }catch(error){
-
 console.error(error);
-
 excelRows=[];
-
-document
-.getElementById("excelPreview")
-.innerHTML=
-'<div class="empty">엑셀 파일을 읽을 수 없습니다.<br>'+
-escapeHtml(error.message||"파일 형식을 확인해주세요.")+
-'</div>';
-
-document
-.getElementById("excelImportBtn")
-.disabled=true;
-
+document.getElementById("excelPreview").innerHTML='<div class="empty">엑셀 파일을 읽을 수 없습니다.</div>';
+document.getElementById("excelImportBtn").disabled=true;
 }
-
 };
-
-
 reader.readAsArrayBuffer(file);
-
 }
 
-
-function excelSleep(ms){
-
-return new Promise(
-function(resolve){
-setTimeout(resolve,ms);
-}
-);
-
-}
-
+function excelSleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
 async function importExcelProperties(){
-
-if(
-!auth.currentUser ||
-auth.currentUser.email!==ADMIN_EMAIL
-){
-
-alert(
-"관리자만 엑셀 매물을 등록할 수 있습니다."
-);
-
+if(!auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
+alert("관리자만 엑셀 매물을 등록할 수 있습니다.");
 return;
-
 }
-
-
 if(!excelRows.length){
-
-alert(
-"먼저 엑셀 파일을 선택해주세요."
-);
-
+alert("먼저 엑셀 파일을 선택해주세요.");
 return;
-
 }
 
-
-const btn=
-document.getElementById(
-"excelImportBtn"
-);
-
+const btn=document.getElementById("excelImportBtn");
 btn.disabled=true;
-
 let success=0;
 let failed=0;
-
 const errors=[];
 
-
 try{
-
-let excelNextNumber=await getNextPropertyNumber();
-
-for(
-let i=0;
-i<excelRows.length;
-i++
-){
-
-const row=
-excelRows[i];
-
-
-const title=
-getExcelValue(
-row,
-[
-"제목",
-"매물명",
-"매물 제목",
-"title"
-],
-0
-);
-
-
-const address=
-getExcelValue(
-row,
-[
-"주소",
-"소재지",
-"주소(소재지)",
-"소재지 주소",
-"address"
-],
-1
-);
-
-
-const type=
-normalizeExcelType(
-getExcelValue(
-row,
-[
-"종류",
-"매물종류",
-"종류(매물종류)",
-"매물 종류",
-"type"
-],
-2
-)
-)||"상가";
-
+for(let i=0;i<excelRows.length;i++){
+const row=excelRows[i];
+const title=getExcelValue(row,["제목","매물명","title"]);
+const address=getExcelValue(row,["주소","소재지","address"]);
+const type=getExcelValue(row,["종류","매물종류","type"])||"상가";
 
 if(!title || !address){
-
 failed++;
-
-errors.push(
-(i+2)+
-"행: 제목 또는 소재지 없음"
-);
-
+errors.push((i+2)+"행: 제목 또는 주소 없음");
 continue;
-
 }
-
 
 const data={
-
-propertyNumber:
-excelNextNumber+i,
-
 title:title,
-
 address:address,
-
 type:type,
-
-deposit:
-getExcelNumber(
-row,
-[
-"보증금",
-"보증금(만원)",
-"보증금 만원",
-"deposit"
-],
-3
-),
-
-rent:
-getExcelNumber(
-row,
-[
-"월세",
-"월세(만원)",
-"월세 만원",
-"rent"
-]
-),
-
-premium:
-getExcelNumber(
-row,
-[
-"권리금",
-"권리금(만원)",
-"권리금 만원",
-"premium"
-],
-5
-) || "없음",
-
-area:
-normalizeAreaDisplay(
-getExcelValue(
-row,
-[
-"면적",
-"면적(m²)",
-"면적(㎡)",
-"면적 m²",
-"area"
-],
-6
-)
-),
-
-floor:
-getExcelValue(
-row,
-[
-"층",
-"층수",
-"해당층/총층",
-"해당층/총층수",
-"floor"
-],
-7
-),
-
-approvalDate:
-excelDateValue(
-row,
-[
-"사용승인일",
-"사용승인",
-"승인일",
-"사용승인일자",
-"approvalDate"
-],
-8
-),
-
-direction:
-getExcelValue(
-row,
-[
-"방향",
-"direction"
-],
-9
-),
-
-detailUrl:
-getExcelValue(
-row,
-[
-"상세주소",
-"상세페이지 주소",
-"상세페이지주소",
-"상세정보",
-"상세정보 주소",
-"detailUrl",
-"url"
-],
-10
-),
-
-description:
-getExcelValue(
-row,
-[
-"설명",
-"매물설명",
-"매물 설명",
-"description"
-],
-11
-),
-
-image:
-getExcelValue(
-row,
-[
-"사진URL",
-"사진 URL",
-"사진주소",
-"대표사진URL",
-"대표사진 URL",
-"image",
-"imageUrl"
-],
-12
-),
-
-dong:
-extractDong(address),
-
-createdBy:
-auth.currentUser.email,
-
-createdAt:
-firebase.firestore
-.FieldValue
-.serverTimestamp(),
-
-updatedAt:
-firebase.firestore
-.FieldValue
-.serverTimestamp()
-
+deposit:getExcelValue(row,["보증금","deposit"]),
+rent:getExcelValue(row,["월세","rent"]),
+premium:getExcelValue(row,["권리금","premium"])||"없음",
+area:getExcelValue(row,["면적","area"]),
+floor:getExcelValue(row,["층","층수","floor"]),
+detailUrl:getExcelValue(row,["상세주소","상세페이지주소","상세정보","detailUrl","url"]),
+description:getExcelValue(row,["설명","매물설명","description"]),
+image:getExcelValue(row,["사진URL","사진주소","image","imageUrl"]),
+dong:extractDong(address),
+createdBy:auth.currentUser.email,
+createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+updatedAt:firebase.firestore.FieldValue.serverTimestamp()
 };
 
-
-/*
-  원본 네이버 매물장 형식의
-  매물가(만원)를 매매가로 저장합니다.
-  5000/250 형식은 보증금/월세로 분리하고,
-  단일 금액은 매매가로 저장합니다.
-*/
-if(
-!data.deposit &&
-!data.rent
-){
-
-const price=
-getExcelValue(
-row,
-[
-"매물가(만원)",
-"매물가",
-"가격",
-"거래가",
-"매매가"
-],
-13
-);
-
-const text=
-String(price||"")
-.replace(/,/g,"")
-.trim();
-
-const match=
-text.match(
-/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/
-);
-
-if(match){
-
-data.deposit=match[1];
-data.rent=match[2];
-
-}else if(text){
-
-data.salePrice=text;
-
-}
-
-}
-
+try{
+const coords=await addressToCoords(address);
+if(coords){data.lat=coords.lat;data.lng=coords.lng;}
+}catch(e){}
 
 try{
-
-const coords=
-await addressToCoords(address);
-
-if(coords){
-
-data.lat=
-coords.lat;
-
-data.lng=
-coords.lng;
-
-}
-
-}catch(e){
-
-console.warn(
-"주소 좌표 변환 실패:",
-address,
-e
-);
-
-}
-
-
-try{
-
-await db
-.collection("properties")
-.add(data);
-
+await db.collection("properties").add(data);
 success++;
-
 }catch(e){
-
 failed++;
-
-errors.push(
-(i+2)+
-"행: "+
-(e.message||"등록 실패")
-);
-
+errors.push((i+2)+"행: "+e.message);
 }
 
-
-btn.textContent=
-"등록 중... "+
-(i+1)+
-" / "+
-excelRows.length;
-
+btn.textContent="등록 중... "+(i+1)+" / "+excelRows.length;
 await excelSleep(180);
-
 }
-
 
 await loadProperties();
-
 closeExcelImport();
-
 renderAdminList();
 
-
-let message=
-"엑셀 등록 완료\n\n"+
-"성공: "+success+"개\n"+
-"실패: "+failed+"개";
-
-
-if(errors.length){
-
-message+=
-"\n\n실패 내역\n"+
-errors
-.slice(0,15)
-.join("\n");
-
-if(errors.length>15){
-
-message+=
-"\n외 "+
-(errors.length-15)+
-"건";
-
-}
-
-}
-
-
+let message="엑셀 등록 완료\n\n성공: "+success+"개\n실패: "+failed+"개";
+if(errors.length){message+="\n\n실패 내역\n"+errors.slice(0,15).join("\n");if(errors.length>15)message+="\n외 "+(errors.length-15)+"건";}
 alert(message);
-
-
 }catch(error){
-
 console.error(error);
-
-alert(
-"엑셀 등록 중 오류가 발생했습니다.\n\n"+
-(error.message||error)
-);
-
+alert("엑셀 등록 중 오류가 발생했습니다.\n\n"+error.message);
 }finally{
-
 btn.disabled=false;
-
-btn.textContent=
-"엑셀 매물 등록하기";
-
+btn.textContent="엑셀 매물 등록하기";
 }
-
 }
 
 /* =====================================================
@@ -4337,41 +3208,22 @@ btn.textContent=
 
 function openReception(){
 
-const receptionModal=
-document.getElementById("receptionModal");
-
-if(!receptionModal){
-
-alert("매물접수 창을 찾을 수 없습니다.");
-
-return;
-
-}
-
-receptionModal.classList.add("show");
-receptionModal.style.display="flex";
-receptionModal.style.visibility="visible";
-receptionModal.style.opacity="1";
-receptionModal.style.pointerEvents="auto";
+const receptionModal=document.getElementById("receptionModal");
 receptionModal.style.zIndex="12000";
+receptionModal.classList.add("show");
 
 }
 
 
 function closeReception(){
 
-const receptionModal=
-document.getElementById("receptionModal");
-
-if(receptionModal){
-
-receptionModal.classList.remove("show");
-receptionModal.style.display="none";
-receptionModal.style.visibility="hidden";
-receptionModal.style.opacity="0";
-receptionModal.style.pointerEvents="none";
-
-}
+document
+.getElementById(
+"receptionModal"
+)
+.classList.remove(
+"show"
+);
 
 }
 
@@ -4533,9 +3385,9 @@ button.textContent=
 function openAdminPanel(){
 
 if(
-!auth ||
 !auth.currentUser ||
-auth.currentUser.email!==ADMIN_EMAIL
+auth.currentUser.email!==
+ADMIN_EMAIL
 ){
 
 alert(
@@ -4546,69 +3398,30 @@ return;
 
 }
 
-const modal=
-document.getElementById(
-"adminModal"
-);
-
-if(!modal){
-
-alert(
-"관리자 매물관리 창을 찾을 수 없습니다."
-);
-
-return;
-
-}
-
-try{
 
 renderAdminList();
 
-modal.classList.add("show");
-modal.style.display="flex";
-modal.style.visibility="visible";
-modal.style.opacity="1";
-modal.style.pointerEvents="auto";
-modal.style.zIndex="20000";
 
-document.body.style.overflow="hidden";
-
-}catch(error){
-
-console.error(
-"관리자 매물관리 열기 오류:",
-error
+document
+.getElementById(
+"adminModal"
+)
+.classList.add(
+"show"
 );
-
-alert(
-"관리자 매물관리를 여는 중 오류가 발생했습니다.\n"+
-error.message
-);
-
-}
 
 }
 
 
 function closeAdminPanel(){
 
-const modal=
-document.getElementById(
+document
+.getElementById(
 "adminModal"
+)
+.classList.remove(
+"show"
 );
-
-if(modal){
-
-modal.classList.remove("show");
-modal.style.display="none";
-modal.style.visibility="hidden";
-modal.style.opacity="0";
-modal.style.pointerEvents="none";
-
-}
-
-document.body.style.overflow="";
 
 }
 
@@ -4642,7 +3455,6 @@ return `
 <div class="admin-property">
 
 <div class="admin-property-title">
-${p.propertyNumber ? "#"+escapeHtml(p.propertyNumber)+" · " : ""}
 ${escapeHtml(
 p.title||
 "매물"
@@ -5161,181 +3973,6 @@ refreshDongCount,
 }
 );
 
-</script>
-
-
-<script>
-(function(){
-  function forceBind(){
-    var reception=document.getElementById('receptionOpenBtn');
-    var admin=document.getElementById('adminManageBtn');
-
-    if(reception && !reception.__forceBound){
-      reception.__forceBound=true;
-      reception.onclick=function(e){
-        if(e){e.preventDefault();e.stopPropagation();}
-        var m=document.getElementById('receptionModal');
-        if(!m){alert('매물접수 창을 찾을 수 없습니다.');return false;}
-        m.classList.add('show');
-        m.style.display='flex';
-        m.style.visibility='visible';
-        m.style.opacity='1';
-        m.style.pointerEvents='auto';
-        m.style.zIndex='99999';
-        return false;
-      };
-    }
-
-    if(admin && !admin.__forceBound){
-      admin.__forceBound=true;
-      admin.onclick=function(e){
-        if(e){e.preventDefault();e.stopPropagation();}
-        var m=document.getElementById('adminModal');
-        if(!m){alert('관리자 매물관리 창을 찾을 수 없습니다.');return false;}
-        if(typeof auth==='undefined' || !auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
-          alert('관리자만 이용할 수 있습니다.');
-          return false;
-        }
-        m.classList.add('show');
-        m.style.display='flex';
-        m.style.visibility='visible';
-        m.style.opacity='1';
-        m.style.pointerEvents='auto';
-        m.style.zIndex='99999';
-        if(typeof renderAdminList==='function') renderAdminList();
-        document.body.style.overflow='hidden';
-        return false;
-      };
-    }
-  }
-
-  // Run immediately, after DOM is parsed, and again at DOM ready/load.
-  forceBind();
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',forceBind,{once:false});
-  }
-  window.addEventListener('load',forceBind);
-  setTimeout(forceBind,100);
-  setTimeout(forceBind,500);
-})();
-</script>
-
-
-<script>
-/* ISOLATED UI CONTROLLER: map/buttons must not depend on Firebase initialization */
-(function(){
-  "use strict";
-
-  function showModal(id){
-    var el=document.getElementById(id);
-    if(!el) return false;
-    el.style.display="flex";
-    el.style.visibility="visible";
-    el.style.opacity="1";
-    el.style.pointerEvents="auto";
-    el.style.zIndex=(id==="adminModal" ? "20000" : "12000");
-    el.classList.add("show");
-    return true;
-  }
-
-  function hideModal(id){
-    var el=document.getElementById(id);
-    if(!el) return false;
-    el.style.display="none";
-    el.style.visibility="hidden";
-    el.style.opacity="0";
-    el.style.pointerEvents="none";
-    el.classList.remove("show");
-    return true;
-  }
-
-  function bind(){
-    var reception=document.getElementById("receptionOpenBtn");
-    if(reception && !reception.dataset.uiBound){
-      reception.dataset.uiBound="1";
-      reception.addEventListener("click",function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        if(window.openReception) window.openReception();
-        else showModal("receptionModal");
-      },true);
-    }
-
-    var admin=document.getElementById("adminManageBtn");
-    if(admin && !admin.dataset.uiBound){
-      admin.dataset.uiBound="1";
-      admin.addEventListener("click",function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        if(window.auth && window.ADMIN_EMAIL &&
-           window.auth.currentUser &&
-           window.auth.currentUser.email===window.ADMIN_EMAIL){
-          if(window.openAdminPanel) window.openAdminPanel();
-          else {
-            showModal("adminModal");
-            if(window.renderAdminList) window.renderAdminList();
-          }
-        }else{
-          alert("관리자만 이용할 수 있습니다.");
-        }
-      },true);
-    }
-  }
-
-  function mapBoot(){
-    /* Never let map initialization failure stop the rest of the UI. */
-    try{
-      if(window.kakao && kakao.maps){
-        if(window.initMap){
-          initMap();
-        }
-      }
-    }catch(e){
-      console.error("Kakao map initialization:",e);
-    }
-  }
-
-  window.addEventListener("error",function(e){
-    console.error("Runtime error:",e.error||e.message);
-    /* UI controller remains alive even if another script fails. */
-  });
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",function(){
-      bind();
-      setTimeout(bind,500);
-      setTimeout(mapBoot,50);
-      setTimeout(mapBoot,1000);
-    });
-  }else{
-    bind();
-    setTimeout(bind,500);
-    setTimeout(mapBoot,50);
-    setTimeout(mapBoot,1000);
-  }
-
-  /* Re-bind after authentication changes without making buttons depend on it. */
-  if(window.auth && window.auth.onAuthStateChanged){
-    try{
-      window.auth.onAuthStateChanged(function(){
-        bind();
-      });
-    }catch(e){}
-  }
-
-  document.addEventListener("keydown",function(e){
-    if(e.key!=="Escape") return;
-    hideModal("receptionModal");
-    hideModal("adminModal");
-  });
-
-  document.addEventListener("click",function(e){
-    var r=document.getElementById("receptionModal");
-    var a=document.getElementById("adminModal");
-    if(e.target===r) hideModal("receptionModal");
-    if(e.target===a) hideModal("adminModal");
-  });
-})();
 </script>
 
 </body>
