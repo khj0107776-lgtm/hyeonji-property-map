@@ -5356,9 +5356,19 @@ window.openDetailPage=function(id){
 
   document.getElementById("detailType").textContent=
     normalizedType(p.type)||"";
+
+  // 매물번호는 상세정보에서만 표시한다.
+  // 등록/엑셀 업로드 시 저장된 propertyNumber를 그대로 사용한다.
+  const detailNoEl=document.getElementById("detailPropertyNumber");
+  if(detailNoEl){
+    detailNoEl.textContent=
+      p.propertyNumber
+        ? "#"+String(p.propertyNumber).replace(/^#/,"")
+        : "";
+    detailNoEl.style.display=p.propertyNumber ? "block" : "none";
+  }
+
   document.getElementById("detailTitle").innerHTML=
-    (p.propertyNumber?
-      ' ':"")+
     escapeHtml(p.title||"매물");
   document.getElementById("detailAddress").textContent=
     p.address||"-";
