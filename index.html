@@ -1627,34 +1627,106 @@ function formatPrice(p){
 
 let text="";
 
+function firstValue(keys){
+
+for(const key of keys){
+
+const value=p[key];
+
+if(
+value!==undefined &&
+value!==null &&
+String(value).trim()!==""
+){
+
+return value;
+
+}
+
+}
+
+return "";
+
+}
+
+/*
+  아파트/매매 매물:
+  실제 엑셀 원본에서 사용하는 "매물가(만원)"을
+  최우선으로 인식합니다.
+*/
 const salePrice=
-p.salePrice ??
-p.price ??
-p.매물가 ??
-p.매매가 ??
-p.매매가격 ??
-p.매매금액 ??
-p["매매가(만원)"] ??
-p["매매가격(만원)"] ??
-"";
+firstValue([
+  "매물가(만원)",
+  "매물가",
+  "매매가(만원)",
+  "매매가격(만원)",
+  "매매금액(만원)",
+  "매매가",
+  "매매가격",
+  "매매금액",
+  "거래가",
+  "거래가격",
+  "가격",
+  "price",
+  "salePrice"
+]);
 
-if(String(salePrice).trim()!==""){
-text="매매가 "+numberFormat(salePrice)+"만원";
+if(
+String(salePrice).trim()!==""
+){
+
+text=
+"매매가 "+
+numberFormat(salePrice)+
+"만원";
+
 }
 
-const deposit=p.deposit ?? p.보증금 ?? p["보증금(만원)"] ?? "";
-const rent=p.rent ?? p.월세 ?? p["월세(만원)"] ?? "";
+/* 임대 */
+const deposit=
+firstValue([
+  "보증금(만원)",
+  "보증금",
+  "deposit"
+]);
 
-if(!text && String(deposit).trim()!==""){
-text+="보증금 "+numberFormat(deposit)+"만원";
+const rent=
+firstValue([
+  "월세(만원)",
+  "월세",
+  "rent"
+]);
+
+if(
+!text &&
+String(deposit).trim()!==""
+){
+
+text=
+"보증금 "+
+numberFormat(deposit)+
+"만원";
+
 }
 
-if(String(rent).trim()!==""){
+if(
+String(rent).trim()!==""
+){
+
 if(text)text+=" / ";
-text+="월세 "+numberFormat(rent)+"만원";
+
+text+=
+"월세 "+
+numberFormat(rent)+
+"만원";
+
 }
 
-if(!text)text="가격 문의";
+if(!text){
+
+text="가격 문의";
+
+}
 
 return text;
 
@@ -3293,7 +3365,9 @@ address:address,
 type:type,
 deposit:getExcelValue(row,["보증금","보증금(만원)","deposit"]),
 rent:getExcelValue(row,["월세","월세(만원)","rent"]),
-salePrice:getExcelValue(row,["매매가","매매가격","매매금액","매물가","매매가(만원)","매매가격(만원)","가격","price","salePrice"]),
+salePrice:getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"]),
+/* 원본 네이버 매물장처럼 매물가가 숫자/5000 형태로 들어온 경우 */
+
 premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음",
 area:getExcelValue(row,["면적","area"]),
 floor:getExcelValue(row,["층","층수","floor"]),
