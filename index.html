@@ -4726,23 +4726,25 @@ document.addEventListener("click",function(e){
     }
 
 
-    const content =
-      '<div class="count-overlay" ' +
-      'data-stable-dong="' +
-      escapeAttr(dong) +
-      '" ' +
-      'style="cursor:pointer" ' +
-      'onclick="window.renderDongPropertyList && window.renderDongPropertyList(\'' +
-      escapeAttr(dong) +
-      '\'); return false;">' +
-      '<strong>' +
-      count +
-      '</strong> ' +
-      '<span>' +
-      escapeHtml(dong) +
-      '</span>' +
-      '</div>';
+    /* Kakao CustomOverlay 클릭을 문자열 onclick에 맡기지 않고
+       실제 DOM 이벤트로 직접 연결한다. */
+    const content = document.createElement("div");
+    content.className = "count-overlay";
+    content.setAttribute("data-stable-dong", dong);
+    content.style.cursor = "pointer";
+    content.style.pointerEvents = "auto";
+    content.innerHTML =
+      '<strong>' + escapeHtml(String(count)) + '</strong> ' +
+      '<span>' + escapeHtml(dong) + '</span>';
 
+    content.addEventListener("click", function(event){
+      event.preventDefault();
+      event.stopPropagation();
+
+      if(typeof window.renderDongPropertyList === "function"){
+        window.renderDongPropertyList(dong);
+      }
+    });
 
     const overlay =
       new kakao.maps.CustomOverlay({
@@ -5099,10 +5101,13 @@ document.addEventListener("click",function(e){
     dong = normalizeDongName(dong);
     if(!dong) return;
 
-    const list = (Array.isArray(properties) ? properties : [])
+    const source =
+      typeof getFilteredProperties === "function"
+        ? getFilteredProperties()
+        : (Array.isArray(properties) ? properties : []);
+
+    const list = source
       .filter(function(p){
-        /* 현재 선택된 카테고리는 그대로 유지 */
-        if(normalizedType(p.type) !== currentCategory) return false;
         return getPropertyDong(p) === dong;
       })
       .sort(typeof propertySort === "function" ? propertySort : function(){return 0;});
@@ -5195,6 +5200,131 @@ document.addEventListener("click",function(e){
     renderDongPropertyList(dong);
   }, true);
 
+})();
+</script>
+
+
+<style>
+/* =========================================================
+   모바일 상세페이지만 수정
+   PC의 지도 50% + 상세 50% 구조는 그대로 유지
+========================================================= */
+@media (max-width:900px){
+  #detailPage.detail-split.show{
+    display:block !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  #detailPage.detail-split.show .detail-page{
+    display:block !important;
+    width:100% !important;
+    min-height:100% !important;
+  }
+
+  #detailPage.detail-split .detail-split-map{
+    display:block !important;
+    width:100% !important;
+    height:38vh !important;
+    min-height:230px !important;
+    max-height:340px !important;
+    flex:none !important;
+  }
+
+  #detailPage.detail-split .detail-split-content{
+    display:block !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:auto !important;
+    overflow:visible !important;
+  }
+
+  #detailPage.detail-split .detail-page-content{
+    width:100% !important;
+    max-width:none !important;
+    padding:15px 15px 35px !important;
+  }
+
+  #detailPage.detail-split .detail-page-content .detail-main-photo{
+    width:100% !important;
+    height:230px !important;
+  }
+}
+</style>
+
+
+<script>
+/* =========================================================
+   상세페이지 브라우저 뒤로가기 처리만 추가
+========================================================= */
+(function(){
+  "use strict";
+
+  const originalOpenDetailPage = window.openDetailPage;
+  const originalCloseDetailPage = window.closeDetailPage;
+
+  if(
+    typeof originalOpenDetailPage !== "function" ||
+    typeof originalCloseDetailPage !== "function"
+  ){
+    return;
+  }
+
+  let detailHistoryActive = false;
+  const DETAIL_STATE_KEY = "hyeonjiPropertyDetail";
+
+  window.openDetailPage = function(id){
+    const page = document.getElementById("detailPage");
+    const wasOpen = !!(page && page.classList.contains("show"));
+
+    originalOpenDetailPage(id);
+
+    const isOpen = !!(page && page.classList.contains("show"));
+
+    if(isOpen && !wasOpen && !detailHistoryActive){
+      try{
+        history.pushState(
+          { [DETAIL_STATE_KEY]: true, propertyId: id },
+          "",
+          location.href
+        );
+        detailHistoryActive = true;
+      }catch(e){}
+    }
+  };
+
+  window.closeDetailPage = function(){
+    const page = document.getElementById("detailPage");
+    const isOpen = !!(page && page.classList.contains("show"));
+
+    if(isOpen){
+      originalCloseDetailPage();
+    }
+
+    if(detailHistoryActive){
+      detailHistoryActive = false;
+
+      try{
+        if(history.state && history.state[DETAIL_STATE_KEY]){
+          history.back();
+        }
+      }catch(e){}
+    }
+  };
+
+  window.addEventListener("popstate", function(){
+    const page = document.getElementById("detailPage");
+
+    if(
+      detailHistoryActive &&
+      page &&
+      page.classList.contains("show")
+    ){
+      detailHistoryActive = false;
+      originalCloseDetailPage();
+    }
+  });
 })();
 </script>
 
