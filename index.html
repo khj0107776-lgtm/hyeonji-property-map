@@ -4265,27 +4265,46 @@ btn.textContent=
 
 function openReception(){
 
-const receptionModal=document.getElementById("receptionModal");
-receptionModal.style.zIndex="12000";
+const receptionModal=
+document.getElementById("receptionModal");
+
+if(!receptionModal){
+
+alert("매물접수 창을 찾을 수 없습니다.");
+
+return;
+
+}
+
 receptionModal.classList.add("show");
+receptionModal.style.display="flex";
+receptionModal.style.visibility="visible";
+receptionModal.style.opacity="1";
+receptionModal.style.pointerEvents="auto";
+receptionModal.style.zIndex="12000";
 
 }
 
 
 function closeReception(){
 
-document
-.getElementById(
-"receptionModal"
-)
-.classList.remove(
-"show"
-);
+const receptionModal=
+document.getElementById("receptionModal");
+
+if(receptionModal){
+
+receptionModal.classList.remove("show");
+receptionModal.style.display="none";
+receptionModal.style.visibility="hidden";
+receptionModal.style.opacity="0";
+receptionModal.style.pointerEvents="none";
+
+}
 
 }
 
 
-async function submitReception(){
+async async function submitReception(){
 
 const name=
 document
