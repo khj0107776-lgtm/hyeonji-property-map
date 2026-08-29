@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer&autoload=false"></script>
 
 <style>
 *{box-sizing:border-box}
@@ -1038,8 +1038,30 @@ window.addEventListener(
 "load",
 function(){
 
+function startApp(){
+
+try{
+
 initMap();
 
+}catch(error){
+
+console.error(
+"카카오지도 초기화 오류:",
+error
+);
+
+const mapBox=
+document.getElementById("map");
+
+if(mapBox){
+
+mapBox.innerHTML=
+'<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#777;font-weight:800;background:#f7f8fb;">지도를 불러오지 못했습니다. 페이지를 새로고침해주세요.</div>';
+
+}
+
+}
 
 auth.onAuthStateChanged(
 async function(user){
@@ -1051,18 +1073,15 @@ document
 .textContent=
 user.email||"";
 
-
 document
 .getElementById("loginBtn")
 .style.display=
 "none";
 
-
 document
 .getElementById("logoutBtn")
 .style.display=
 "block";
-
 
 if(
 user.email===
@@ -1090,18 +1109,15 @@ document
 .textContent=
 "";
 
-
 document
 .getElementById("loginBtn")
 .style.display=
 "block";
 
-
 document
 .getElementById("logoutBtn")
 .style.display=
 "none";
-
 
 document
 .getElementById("adminManageBtn")
@@ -1110,12 +1126,36 @@ document
 
 }
 
-
 await loadProperties();
 
 });
 
-});
+}
+
+if(
+typeof kakao!=="undefined" &&
+kakao.maps &&
+typeof kakao.maps.load==="function"
+){
+
+kakao.maps.load(
+function(){
+
+startApp();
+
+}
+);
+
+}else{
+
+console.error(
+"카카오 지도 SDK가 로드되지 않았습니다."
+);
+
+}
+
+}
+););
 
 
 async function googleLogin(){
@@ -1181,6 +1221,19 @@ map=
 new kakao.maps.Map(
 container,
 options
+);
+
+setTimeout(
+function(){
+
+if(map){
+
+map.relayout();
+
+}
+
+},
+100
 );
 
 
