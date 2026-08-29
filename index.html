@@ -1168,252 +1168,12 @@ error.message
 }
 
 
-function initMap(){
 
-const container=
-document.getElementById("map");
 
-if(!container){
 
-throw new Error(
-"지도 컨테이너(#map)를 찾을 수 없습니다."
-);
 
-}
 
-if(
-!window.kakao ||
-!kakao.maps
-){
 
-throw new Error(
-"Kakao Maps가 준비되지 않았습니다."
-);
-
-}
-
-const options={
-
-center:
-new kakao.maps.LatLng(
-36.8151,
-127.1139
-),
-
-level:7
-
-};
-
-map=
-new kakao.maps.Map(
-container,
-options
-);
-
-if(
-kakao.maps.services &&
-kakao.maps.services.Geocoder
-){
-
-geocoder=
-new kakao.maps.services.Geocoder();
-
-}
-
-setTimeout(
-function(){
-
-try{
-
-if(map)
-map.relayout();
-
-}catch(error){
-
-console.error(
-"지도 relayout 오류:",
-error
-);
-
-}
-
-},
-100
-);
-
-}
-
-
-async function loadProperties(){
-
-try{
-
-const snapshot=
-await db
-.collection("properties")
-.get();
-
-
-properties=[];
-
-
-snapshot.forEach(
-function(doc){
-
-properties.push({
-
-id:doc.id,
-
-...doc.data()
-
-});
-
-}
-);
-
-
-properties.sort(
-function(a,b){
-
-const aa=
-a.createdAt?.seconds||0;
-
-const bb=
-b.createdAt?.seconds||0;
-
-return bb-aa;
-
-}
-);
-
-
-renderProperties();
-
-drawMarkers();
-
-
-}catch(error){
-
-console.error(error);
-
-
-document
-.getElementById("propertyList")
-.innerHTML=
-'<div class="empty">매물을 불러오지 못했습니다.</div>';
-
-}
-
-}
-
-
-function selectCategory(
-category,
-button
-){
-
-currentCategory=
-category;
-
-
-document
-.querySelectorAll(".cat")
-.forEach(
-function(btn){
-
-btn.classList.remove(
-"active"
-);
-
-}
-);
-
-
-button.classList.add(
-"active"
-);
-
-
-renderProperties();
-
-drawMarkers();
-
-}
-
-
-function searchProperties(){
-
-renderProperties();
-
-drawMarkers();
-
-
-const keyword=
-document
-.getElementById("searchInput")
-.value
-.trim()
-.toLowerCase();
-
-
-if(!keyword){
-
-return;
-
-}
-
-
-const found=
-getSearchResults();
-
-
-if(
-found.length &&
-found[0].lat &&
-found[0].lng
-){
-
-map.setLevel(5);
-
-
-map.panTo(
-new kakao.maps.LatLng(
-Number(found[0].lat),
-Number(found[0].lng)
-)
-);
-
-}else if(
-found.length &&
-found[0].address
-){
-
-geocoder.addressSearch(
-found[0].address,
-function(result,status){
-
-if(
-status===
-kakao.maps.services.Status.OK
-){
-
-map.setLevel(5);
-
-map.panTo(
-new kakao.maps.LatLng(
-Number(result[0].y),
-Number(result[0].x)
-)
-);
-
-}
-
-}
-);
-
-}
-
-}
 
 
 document
@@ -1481,151 +1241,10 @@ keyword
 }
 
 
-function getFilteredProperties(){
-
-const keyword=
-document
-.getElementById("searchInput")
-.value
-.trim();
 
 
-if(keyword){
-
-return getSearchResults();
-
-}
 
 
-return properties.filter(
-function(p){
-
-return p.type===
-currentCategory;
-
-}
-);
-
-}
-
-
-function renderProperties(){
-
-const list=
-getFilteredProperties();
-
-
-document
-.getElementById("countLine")
-.textContent=
-"현재 "+
-list.length+
-"개 매물";
-
-
-const box=
-document
-.getElementById("propertyList");
-
-
-box.innerHTML="";
-
-
-if(!list.length){
-
-box.innerHTML=
-'<div class="empty">조건에 맞는 매물이 없습니다.</div>';
-
-return;
-
-}
-
-
-list.forEach(
-function(p){
-
-const card=
-document.createElement(
-"div"
-);
-
-
-card.className=
-"property-card";
-
-
-card.onclick=
-function(){
-
-openProperty(
-p
-);
-
-};
-
-
-const photo=
-p.image
-?
-'<img src="'+
-escapeAttr(p.image)+
-'" loading="lazy">'
-:
-'<span>대표사진 없음</span>';
-
-
-card.innerHTML=`
-
-<div class="card-photo">
-${photo}
-</div>
-
-<div class="card-body">
-
-<span class="type-badge">
-${escapeHtml(p.type||"")}
-</span>
-
-<div class="card-title">
-${escapeHtml(p.title||"매물")}
-</div>
-
-<div class="card-address">
-${escapeHtml(p.address||"")}
-</div>
-
-<div class="card-price">
-
-${formatPrice(p)}
-
-<span class="card-right">
-${escapeHtml(p.area||"")}
-</span>
-
-</div>
-
-</div>
-
-`;
-
-
-box.appendChild(
-card
-);
-
-}
-);
-
-}
-
-
-function openProperty(p){
-
-openDetailPage(
-p.id
-);
-
-}
 
 
 function formatPrice(p){
@@ -1790,190 +1409,12 @@ return value;
 }
 
 
-function clearMarkers(){
 
-markers.forEach(
-function(marker){
 
-marker.setMap(
-null
-);
 
-}
-);
 
 
-markers=[];
 
-}
-
-
-function drawMarkers(){
-
-clearMarkers();
-
-
-const list=
-getFilteredProperties();
-
-
-list.forEach(
-function(p){
-
-if(
-p.lat!==undefined &&
-p.lng!==undefined &&
-p.lat!==null &&
-p.lng!==null
-){
-
-createMarker(
-p
-);
-
-}else if(
-p.address
-){
-
-geocodeProperty(
-p
-);
-
-}
-
-}
-);
-
-
-setTimeout(
-refreshDongCount,
-500
-);
-
-}
-
-
-function createMarker(p){
-
-const marker=
-new kakao.maps.Marker({
-
-map:map,
-
-position:
-new kakao.maps.LatLng(
-Number(p.lat),
-Number(p.lng)
-)
-
-});
-
-
-kakao.maps.event.addListener(
-marker,
-"click",
-function(){
-
-openProperty(
-p
-);
-
-}
-);
-
-
-markers.push(
-marker
-);
-
-}
-
-
-function geocodeProperty(p){
-
-geocoder.addressSearch(
-p.address,
-function(result,status){
-
-if(
-status===
-kakao.maps.services.Status.OK
-){
-
-p.lat=
-Number(
-result[0].y
-);
-
-p.lng=
-Number(
-result[0].x
-);
-
-p.dong=
-extractDong(
-p.address
-);
-
-
-createMarker(
-p
-);
-
-
-refreshDongCount();
-
-return;
-
-}
-
-
-const places=
-new kakao.maps.services.Places();
-
-
-places.keywordSearch(
-p.address,
-function(result,status){
-
-if(
-status===
-kakao.maps.services.Status.OK &&
-result.length
-){
-
-p.lat=
-Number(
-result[0].y
-);
-
-p.lng=
-Number(
-result[0].x
-);
-
-p.dong=
-extractDong(
-p.address
-);
-
-
-createMarker(
-p
-);
-
-
-refreshDongCount();
-
-}
-
-}
-);
-
-}
-);
-
-}
 
 
 function extractDong(address){
@@ -2019,330 +1460,8 @@ dongOverlays=[];
 }
 
 
-function refreshDongCount(){
 
-if(!map){
 
-return;
-
-}
-
-
-clearDongOverlays();
-
-
-const list=
-getFilteredProperties();
-
-
-const groups={};
-
-
-list.forEach(
-function(p){
-
-if(
-p.lat===undefined ||
-p.lng===undefined ||
-p.lat===null ||
-p.lng===null
-){
-
-return;
-
-}
-
-
-const dong=
-p.dong||
-extractDong(
-p.address
-);
-
-
-if(!dong){
-
-return;
-
-}
-
-
-if(!groups[dong]){
-
-groups[dong]={
-
-count:0,
-
-lat:0,
-
-lng:0
-
-};
-
-}
-
-
-groups[dong].count++;
-
-groups[dong].lat+=
-Number(p.lat);
-
-groups[dong].lng+=
-Number(p.lng);
-
-}
-);
-
-
-Object.keys(
-groups
-)
-.forEach(
-function(dong){
-
-const group=
-groups[dong];
-
-
-const position=
-new kakao.maps.LatLng(
-
-group.lat/
-group.count,
-
-group.lng/
-group.count
-
-);
-
-
-const content=
-'<div class="count-overlay">'+
-'<strong>'+
-group.count+
-'</strong>'+
-escapeHtml(dong)+
-'</div>';
-
-
-const overlay=
-new kakao.maps.CustomOverlay({
-
-position:position,
-
-content:content,
-
-yAnchor:1.7,
-
-zIndex:10
-
-});
-
-
-overlay.setMap(
-map
-);
-
-
-dongOverlays.push(
-overlay
-);
-
-}
-);
-
-}
-
-
-function openDetailPage(id){
-
-const property=
-properties.find(
-function(p){
-
-return p.id===
-id;
-
-}
-);
-
-
-if(!property){
-
-return;
-
-}
-
-
-currentProperty=
-property;
-
-
-document
-.getElementById("detailType")
-.textContent=
-property.type||"";
-
-
-document
-.getElementById("detailTitle")
-.textContent=
-property.title||"매물";
-
-
-document
-.getElementById("detailAddress")
-.textContent=
-property.address||"-";
-
-
-document
-.getElementById("detailPrice")
-.textContent=
-formatPrice(
-property
-);
-
-
-document
-.getElementById("detailPremium")
-.textContent=
-property.premium &&
-property.premium!=="없음"
-?
-property.premium+"만원"
-:
-"없음";
-
-
-document
-.getElementById("detailArea")
-.textContent=
-property.area||"-";
-
-
-document
-.getElementById("detailFloor")
-.textContent=
-property.floor||"-";
-
-
-document
-.getElementById("detailDescription")
-.textContent=
-property.description||"-";
-
-
-const photo=
-document
-.getElementById(
-"detailPhoto"
-);
-
-
-if(property.image){
-
-photo.innerHTML=
-'<img src="'+
-escapeAttr(
-property.image
-)+
-'">';
-
-}else{
-
-photo.innerHTML=
-'<div class="detail-no-photo">'+
-'대표사진 없음'+
-'</div>';
-
-}
-
-
-const externalLink=
-document
-.getElementById(
-"detailExternalLink"
-);
-
-
-if(
-property.detailUrl &&
-String(property.detailUrl).trim()
-){
-
-let url=
-String(
-property.detailUrl
-).trim();
-
-
-if(
-!/^https?:\/\//i.test(url)
-){
-
-url=
-"https://"+
-url;
-
-}
-
-
-externalLink.href=
-url;
-
-
-externalLink.style.display=
-"block";
-
-}else{
-
-externalLink.removeAttribute(
-"href"
-);
-
-
-externalLink.style.display=
-"none";
-
-}
-
-
-const admin=
-document
-.getElementById(
-"detailAdmin"
-);
-
-
-if(
-auth.currentUser &&
-auth.currentUser.email===
-ADMIN_EMAIL
-){
-
-admin.classList.add(
-"show"
-);
-
-}else{
-
-admin.classList.remove(
-"show"
-);
-
-}
-
-
-document
-.getElementById(
-"detailPage"
-)
-.classList.add(
-"show"
-);
-
-}
 
 
 function closeDetailPage(){
@@ -2357,78 +1476,8 @@ currentProperty=null;
 }
 
 
-function openPropertyForm(){
-
-if(
-!auth.currentUser ||
-auth.currentUser.email!==
-ADMIN_EMAIL
-){
-
-alert(
-"관리자만 매물을 등록할 수 있습니다."
-);
-
-return;
-
-}
 
 
-editingId=
-null;
-
-
-currentImageData=
-"";
-
-
-clearPropertyForm();
-
-
-document
-.getElementById(
-"formTitle"
-)
-.textContent=
-"매물 등록";
-
-
-const modal=
-document
-.getElementById(
-"propertyFormModal"
-);
-
-
-modal.style.zIndex=
-"11000";
-
-
-modal.classList.add(
-"show"
-);
-
-}
-
-
-function closePropertyForm(){
-
-const modal=
-document
-.getElementById(
-"propertyFormModal"
-);
-
-
-modal.classList.remove(
-"show"
-);
-
-
-modal.style.zIndex=
-"11000";
-
-}
 
 
 function clearPropertyForm(){
@@ -2690,253 +1739,6 @@ source;
 }
 
 
-async function saveProperty(){
-
-if(
-!auth.currentUser ||
-auth.currentUser.email!==
-ADMIN_EMAIL
-){
-
-alert(
-"관리자만 매물을 등록할 수 있습니다."
-);
-
-return;
-
-}
-
-
-const title=
-document
-.getElementById("fTitle")
-.value
-.trim();
-
-
-const address=
-document
-.getElementById("fAddress")
-.value
-.trim();
-
-
-if(
-!title ||
-!address
-){
-
-alert(
-"매물 제목과 주소를 입력해주세요."
-);
-
-return;
-
-}
-
-
-const data={
-
-propertyNumber:String(getNextPropertyNumber()),
-
-title:title,
-
-address:address,
-
-type:
-document
-.getElementById("fType")
-.value,
-
-deposit:
-document
-.getElementById("fDeposit")
-.value
-.trim(),
-
-rent:
-document
-.getElementById("fRent")
-.value
-.trim(),
-
-salePrice:
-document
-.getElementById("fSalePrice")
-.value
-.trim(),
-
-premium:
-document
-.getElementById("fPremium")
-.value
-.trim()||
-"없음",
-
-area:
-document
-.getElementById("fArea")
-.value
-.trim(),
-
-floor:
-document
-.getElementById("fFloor")
-.value
-.trim(),
-
-approvalDate:
-document
-.getElementById("fApprovalDate")
-.value
-.trim(),
-
-direction:
-document
-.getElementById("fDirection")
-.value
-.trim(),
-
-detailUrl:
-document
-.getElementById("fDetailUrl")
-.value
-.trim(),
-
-description:
-document
-.getElementById("fDescription")
-.value
-.trim(),
-
-updatedAt:
-firebase.firestore
-.FieldValue
-.serverTimestamp()
-
-};
-
-
-if(currentImageData){
-
-data.image=
-currentImageData;
-
-}
-
-
-try{
-
-let coords=
-null;
-
-
-try{
-
-coords=
-await addressToCoords(
-address
-);
-
-}catch(e){
-
-coords=
-null;
-
-}
-
-
-if(coords){
-
-data.lat=
-coords.lat;
-
-data.lng=
-coords.lng;
-
-}
-
-
-data.dong=
-extractDong(
-address
-);
-
-
-if(editingId){
-
-await db
-.collection("properties")
-.doc(editingId)
-.update(data);
-
-
-alert(
-"매물이 수정되었습니다."
-);
-
-}else{
-
-data.createdAt=
-firebase.firestore
-.FieldValue
-.serverTimestamp();
-
-
-data.createdBy=
-auth.currentUser.email;
-
-
-await db
-.collection("properties")
-.add(
-data
-);
-
-
-alert(
-"매물이 등록되었습니다."
-);
-
-}
-
-
-closePropertyForm();
-
-
-await loadProperties();
-
-
-if(
-document
-.getElementById(
-"adminModal"
-)
-.classList.contains(
-"show"
-)
-){
-
-renderAdminList();
-
-}
-
-
-}catch(error){
-
-console.error(
-error
-);
-
-
-alert(
-"저장 중 오류가 발생했습니다.\n\n"+
-error.message
-);
-
-}
-
-}
 
 
 function addressToCoords(address){
@@ -3050,180 +1852,6 @@ function addressToCoords(address){
 }
 
 
-function editCurrentProperty(){
-
-if(!currentProperty){
-
-return;
-
-}
-
-
-if(
-!auth.currentUser ||
-auth.currentUser.email!==
-ADMIN_EMAIL
-){
-
-alert(
-"관리자만 수정할 수 있습니다."
-);
-
-return;
-
-}
-
-
-editingId=
-currentProperty.id;
-
-
-document
-.getElementById(
-"formTitle"
-)
-.textContent=
-"매물 수정";
-
-
-document
-.getElementById("fTitle")
-.value=
-currentProperty.title||"";
-
-
-document
-.getElementById("fAddress")
-.value=
-currentProperty.address||"";
-
-addMapAddressField();
-
-const editMapAddressInput=
-document.getElementById("fMapAddress");
-
-if(editMapAddressInput){
-  editMapAddressInput.value=
-    currentProperty.mapAddress||
-    currentProperty.address||
-    "";
-}
-
-
-document
-.getElementById("fType")
-.value=
-currentProperty.type||
-"상가";
-
-
-document
-.getElementById("fDeposit")
-.value=
-currentProperty.deposit||"";
-
-
-document
-.getElementById("fRent")
-.value=
-currentProperty.rent||"";
-
-
-document
-.getElementById("fSalePrice")
-.value=
-currentProperty.salePrice||
-currentProperty.price||
-currentProperty.매매가||
-currentProperty.매매가격||
-"";
-
-
-document
-.getElementById("fPremium")
-.value=
-currentProperty.premium||"";
-
-
-document
-.getElementById("fArea")
-.value=
-currentProperty.area||"";
-
-
-document
-.getElementById("fFloor")
-.value=
-currentProperty.floor||"";
-
-
-document
-.getElementById("fApprovalDate")
-.value=
-currentProperty.approvalDate||"";
-
-
-document
-.getElementById("fDirection")
-.value=
-currentProperty.direction||"";
-
-
-document
-.getElementById("fDetailUrl")
-.value=
-currentProperty.detailUrl||"";
-
-
-document
-.getElementById("fDescription")
-.value=
-currentProperty.description||"";
-
-
-currentImageData=
-currentProperty.image||"";
-
-
-if(currentImageData){
-
-document
-.getElementById(
-"imagePreview"
-)
-.src=
-currentImageData;
-
-
-document
-.getElementById(
-"imagePreview"
-)
-.style.display=
-"block";
-
-}
-
-
-closeDetailPage();
-
-
-const modal=
-document
-.getElementById(
-"propertyFormModal"
-);
-
-
-modal.style.zIndex=
-"11000";
-
-
-modal.classList.add(
-"show"
-);
-
-}
 
 
 async function deleteCurrentProperty(){
@@ -3574,111 +2202,6 @@ reader.readAsArrayBuffer(file);
 
 function excelSleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
-async function importExcelProperties(){
-if(!auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
-alert("관리자만 엑셀 매물을 등록할 수 있습니다.");
-return;
-}
-if(!excelRows.length){
-alert("먼저 엑셀 파일을 선택해주세요.");
-return;
-}
-
-const btn=document.getElementById("excelImportBtn");
-btn.disabled=true;
-let success=0;
-let failed=0;
-const errors=[];
-const excelImportedProperties=[];
-
-try{
-const excelNextNumber=getNextPropertyNumber();
-
-for(let i=0;i<excelRows.length;i++){
-const row=excelRows[i];
-const title=getExcelValue(row,["제목","매물명","title"]);
-const address=getExcelValue(row,["주소","소재지","address"]);
-const type=getExcelValue(row,["종류","매물종류","type"])||"상가";
-
-if(!title || !address){
-failed++;
-errors.push((i+2)+"행: 제목 또는 주소 없음");
-continue;
-}
-
-const data={
-propertyNumber:String(excelNextNumber+i),
-title:title,
-address:address,
-type:type,
-deposit:getExcelValue(row,["보증금","보증금(만원)","deposit"]),
-rent:getExcelValue(row,["월세","월세(만원)","rent"]),
-salePrice:getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"]),
-/* 원본 네이버 매물장처럼 매물가가 숫자/5000 형태로 들어온 경우 */
-
-premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음",
-area:getExcelValue(row,["면적","area"]),
-floor:getExcelValue(row,["층","층수","floor"]),
-detailUrl:getExcelValue(row,["상세주소","상세페이지주소","상세정보","detailUrl","url"]),
-description:getExcelValue(row,["설명","매물설명","description"]),
-image:getExcelValue(row,["사진URL","사진주소","image","imageUrl"]),
-dong:extractDong(address),
-createdBy:auth.currentUser.email,
-createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-};
-
-try{
-const coords=await addressToCoords(address);
-if(coords){data.lat=coords.lat;data.lng=coords.lng;}
-}catch(e){}
-
-try{
-const docRef=await db.collection("properties").add(data);
-data.id=docRef.id;
-excelImportedProperties.push({...data});
-success++;
-}catch(e){
-failed++;
-errors.push((i+2)+"행: "+e.message);
-}
-
-btn.textContent="등록 중... "+(i+1)+" / "+excelRows.length;
-await excelSleep(180);
-}
-
-await loadProperties();
-
-/* 엑셀 일괄등록 성공분을 현재 지도 데이터에도 확실히 반영 */
-excelImportedProperties.forEach(function(imported){
-  const exists=properties.some(function(p){
-    return p.id===imported.id;
-  });
-  if(!exists){
-    properties.push(imported);
-  }
-});
-
-properties.sort(propertySort);
-
-renderProperties();
-drawMarkers();
-window.refreshDongCount();
-
-closeExcelImport();
-renderAdminList();
-
-let message="엑셀 등록 완료\n\n성공: "+success+"개\n실패: "+failed+"개";
-if(errors.length){message+="\n\n실패 내역\n"+errors.slice(0,15).join("\n");if(errors.length>15)message+="\n외 "+(errors.length-15)+"건";}
-alert(message);
-}catch(error){
-console.error(error);
-alert("엑셀 등록 중 오류가 발생했습니다.\n\n"+error.message);
-}finally{
-btn.disabled=false;
-btn.textContent="엑셀 매물 등록하기";
-}
-}
 
 /* =====================================================
    고객 매물접수
@@ -3743,45 +2266,8 @@ true
 
 }
 
-function openReception(){
-
-const modal=
-document.getElementById("receptionModal");
-
-if(!modal){
-
-alert("매물접수 창을 찾을 수 없습니다.");
-
-return;
-
-}
-
-modal.classList.add("show");
-modal.style.display="flex";
-modal.style.visibility="visible";
-modal.style.opacity="1";
-modal.style.pointerEvents="auto";
-modal.style.zIndex="12000";
-
-}
 
 
-function closeReception(){
-
-const modal=
-document.getElementById("receptionModal");
-
-if(modal){
-
-modal.classList.remove("show");
-modal.style.display="none";
-modal.style.visibility="hidden";
-modal.style.opacity="0";
-modal.style.pointerEvents="none";
-
-}
-
-}
 
 
 async function submitReception(){
@@ -3938,197 +2424,12 @@ button.textContent=
    관리자
 ===================================================== */
 
-function openAdminPanel(){
 
-if(
-!auth.currentUser ||
-auth.currentUser.email!==ADMIN_EMAIL
-){
 
-alert("관리자만 이용할 수 있습니다.");
 
-return;
 
-}
 
-const modal=
-document.getElementById("adminModal");
 
-if(!modal){
-
-alert("관리자 매물관리 창을 찾을 수 없습니다.");
-
-return;
-
-}
-
-try{
-
-renderAdminList();
-
-modal.classList.add("show");
-modal.style.display="flex";
-modal.style.visibility="visible";
-modal.style.opacity="1";
-modal.style.pointerEvents="auto";
-modal.style.zIndex="20000";
-
-document.body.style.overflow="hidden";
-
-}catch(error){
-
-console.error(
-"관리자 매물관리 오류:",
-error
-);
-
-alert(
-"관리자 매물관리를 여는 중 오류가 발생했습니다.\n\n"+
-error.message
-);
-
-}
-
-}
-
-
-function closeAdminPanel(){
-
-const modal=
-document.getElementById("adminModal");
-
-if(modal){
-
-modal.classList.remove("show");
-modal.style.display="none";
-modal.style.visibility="hidden";
-modal.style.opacity="0";
-modal.style.pointerEvents="none";
-
-}
-
-document.body.style.overflow="";
-
-}
-
-
-function renderAdminList(){
-
-const box=
-document
-.getElementById(
-"adminPropertyList"
-);
-
-
-if(!properties.length){
-
-box.innerHTML=
-'<div class="empty">등록된 매물이 없습니다.</div>';
-
-return;
-
-}
-
-
-box.innerHTML=
-properties
-.map(
-function(p){
-
-return `
-
-<div class="admin-property">
-
-<div class="admin-property-title">
-${escapeHtml(
-p.title||
-"매물"
-)}
-</div>
-
-<div class="admin-property-info">
-${escapeHtml(
-p.type||
-""
-)}
-·
-${escapeHtml(
-p.address||
-""
-)}
-</div>
-
-<div class="admin-property-info">
-${formatPrice(p)}
-</div>
-
-${
-p.detailUrl
-?
-'<div class="admin-property-info" style="margin-top:4px">상세주소 있음</div>'
-:
-""
-}
-
-<div class="admin-actions">
-
-<button
-class="admin-edit"
-onclick="adminEdit('${p.id}')">
-수정
-</button>
-
-<button
-class="admin-delete"
-onclick="adminDelete('${p.id}')">
-삭제
-</button>
-
-</div>
-
-</div>
-
-`;
-
-}
-)
-.join("");
-
-}
-
-
-function adminEdit(id){
-
-const p=
-properties.find(
-function(x){
-
-return x.id===
-id;
-
-}
-);
-
-
-if(!p){
-
-return;
-
-}
-
-
-currentProperty=
-p;
-
-
-/* 수정 폼을 먼저 실행한 뒤 관리자창만 닫는다. */
-editCurrentProperty();
-
-
-closeAdminPanel();
-
-}
 
 
 async function adminDelete(id){
@@ -5044,187 +3345,7 @@ window.geocodeProperty=function(p){
 
 window.extractDong=neighborhood;
 
-window.refreshDongCount=function(){
 
-  if(!map)return;
-
-  clearDongOverlays();
-
-  const list=Array.isArray(properties)?properties:[];
-  const groups={};
-
-  list.forEach(function(p){
-
-    const address=String(p.address||"").trim();
-    if(!address)return;
-
-    let dong=String(p.dong||"").trim();
-
-    if(!dong && typeof neighborhood==="function"){
-      dong=String(neighborhood(address)||"").trim();
-    }
-
-    if(!dong && typeof extractDong==="function"){
-      dong=String(extractDong(address)||"").trim();
-    }
-
-    if(!dong)return;
-
-    if(!groups[dong]){
-      groups[dong]={
-        count:0,
-        lat:0,
-        lng:0,
-        coordCount:0,
-        sampleAddress:address
-      };
-    }
-
-    groups[dong].count++;
-
-    const lat=Number(p.lat);
-    const lng=Number(p.lng);
-
-    if(
-      isFinite(lat) &&
-      isFinite(lng) &&
-      lat!==0 &&
-      lng!==0
-    ){
-      groups[dong].lat+=lat;
-      groups[dong].lng+=lng;
-      groups[dong].coordCount++;
-    }
-
-  });
-
-  const unresolved=[];
-
-  Object.keys(groups).forEach(function(dong){
-
-    const g=groups[dong];
-
-    if(g.coordCount>0){
-
-      const position=new kakao.maps.LatLng(
-        g.lat/g.coordCount,
-        g.lng/g.coordCount
-      );
-
-      const content=
-        '<div class="count-overlay">'+
-        '<strong>'+g.count+'</strong> '+
-        '<span>'+escapeHtml(dong)+'</span>'+
-        '</div>';
-
-      const overlay=new kakao.maps.CustomOverlay({
-        map:map,
-        position:position,
-        content:content,
-        yAnchor:1.4,
-        zIndex:20
-      });
-
-      dongOverlays.push(overlay);
-
-    }else{
-
-      unresolved.push({
-        dong:dong,
-        group:g
-      });
-
-    }
-
-  });
-
-  /*
-    엑셀 일괄등록 매물은 저장 직후 좌표가 비어 있을 수 있다.
-    이 경우 해당 동의 대표 주소 1개만 검색해서
-    그 동의 개수 위치를 만든다.
-  */
-  if(
-    unresolved.length &&
-    typeof geocoder!=="undefined" &&
-    geocoder
-  ){
-
-    let left=unresolved.length;
-
-    unresolved.forEach(function(item){
-
-      geocoder.addressSearch(
-        item.group.sampleAddress,
-        function(result,status){
-
-          if(
-            status===kakao.maps.services.Status.OK &&
-            result &&
-            result.length
-          ){
-
-            const position=new kakao.maps.LatLng(
-              Number(result[0].y),
-              Number(result[0].x)
-            );
-
-            const content=
-              '<div class="count-overlay">'+
-              '<strong>'+item.group.count+'</strong> '+
-              '<span>'+escapeHtml(item.dong)+'</span>'+
-              '</div>';
-
-            const overlay=new kakao.maps.CustomOverlay({
-              map:map,
-              position:position,
-              content:content,
-              yAnchor:1.4,
-              zIndex:20
-            });
-
-            dongOverlays.push(overlay);
-
-          }
-
-          left--;
-
-          if(left===0){
-            // 모든 동별 대표 주소 검색 완료
-            // 좌표가 있는 기존 동은 그대로 두고,
-            // 새로 찾은 동도 현재 화면에 표시됨.
-          }
-
-        }
-      );
-
-    });
-
-  }
-
-};;;;
-
-window.drawMarkers=function(){
-
-  if(!map)return;
-
-  clearMarkers();
-
-  getFilteredProperties().forEach(p=>{
-
-    if(
-      p.lat!=null &&
-      p.lng!=null
-    ){
-      createMarker(p);
-    }else{
-      geocodeProperty(p);
-    }
-
-  });
-
-  setTimeout(refreshDongCount,700);
-
-};
 
 /* ---------- 상세페이지 + 상세지도 ---------- */
 
@@ -5504,6 +3625,19 @@ window.openDetailPage=function(id){
 
   },100);
 
+
+  /* 상세 분할지도 표시 후 레이아웃 재계산 */
+  setTimeout(function(){
+    try{
+      if(
+        window.detailSplitMapInstance &&
+        typeof window.detailSplitMapInstance.relayout === "function"
+      ){
+        window.detailSplitMapInstance.relayout();
+      }
+    }catch(e){}
+  },500);
+
 };
 
 function showDetailMap(p){
@@ -5695,17 +3829,6 @@ function addMapAddressField(){
 
 }
 
-window.openPropertyForm=(function(old){
-
-  return function(){
-
-    old();
-
-    addMapAddressField();
-
-  };
-
-})(window.openPropertyForm);
 
 /* ---------- 저장: 번호/승인일/방향/지도주소 ---------- */
 
@@ -6898,8 +5021,6 @@ document.addEventListener("click",function(e){
 })();
 </script>
 
-</body>
-</html>
 <style>
 #detailPage.detail-split.show{
   display:flex !important;
@@ -6909,45 +5030,167 @@ document.addEventListener("click",function(e){
 }
 </style>
 
+
+
+<style>
+/* =========================================================
+   요청사항 2번만 적용:
+   우측 매물목록 카드의 사진/내용을 위아래 → 좌우 배치
+========================================================= */
+.side .property-card{
+  display:flex;
+  align-items:stretch;
+}
+.side .property-card .card-photo{
+  width:145px;
+  min-width:145px;
+  height:auto;
+  min-height:118px;
+  flex:none;
+}
+.side .property-card .card-body{
+  flex:1;
+  min-width:0;
+  padding:11px 12px;
+}
+.side .property-card .card-price{
+  line-height:1.45;
+}
+.side .property-card .card-right{
+  float:none;
+  display:block;
+  margin-top:3px;
+}
+</style>
+
 <script>
+/* =========================================================
+   요청사항 1번만 적용:
+   지도 동별 매물개수 클릭 → 해당 동 매물만 우측 목록에 표시
+   지도 자체/동별개수 계산/기존 검색/카테고리는 수정하지 않음
+========================================================= */
 (function(){
+  "use strict";
 
-  const originalOpen=window.openDetailPage;
-
-  if(typeof originalOpen==="function"){
-
-    window.openDetailPage=function(id){
-
-      originalOpen(id);
-
-      setTimeout(function(){
-
-        try{
-
-          if(
-            window.detailSplitMapInstance &&
-            typeof window.detailSplitMapInstance.relayout==="function"
-          ){
-
-            window.detailSplitMapInstance.relayout();
-
-          }
-
-        }catch(e){}
-
-      },500);
-
-    };
-
+  function normalizeDongName(value){
+    return String(value || "").replace(/\s+/g," ").trim();
   }
+
+  function getPropertyDong(p){
+    const saved = normalizeDongName(p && p.dong);
+    if(saved) return saved;
+
+    const address = String(
+      (p && (p.address || p.mapAddress)) || ""
+    ).replace(/\r?\n/g," ").replace(/\s+/g," ").trim();
+
+    if(typeof neighborhood === "function"){
+      return normalizeDongName(neighborhood(address));
+    }
+
+    return "";
+  }
+
+  function renderDongPropertyList(dong){
+    dong = normalizeDongName(dong);
+    if(!dong) return;
+
+    const list = (Array.isArray(properties) ? properties : [])
+      .filter(function(p){
+        /* 현재 선택된 카테고리는 그대로 유지 */
+        if(normalizedType(p.type) !== currentCategory) return false;
+        return getPropertyDong(p) === dong;
+      })
+      .sort(typeof propertySort === "function" ? propertySort : function(){return 0;});
+
+    const count = document.getElementById("countLine");
+    if(count){
+      count.textContent = dong + " 매물 " + list.length + "개";
+    }
+
+    const box = document.getElementById("propertyList");
+    if(!box) return;
+
+    box.innerHTML = "";
+
+    if(!list.length){
+      box.innerHTML =
+        '<div class="empty">' +
+        escapeHtml(dong) +
+        '의 현재 카테고리 매물이 없습니다.</div>';
+      return;
+    }
+
+    list.forEach(function(p){
+      const card = document.createElement("div");
+      card.className = "property-card";
+
+      card.addEventListener("click", function(){
+        if(typeof openProperty === "function"){
+          openProperty(p);
+        }
+      });
+
+      const photo = p.image
+        ? '<img src="' + escapeAttr(p.image) + '" loading="lazy">'
+        : '<span>대표사진 없음</span>';
+
+      card.innerHTML =
+        '<div class="card-photo">' + photo + '</div>' +
+        '<div class="card-body">' +
+          '<span class="type-badge">' +
+            escapeHtml(normalizedType(p.type) || "") +
+          '</span>' +
+          '<div class="card-title">' +
+            escapeHtml(p.title || "매물") +
+          '</div>' +
+          '<div class="card-address">' +
+            escapeHtml(p.address || "") +
+          '</div>' +
+          '<div class="card-price">' +
+            formatPrice(p) +
+            '<span class="card-right">' +
+              escapeHtml(areaWithPyeong(p.area)) +
+            '</span>' +
+          '</div>' +
+        '</div>';
+
+      box.appendChild(card);
+    });
+
+    /* 우측 목록을 위쪽부터 바로 볼 수 있게 함 */
+    const side = document.querySelector(".side");
+    if(side){
+      side.scrollTop = 0;
+    }
+  }
+
+  /* Kakao CustomOverlay 안의 .count-overlay 클릭을 감지 */
+  document.addEventListener("click", function(event){
+    const overlay = event.target.closest
+      ? event.target.closest(".count-overlay")
+      : null;
+
+    if(!overlay) return;
+
+    const dong =
+      normalizeDongName(overlay.getAttribute("data-stable-dong")) ||
+      normalizeDongName(
+        overlay.querySelector("span")
+          ? overlay.querySelector("span").textContent
+          : ""
+      );
+
+    if(!dong) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    renderDongPropertyList(dong);
+  }, true);
 
 })();
 </script>
 
-<style>
-/* 상세정보에서만 등록 순서 매물번호 표시 */
-#detailPropertyNumber{
-  display:block !important;
-  font-weight:900;
-}
-</style>
+</body>
+</html>
