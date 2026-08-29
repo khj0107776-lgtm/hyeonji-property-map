@@ -4730,7 +4730,11 @@ document.addEventListener("click",function(e){
       '<div class="count-overlay" ' +
       'data-stable-dong="' +
       escapeAttr(dong) +
-      '">' +
+      '" ' +
+      'style="cursor:pointer" ' +
+      'onclick="window.renderDongPropertyList && window.renderDongPropertyList(\'' +
+      escapeAttr(dong) +
+      '\'); return false;">' +
       '<strong>' +
       count +
       '</strong> ' +
@@ -5164,6 +5168,8 @@ document.addEventListener("click",function(e){
       side.scrollTop = 0;
     }
   }
+
+  window.renderDongPropertyList = renderDongPropertyList;
 
   /* Kakao CustomOverlay 안의 .count-overlay 클릭을 감지 */
   document.addEventListener("click", function(event){
