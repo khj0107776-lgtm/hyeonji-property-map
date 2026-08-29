@@ -5926,17 +5926,22 @@ row,
 ["지도주소","mapAddress","지도 주소"]
 );
 
+/* 반드시 현재 행의 지도주소만 사용한다.
+   지도주소 끝의 층/호수는 지도검색에서 제외한다. */
+const mapAddress=
+String(
+rawMapAddress||address||""
+)
+.replace(/\s+/g," ")
+.trim()
+.replace(/\s+(?:지하\s*)?\d+층(?:\s*\d+호)?\s*$/i,"")
+.replace(/\s+\d+호\s*$/i,"")
+.trim();
+
 const detailAddress=
 getExcelValue(
 row,
 ["상세주소","상세"]
-);
-
-const mapAddress=
-buildExactMapAddress(
-address,
-rawMapAddress,
-detailAddress
 );
 
 let type=
