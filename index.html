@@ -4915,48 +4915,16 @@ window.initMap=function(){
 
 window.createMarker=function(p){
 
-  if(!map)return;
+  /*
+    개별 매물 마커는 표시하지 않는다.
+    지도에는 refreshDongCount()가 만드는
+    '동별 매물 개수'만 표시한다.
+    매물의 좌표 계산은 geocodeProperty()에서 계속 수행한다.
+  */
 
-  const type=typeClass(p.type);
+  return;
 
-  const content=
-    '<div class="map-pin '+type+'" title="'+
-    escapeAttr((p.title||"매물"))+
-    '">'+
-    escapeHtml(p.propertyNumber?("#"+p.propertyNumber):"●")+
-    '</div>';
-
-  const overlay=new kakao.maps.CustomOverlay({
-    map:map,
-    position:new kakao.maps.LatLng(Number(p.lat),Number(p.lng)),
-    content:content,
-    yAnchor:1,
-    zIndex:30
-  });
-
-  kakao.maps.event.addListener(
-    overlay,
-    "click",
-    function(){
-      openProperty(p);
-    }
-  );
-
-  /* CustomOverlay는 직접 DOM 이벤트 연결 */
-  setTimeout(()=>{
-    const nodes=document.querySelectorAll(".map-pin");
-    const node=nodes[nodes.length-1];
-    if(node){
-      node.onclick=function(e){
-        e.stopPropagation();
-        openProperty(p);
-      };
-    }
-  },0);
-
-  markers.push(overlay);
-
-};
+};;
 
 window.clearMarkers=function(){
   markers.forEach(m=>{
@@ -4969,7 +4937,7 @@ window.geocodeProperty=function(p){
 
   if(!geocoder || !map)return;
 
-  const addr=p.mapAddress||p.address;
+  const addr=p.address;
   if(!addr)return;
 
   geocoder.addressSearch(
@@ -5350,7 +5318,7 @@ window.openDetailPage=function(id){
 
     if(p.lat==null||p.lng==null){
 
-      addressToCoords(p.mapAddress||p.address)
+      addressToCoords(p.address)
         .then(coords=>{
           p.lat=coords.lat;
           p.lng=coords.lng;
