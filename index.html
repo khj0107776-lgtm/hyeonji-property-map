@@ -5894,14 +5894,20 @@ let nextNo=nextPropertyNumber(properties);
 
 for(let i=0;i<excelRows.length;i++){
 
+/* 중요:
+   반드시 현재 행(row)에서 각각의 값을 독립적으로 읽는다.
+   이전 행의 지도주소가 다음 매물에 재사용되지 않는다.
+*/
 const row=excelRows[i];
 
-const title=getExcelValue(
+const title=
+getExcelValue(
 row,
 ["제목","매물명","title"]
 );
 
-const address=getExcelValue(
+const address=
+getExcelValue(
 row,
 ["주소(소재지)","주소","소재지","address"]
 );
@@ -5920,29 +5926,31 @@ continue;
 
 }
 
+/* 현재 행의 지도주소만 읽는다. */
 const rawMapAddress=
 getExcelValue(
 row,
 ["지도주소","mapAddress","지도 주소"]
 );
 
-/* 반드시 현재 행의 지도주소만 사용한다.
-   지도주소 끝의 층/호수는 지도검색에서 제외한다. */
+/* 지도주소가 비어 있으면 해당 행의 주소를 사용.
+   층/호수는 지도검색용 주소에서 제거한다. */
 const mapAddress=
 String(
-rawMapAddress||address||""
+rawMapAddress || address || ""
 )
+.replace(/\r?\n/g," ")
 .replace(/\s+/g," ")
 .trim()
-.replace(/\s+(?:지하\s*)?\d+층(?:\s*\d+호)?\s*$/i,"")
-.replace(/\s+\d+호\s*$/i,"")
+.replace(
+/\s+(?:지하\s*)?\d+층(?:\s*\d+호)?\s*$/i,
+""
+)
+.replace(
+/\s+\d+호\s*$/i,
+""
+)
 .trim();
-
-const detailAddress=
-getExcelValue(
-row,
-["상세주소","상세"]
-);
 
 let type=
 getExcelValue(
@@ -5967,10 +5975,18 @@ title:
 String(title).trim(),
 
 address:
-String(address).replace(/\s+/g," ").trim(),
+String(address)
+.replace(/\r?\n/g," ")
+.replace(/\s+/g," ")
+.trim(),
 
+/* 핵심 수정:
+   이 매물의 지도주소를 이 매물 데이터에 직접 저장 */
 mapAddress:
-String(mapAddress).replace(/\s+/g," ").trim(),
+String(mapAddress)
+.replace(/\r?\n/g," ")
+.replace(/\s+/g," ")
+.trim(),
 
 type:type,
 
@@ -6071,9 +6087,10 @@ firebase.firestore.FieldValue.serverTimestamp()
 
 try{
 
+/* 지도좌표도 반드시 현재 매물의 지도주소로 검색 */
 const coords=
 await addressToCoords(
-data.mapAddress||data.address
+data.mapAddress || data.address
 );
 
 if(coords){
@@ -6085,7 +6102,7 @@ data.lng=coords.lng;
 
 }catch(e){
 
-/* 주소 좌표 실패는 매물 등록 실패로 처리하지 않음 */
+/* 좌표 검색 실패해도 매물 등록은 계속 진행 */
 
 }
 
