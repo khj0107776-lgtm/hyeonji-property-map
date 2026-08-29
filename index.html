@@ -2613,7 +2613,61 @@ return;
 }
 
 
+let nextPropertyNumber=null;
+
+if(!currentProperty){
+
+try{
+
+const snap=
+await db
+.collection("properties")
+.orderBy("propertyNumber","desc")
+.limit(1)
+.get();
+
+if(!snap.empty){
+
+const latest=
+Number(
+snap.docs[0].data().propertyNumber
+);
+
+nextPropertyNumber=
+Number.isFinite(latest)
+?
+latest+1
+:
+1;
+
+}else{
+
+nextPropertyNumber=1;
+
+}
+
+}catch(e){
+
+console.warn(
+"매물번호 조회 실패:",
+e
+);
+
+nextPropertyNumber=
+Date.now();
+
+}
+
+}
+
 const data={
+
+propertyNumber:
+currentProperty
+?
+(currentProperty.propertyNumber||"")
+:
+nextPropertyNumber,
 
 title:title,
 
@@ -3477,6 +3531,41 @@ const errors=[];
 
 try{
 
+let excelNextNumber=1;
+
+try{
+
+const numberSnap=
+await db
+.collection("properties")
+.orderBy("propertyNumber","desc")
+.limit(1)
+.get();
+
+if(!numberSnap.empty){
+
+const latest=
+Number(
+numberSnap.docs[0].data().propertyNumber
+);
+
+if(Number.isFinite(latest)){
+
+excelNextNumber=latest+1;
+
+}
+
+}
+
+}catch(e){
+
+console.warn(
+"기존 매물번호 조회 실패:",
+e
+);
+
+}
+
 for(
 let i=0;
 i<excelRows.length;
@@ -3545,6 +3634,9 @@ continue;
 
 
 const data={
+
+propertyNumber:
+excelNextNumber+i,
 
 title:title,
 
