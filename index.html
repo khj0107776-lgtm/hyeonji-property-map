@@ -289,7 +289,18 @@ Google 로그인
 <!-- 매물 선택 시 지도와 상세정보를 좌우 50:50으로 표시 -->
 <div class="detail-split-map">
   <div class="detail-split-map-title">📍 선택한 매물 위치</div>
+
+  <div class="detail-view-toggle" aria-label="상세 지도 보기 전환">
+    <button type="button" id="detailMapBtn" class="active">지도</button>
+    <button type="button" id="detailRoadviewBtn">로드뷰</button>
+  </div>
+
   <div id="detailSplitMap"></div>
+  <div id="detailRoadview"></div>
+
+  <div id="detailRoadviewMessage">
+    이 위치 주변에는 로드뷰가 없습니다.
+  </div>
 </div>
 
 <div class="detail-split-content">
@@ -3042,6 +3053,61 @@ closeAdminPanel();
   width:100%;
   height:100%;
 }
+#detailPage.detail-split .detail-split-map #detailRoadview{
+  width:100%;
+  height:100%;
+  display:none;
+}
+#detailPage.detail-split .detail-view-toggle{
+  position:absolute;
+  right:16px;
+  top:16px;
+  z-index:8;
+  display:flex;
+  overflow:hidden;
+  border-radius:11px;
+  background:#fff;
+  box-shadow:0 3px 12px rgba(0,0,0,.16);
+}
+#detailPage.detail-split .detail-view-toggle button{
+  border:0;
+  background:#fff;
+  color:#333;
+  padding:9px 13px;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+}
+#detailPage.detail-split .detail-view-toggle button.active{
+  background:#5968dd;
+  color:#fff;
+}
+#detailPage.detail-split #detailRoadviewMessage{
+  display:none;
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:7;
+  max-width:80%;
+  padding:12px 16px;
+  border-radius:10px;
+  background:rgba(255,255,255,.95);
+  color:#555;
+  font-size:14px;
+  font-weight:800;
+  text-align:center;
+  box-shadow:0 3px 12px rgba(0,0,0,.14);
+}
+@media (max-width:900px){
+  #detailPage.detail-split .detail-view-toggle{
+    top:12px;
+    right:12px;
+  }
+  #detailPage.detail-split .detail-view-toggle button{
+    padding:8px 12px;
+  }
+}
 #detailPage.detail-split .detail-split-map-title{
   position:absolute;
   left:16px;
@@ -3379,6 +3445,128 @@ function ensureDetailMap(){
 
 let detailSplitMapInstance=null;
 let detailSplitMarker=null;
+let detailRoadviewInstance=null;
+let detailRoadviewClient=null;
+let detailRoadviewPosition=null;
+
+
+function setDetailViewMode(mode){
+
+  const mapEl=document.getElementById("detailSplitMap");
+  const roadEl=document.getElementById("detailRoadview");
+  const messageEl=document.getElementById("detailRoadviewMessage");
+  const mapBtn=document.getElementById("detailMapBtn");
+  const roadBtn=document.getElementById("detailRoadviewBtn");
+
+  if(!mapEl || !roadEl)return;
+
+  if(mode==="roadview"){
+
+    mapEl.style.display="none";
+    roadEl.style.display="block";
+
+    if(mapBtn)mapBtn.classList.remove("active");
+    if(roadBtn)roadBtn.classList.add("active");
+
+    if(messageEl)messageEl.style.display="none";
+
+    showCurrentDetailRoadview();
+
+  }else{
+
+    roadEl.style.display="none";
+    mapEl.style.display="block";
+
+    if(roadBtn)roadBtn.classList.remove("active");
+    if(mapBtn)mapBtn.classList.add("active");
+
+    if(messageEl)messageEl.style.display="none";
+
+    setTimeout(function(){
+      try{
+        if(detailSplitMapInstance){
+          detailSplitMapInstance.relayout();
+          if(detailRoadviewPosition){
+            detailSplitMapInstance.setCenter(detailRoadviewPosition);
+          }
+        }
+      }catch(e){}
+    },50);
+
+  }
+}
+
+function showCurrentDetailRoadview(){
+
+  const container=document.getElementById("detailRoadview");
+  const messageEl=document.getElementById("detailRoadviewMessage");
+
+  if(!container || !detailRoadviewPosition)return;
+  if(!window.kakao || !kakao.maps || !kakao.maps.Roadview || !kakao.maps.RoadviewClient){
+    if(messageEl)messageEl.style.display="block";
+    return;
+  }
+
+  if(!detailRoadviewInstance){
+    detailRoadviewInstance=new kakao.maps.Roadview(container);
+  }
+
+  if(!detailRoadviewClient){
+    detailRoadviewClient=new kakao.maps.RoadviewClient();
+  }
+
+  if(messageEl)messageEl.style.display="none";
+
+  /* 현재 매물 좌표 주변 100m 이내의 가장 가까운 로드뷰를 찾는다. */
+  detailRoadviewClient.getNearestPanoId(
+    detailRoadviewPosition,
+    100,
+    function(panoId){
+
+      if(panoId){
+
+        if(messageEl)messageEl.style.display="none";
+
+        try{
+          detailRoadviewInstance.setPanoId(
+            panoId,
+            detailRoadviewPosition
+          );
+        }catch(e){
+          if(messageEl)messageEl.style.display="block";
+        }
+
+      }else{
+        if(messageEl)messageEl.style.display="block";
+      }
+
+    }
+  );
+}
+
+function bindDetailViewToggle(){
+
+  const mapBtn=document.getElementById("detailMapBtn");
+  const roadBtn=document.getElementById("detailRoadviewBtn");
+
+  if(mapBtn && !mapBtn.dataset.bound){
+    mapBtn.dataset.bound="1";
+    mapBtn.addEventListener("click",function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      setDetailViewMode("map");
+    });
+  }
+
+  if(roadBtn && !roadBtn.dataset.bound){
+    roadBtn.dataset.bound="1";
+    roadBtn.addEventListener("click",function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      setDetailViewMode("roadview");
+    });
+  }
+}
 
 function showDetailSplitMap(p){
 
@@ -3391,6 +3579,7 @@ function showDetailSplitMap(p){
   if(!isFinite(lat)||!isFinite(lng))return;
 
   const position=new kakao.maps.LatLng(lat,lng);
+  detailRoadviewPosition=position;
 
   if(!detailSplitMapInstance){
 
@@ -3609,6 +3798,9 @@ window.openDetailPage=function(id){
 
   document.getElementById("detailPage").classList.add("show");
   document.getElementById("detailPage").classList.add("detail-split");
+
+  bindDetailViewToggle();
+  setDetailViewMode("map");
 
   if(!detailWasAlreadyOpen){
     try{
@@ -5346,8 +5538,8 @@ window.addEventListener("popstate",function(){
 /* 모바일 메인 지도 크기만 확대 */
 @media (max-width:900px){
   #map{
-    height:60vh !important;
-    min-height:430px !important;
+    height:75vh !important;
+    min-height:500px !important;
   }
 }
 </style>
