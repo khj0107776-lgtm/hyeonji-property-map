@@ -1047,6 +1047,10 @@ window.addEventListener(
 "load",
 function(){
 
+/* 페이지 로딩 직후 버튼 이벤트를 먼저 연결합니다.
+   Firebase 인증 콜백을 기다리지 않아도 매물접수가 클릭됩니다. */
+bindMainActionButtons();
+
 function startApp(){
 
 try{
