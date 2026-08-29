@@ -1869,30 +1869,9 @@ return;
 }
 
 
-const type=
-p.type||
-"상가";
+if(!groups[dong]){
 
-
-/*
-  동네 + 매물종류별로 묶습니다.
-  현재 카테고리를 선택한 경우에는 기존처럼
-  동네별 매물 수가 하나의 마크로 표시됩니다.
-*/
-
-const key=
-dong+
-"__"+
-type;
-
-
-if(!groups[key]){
-
-groups[key]={
-
-dong:dong,
-
-type:type,
+groups[dong]={
 
 count:0,
 
@@ -1905,12 +1884,12 @@ lng:0
 }
 
 
-groups[key].count++;
+groups[dong].count++;
 
-groups[key].lat+=
+groups[dong].lat+=
 Number(p.lat);
 
-groups[key].lng+=
+groups[dong].lng+=
 Number(p.lng);
 
 }
@@ -1921,10 +1900,10 @@ Object.keys(
 groups
 )
 .forEach(
-function(key){
+function(dong){
 
 const group=
-groups[key];
+groups[dong];
 
 
 const position=
@@ -1939,45 +1918,12 @@ group.count
 );
 
 
-/*
-  매물 종류별 동네 마크 색상
-  상가   : 파랑
-  공장   : 빨강
-  아파트 : 노랑
-  원·투룸: 보라
-  주택   : 초록
-  토지   : 주황
-*/
-
-const typeColors={
-
-"상가":"#5968dd",
-
-"공장":"#e53935",
-
-"아파트":"#f2c94c",
-
-"원·투룸":"#8e5bd9",
-
-"주택":"#35a853",
-
-"토지":"#f2994a"
-
-};
-
-
-const color=
-typeColors[group.type]||
-"#5968dd";
-
-
 const content=
-'<div class="count-overlay" '+
-'style="border:3px solid '+color+';">'+
-'<strong style="background:'+color+';">'+
+'<div class="count-overlay">'+
+'<strong>'+
 group.count+
 '</strong>'+
-escapeHtml(group.dong)+
+escapeHtml(dong)+
 '</div>';
 
 
@@ -2008,6 +1954,7 @@ overlay
 );
 
 }
+
 
 function openDetailPage(id){
 
@@ -3211,7 +3158,9 @@ deposit:getExcelValue(row,["보증금","deposit"]),
 rent:getExcelValue(row,["월세","rent"]),
 premium:getExcelValue(row,["권리금","premium"])||"없음",
 area:getExcelValue(row,["면적","area"]),
-floor:getExcelValue(row,["층","층수","floor"]),
+floor:getExcelValue(row,["층","층수","해당층/총층","floor"]),
+approvalDate:getExcelValue(row,["사용승인일","사용승인","승인일","approvalDate"]),
+direction:getExcelValue(row,["방향","direction"]),
 detailUrl:getExcelValue(row,["상세주소","상세페이지주소","상세정보","detailUrl","url"]),
 description:getExcelValue(row,["설명","매물설명","description"]),
 image:getExcelValue(row,["사진URL","사진주소","image","imageUrl"]),
