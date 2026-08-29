@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer&autoload=false&autoload=false"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer&autoload=false"></script>
 
 <style>
 *{box-sizing:border-box}
@@ -488,6 +488,11 @@ id="fRent"
 type="number"
 placeholder="250">
 
+</div>
+
+<div class="form-group">
+<label>매매가 (만원)</label>
+<input id="fSalePrice" type="number" placeholder="아파트 매매가">
 </div>
 
 
@@ -1612,51 +1617,34 @@ function formatPrice(p){
 
 let text="";
 
+const salePrice=
+p.salePrice ??
+p.price ??
+p.매물가 ??
+p.매매가 ??
+p.매매가격 ??
+p.매매금액 ??
+p["매매가(만원)"] ??
+p["매매가격(만원)"] ??
+"";
 
-if(
-p.deposit!==undefined &&
-p.deposit!==""
-){
-
-text+=
-"보증금 "+
-numberFormat(
-p.deposit
-)+
-"만원";
-
+if(String(salePrice).trim()!==""){
+text="매매가 "+numberFormat(salePrice)+"만원";
 }
 
+const deposit=p.deposit ?? p.보증금 ?? p["보증금(만원)"] ?? "";
+const rent=p.rent ?? p.월세 ?? p["월세(만원)"] ?? "";
 
-if(
-p.rent!==undefined &&
-p.rent!==""
-){
-
-if(text){
-
-text+=" / ";
-
+if(!text && String(deposit).trim()!==""){
+text+="보증금 "+numberFormat(deposit)+"만원";
 }
 
-
-text+=
-"월세 "+
-numberFormat(
-p.rent
-)+
-"만원";
-
+if(String(rent).trim()!==""){
+if(text)text+=" / ";
+text+="월세 "+numberFormat(rent)+"만원";
 }
 
-
-if(!text){
-
-text=
-"가격 문의";
-
-}
-
+if(!text)text="가격 문의";
 
 return text;
 
@@ -2370,6 +2358,11 @@ document
 
 
 document
+.getElementById("fSalePrice")
+.value="";
+
+
+document
 .getElementById("fPremium")
 .value="";
 
@@ -2652,6 +2645,12 @@ document
 rent:
 document
 .getElementById("fRent")
+.value
+.trim(),
+
+salePrice:
+document
+.getElementById("fSalePrice")
 .value
 .trim(),
 
@@ -2986,6 +2985,16 @@ currentProperty.rent||"";
 
 
 document
+.getElementById("fSalePrice")
+.value=
+currentProperty.salePrice||
+currentProperty.price||
+currentProperty.매매가||
+currentProperty.매매가격||
+"";
+
+
+document
 .getElementById("fPremium")
 .value=
 currentProperty.premium||"";
@@ -3256,9 +3265,10 @@ const data={
 title:title,
 address:address,
 type:type,
-deposit:getExcelValue(row,["보증금","deposit"]),
-rent:getExcelValue(row,["월세","rent"]),
-premium:getExcelValue(row,["권리금","premium"])||"없음",
+deposit:getExcelValue(row,["보증금","보증금(만원)","deposit"]),
+rent:getExcelValue(row,["월세","월세(만원)","rent"]),
+salePrice:getExcelValue(row,["매매가","매매가격","매매금액","매물가","매매가(만원)","매매가격(만원)","가격","price","salePrice"]),
+premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음",
 area:getExcelValue(row,["면적","area"]),
 floor:getExcelValue(row,["층","층수","floor"]),
 detailUrl:getExcelValue(row,["상세주소","상세페이지주소","상세정보","detailUrl","url"]),
