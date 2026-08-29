@@ -197,134 +197,6 @@ body{overflow:auto}
 .form-group.full{grid-column:auto}
 }
 </style>
-
-<style>
-/* 임대/매매 구분 보조 표시 */
-.card-price{line-height:1.45}
-</style>
-
-
-<style>
-/* 매물번호는 상세페이지에서만 표시 */
-.property-number,
-.admin-property-number{
-  display:none !important;
-}
-
-/* 상세페이지 매물번호 */
-.detail-property-number{
-  display:inline-block !important;
-  margin:0 0 8px 0;
-  padding:4px 8px;
-  border-radius:7px;
-  background:#171925;
-  color:#fff;
-  font-size:12px;
-  line-height:1.2;
-  font-weight:900;
-}
-</style>
-
-
-<style>
-/* 지도와 상세화면에서 매물번호는 표시하지 않음.
-   동/읍/면별 매물 개수만 지도에 표시 */
-.property-number,
-.admin-property-number,
-.detail-property-number,
-.property-no,
-.listing-number{
-  display:none !important;
-}
-</style>
-
-<style>
-.property-dot{
-  display:block;
-  width:13px;
-  height:13px;
-  border-radius:50%;
-  background:currentColor;
-  border:2px solid #fff;
-  box-shadow:0 2px 7px rgba(0,0,0,.35);
-}
-.count-overlay{
-  cursor:pointer;
-  z-index:100 !important;
-}
-</style>
-
-<style>
-.detail-property-number,
-.property-number,
-.admin-property-number,
-.listing-number{
-  display:none !important;
-}
-</style>
-
-<style>
-.dong-count-overlay{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  padding:7px 11px;
-  border-radius:18px;
-  background:#fff;
-  border:2px solid #5869df;
-  box-shadow:0 3px 10px rgba(0,0,0,.18);
-  white-space:nowrap;
-  font-size:13px;
-  font-weight:700;
-  color:#333;
-}
-.dong-count-overlay strong{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-width:24px;
-  height:24px;
-  border-radius:50%;
-  background:#5869df;
-  color:#fff;
-  font-size:13px;
-}
-.dong-count-overlay span{
-  font-weight:800;
-}
-</style>
-
-<style>
-/* 동별 개수만 표시: 모든 동 숫자 라벨을 동일하게 표시 */
-.dong-count-overlay{
-  display:flex !important;
-  align-items:center;
-  gap:6px;
-  padding:7px 11px;
-  border-radius:18px;
-  background:#fff;
-  border:2px solid #5869dd;
-  box-shadow:0 3px 10px rgba(0,0,0,.18);
-  white-space:nowrap;
-  font-size:13px;
-  font-weight:800;
-  color:#333;
-  visibility:visible !important;
-  opacity:1 !important;
-}
-.dong-count-overlay strong{
-  display:inline-flex !important;
-  align-items:center;
-  justify-content:center;
-  min-width:24px;
-  height:24px;
-  border-radius:50%;
-  background:#5869dd;
-  color:#fff;
-  font-size:13px;
-}
-.dong-count-overlay span{font-weight:900}
-</style>
 </head>
 
 <body>
@@ -448,8 +320,6 @@ Google 로그인
 <div class="detail-badge" id="detailType">
 상가
 </div>
-
-<div class="detail-property-number" id="detailPropertyNumber" style="display:none"></div>
 
 <h1 id="detailTitle">
 매물
@@ -1094,8 +964,6 @@ let properties=[];
 let currentCategory="상가";
 
 let currentProperty=null;
-
-
 
 let editingId=null;
 
@@ -1755,97 +1623,113 @@ p.id
 }
 
 
-function parseTransaction(p){
-
-  const val = function(keys){
-    for(const key of keys){
-      const v=p && p[key];
-      if(v!==undefined && v!==null && String(v).trim()!==""){
-        return String(v).trim();
-      }
-    }
-    return "";
-  };
-
-  let deposit=val(["deposit","보증금","보증금(만원)"]);
-  let rent=val(["rent","월세","월세(만원)"]);
-  let sale=val([
-    "salePrice","매매가","매매가격","매매금액",
-    "매물가","매물가(만원)","매매가(만원)",
-    "매매가격(만원)","매매금액(만원)","price"
-  ]);
-
-  /*
-    원본 매물장에 '매물가'가 5000/340처럼 들어온 경우:
-    이것은 매매가가 아니라 보증금/월세로 판단한다.
-  */
-  const combined = sale
-    .replace(/,/g,"")
-    .replace(/\s+/g,"")
-    .match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
-
-  if(combined){
-    if(!deposit) deposit=combined[1];
-    if(!rent) rent=combined[2];
-    sale="";
-  }
-
-  /*
-    보증금 또는 월세가 하나라도 있으면 무조건 임대.
-    따라서 상가 5,000/340은 '매매가'로 표시되지 않는다.
-  */
-  if(deposit || rent){
-    return {
-      mode:"임대",
-      deposit:deposit,
-      rent:rent,
-      sale:""
-    };
-  }
-
-  if(sale){
-    return {
-      mode:"매매",
-      deposit:"",
-      rent:"",
-      sale:sale
-    };
-  }
-
-  return {
-    mode:"문의",
-    deposit:"",
-    rent:"",
-    sale:""
-  };
-}
-
-
 function formatPrice(p){
 
-  const t=parseTransaction(p);
+let text="";
 
-  if(t.mode==="임대"){
+function firstValue(keys){
 
-    let text="";
+for(const key of keys){
 
-    if(t.deposit){
-      text+="보증금 "+numberFormat(t.deposit)+"만원";
-    }
+const value=p[key];
 
-    if(t.rent){
-      if(text) text+=" / ";
-      text+="월세 "+numberFormat(t.rent)+"만원";
-    }
+if(
+value!==undefined &&
+value!==null &&
+String(value).trim()!==""
+){
 
-    return text || "임대 조건 문의";
-  }
+return value;
 
-  if(t.mode==="매매"){
-    return "매매가 "+numberFormat(t.sale)+"만원";
-  }
+}
 
-  return "가격 문의";
+}
+
+return "";
+
+}
+
+/*
+  아파트/매매 매물:
+  실제 엑셀 원본에서 사용하는 "매물가(만원)"을
+  최우선으로 인식합니다.
+*/
+const salePrice=
+firstValue([
+  "매물가(만원)",
+  "매물가",
+  "매매가(만원)",
+  "매매가격(만원)",
+  "매매금액(만원)",
+  "매매가",
+  "매매가격",
+  "매매금액",
+  "거래가",
+  "거래가격",
+  "가격",
+  "price",
+  "salePrice"
+]);
+
+if(
+String(salePrice).trim()!==""
+){
+
+text=
+"매매가 "+
+numberFormat(salePrice)+
+"만원";
+
+}
+
+/* 임대 */
+const deposit=
+firstValue([
+  "보증금(만원)",
+  "보증금",
+  "deposit"
+]);
+
+const rent=
+firstValue([
+  "월세(만원)",
+  "월세",
+  "rent"
+]);
+
+if(
+!text &&
+String(deposit).trim()!==""
+){
+
+text=
+"보증금 "+
+numberFormat(deposit)+
+"만원";
+
+}
+
+if(
+String(rent).trim()!==""
+){
+
+if(text)text+=" / ";
+
+text+=
+"월세 "+
+numberFormat(rent)+
+"만원";
+
+}
+
+if(!text){
+
+text="가격 문의";
+
+}
+
+return text;
+
 }
 
 
@@ -2266,38 +2150,6 @@ return;
 
 currentProperty=
 property;
-
-/* 매물번호는 상세페이지를 열었을 때만 표시 */
-const detailNumberEl=document.getElementById("detailPropertyNumber");
-
-if(detailNumberEl){
-
-  const numberValue=
-    property.propertyNumber ??
-    property.listingNumber ??
-    property.매물번호 ??
-    property.number ??
-    property.id ??
-    "";
-
-  if(String(numberValue).trim()){
-
-    const displayNumber=
-      String(numberValue).trim().startsWith("#")
-        ? String(numberValue).trim()
-        : "#"+String(numberValue).trim();
-
-    detailNumberEl.textContent=displayNumber;
-    detailNumberEl.style.display="inline-block";
-
-  }else{
-
-    detailNumberEl.textContent="";
-    detailNumberEl.style.display="none";
-
-  }
-
-}
 
 
 document
@@ -3443,158 +3295,89 @@ return "";
 
 function normalizeImportedRows(rows){
 
-  const clean=v=>{
-    if(v===undefined||v===null)return "";
+const clean=v=>{
+if(v===undefined||v===null)return "";
+return String(v)
+.replace(/\r\n/g,"\n")
+.replace(/\r/g,"\n")
+.split("\n")
+.map(x=>x.trim())
+.filter(Boolean)
+.join(" ")
+.replace(/\s+/g," ")
+.trim();
+};
 
-    return String(v)
-      .replace(/\r\n/g,"\n")
-      .replace(/\r/g,"\n")
-      .split("\n")
-      .map(x=>x.trim())
-      .filter(Boolean)
-      .join(" ")
-      .replace(/\s+/g," ")
-      .trim();
-  };
+const normKey=v=>
+String(v||"")
+.trim()
+.toLowerCase()
+.replace(/\s+/g,"")
+.replace(/[()]/g,"");
 
-  const normKey=v=>
-    String(v||"")
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g,"")
-      .replace(/[()]/g,"");
+const findKey=(obj,names)=>{
+const keys=Object.keys(obj||{});
+for(const name of names){
+const target=normKey(name);
+const found=keys.find(k=>normKey(k)===target);
+if(found!==undefined)return found;
+}
+return null;
+};
 
-  const findKey=(obj,names)=>{
-    const keys=Object.keys(obj||{});
+const result=[];
 
-    for(const name of names){
-      const target=normKey(name);
+rows.forEach(raw=>{
 
-      const found=keys.find(
-        k=>normKey(k)===target
-      );
+const row={};
 
-      if(found!==undefined)return found;
-    }
+Object.keys(raw||{}).forEach(k=>{
+row[k]=clean(raw[k]);
+});
 
-    return null;
-  };
+const titleKey=findKey(row,["제목","매물명","title"]);
+const addrKey=findKey(row,["주소(소재지)","주소","소재지","address"]);
+const mapKey=findKey(row,["지도주소","mapAddress","지도 주소"]);
 
-  const result=[];
+const title=titleKey?row[titleKey]:"";
+const address=addrKey?row[addrKey]:"";
+const mapAddress=mapKey?row[mapKey]:"";
 
-  rows.forEach(raw=>{
+const meaningful=
+Object.values(row).some(v=>String(v||"").trim()!=="");
 
-    const row={};
+if(!meaningful)return;
 
-    Object.keys(raw||{}).forEach(k=>{
-      row[k]=clean(raw[k]);
-    });
+/* 제목이 없고 주소만 있는 줄은 직전 매물의 주소에 합친다. */
+if(!title && address && result.length){
 
-    const titleKey=findKey(
-      row,
-      ["제목","매물명","title"]
-    );
+const prev=result[result.length-1];
 
-    const addrKey=findKey(
-      row,
-      ["주소(소재지)","주소","소재지","소재지 주소","address"]
-    );
+const pk=findKey(prev,["주소(소재지)","주소","소재지","address"]);
+const pmk=findKey(prev,["지도주소","mapAddress","지도 주소"]);
 
-    const title=
-      titleKey ? row[titleKey] : "";
+if(pk){
+prev[pk]=clean((prev[pk]||"")+" "+address);
+}
 
-    const address=
-      addrKey ? row[addrKey] : "";
+if(pmk){
+prev[pmk]=clean((prev[pmk]||"")+" "+mapAddress);
+}
 
-    const meaningful=
-      Object.values(row).some(
-        v=>String(v||"").trim()!==""
-      );
+return;
+}
 
-    if(!meaningful)return;
+if(!title && !address)return;
 
-    /*
-      제목 없이 주소만 있는 보조 행은
-      바로 앞 매물의 주소에 합친다.
-      지도주소 열은 더 이상 사용하지 않는다.
-    */
-    if(!title && address && result.length){
+result.push(row);
 
-      const prev=result[result.length-1];
+});
 
-      const pk=findKey(
-        prev,
-        ["주소(소재지)","주소","소재지","소재지 주소","address"]
-      );
-
-      if(pk){
-
-        prev[pk]=clean(
-          (prev[pk]||"")+" "+address
-        );
-
-      }
-
-      return;
-    }
-
-    if(!title && !address)return;
-
-    result.push(row);
-
-  });
-
-  return result;
+return result;
 
 }
 
-
-function buildExactMapAddress(address,detailAddress){
-
-  const base=
-    String(address||"")
-      .replace(/\s+/g," ")
-      .trim();
-
-  const detail=
-    String(detailAddress||"")
-      .replace(/\s+/g," ")
-      .trim();
-
-  if(!base)return "";
-
-  /*
-    상세주소가 '631-4 301호'처럼 시작하면
-    주소에 지번만 붙여 정확한 지도 검색주소를 만든다.
-  */
-  const lotMatch=
-    detail.match(/^(\d+(?:-\d+)?)(?:\s|$)/);
-
-  if(!lotMatch)return base;
-
-  const lot=lotMatch[1];
-
-  if(
-    new RegExp(
-      "(^|\\s)"+
-      lot.replace(
-        /[-\/\\^$*+?.()|[\]{}]/g,
-        "\\$&"
-      )+
-      "(\\s|$)"
-    ).test(base)
-  ){
-    return base;
-  }
-
-  return (base+" "+lot)
-    .replace(/\s+/g," ")
-    .trim();
-
-}
-
-
-function buildExactMapAddress(address,detailAddress){
+function buildExactMapAddress(address,mapAddress,detailAddress){
 
 const base=String(mapAddress||address||"")
 .replace(/\s+/g," ")
@@ -3782,34 +3565,14 @@ errors.push((i+2)+"행: 제목 또는 주소 없음");
 continue;
 }
 
-let excelDeposit=getExcelValue(row,["보증금(만원)","보증금","deposit"]);
-let excelRent=getExcelValue(row,["월세(만원)","월세","rent"]);
-let excelSale=getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"]);
-
-/* 기존 매물장처럼 매물가 칸에 5000/340이 들어온 경우 임대로 변환 */
-const excelCombined=String(excelSale||"")
-  .replace(/,/g,"")
-  .replace(/\s+/g,"")
-  .match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
-
-if(excelCombined){
-  if(!excelDeposit) excelDeposit=excelCombined[1];
-  if(!excelRent) excelRent=excelCombined[2];
-  excelSale="";
-}
-
-/* 보증금/월세가 있으면 매매가는 비워 임대 매물로 저장 */
-if(excelDeposit || excelRent){
-  excelSale="";
-}
-
 const data={
 title:title,
 address:address,
 type:type,
-deposit:excelDeposit,
-rent:excelRent,
-salePrice:excelSale,
+deposit:getExcelValue(row,["보증금","보증금(만원)","deposit"]),
+rent:getExcelValue(row,["월세","월세(만원)","rent"]),
+salePrice:getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"]),
+/* 원본 네이버 매물장처럼 매물가가 숫자/5000 형태로 들어온 경우 */
 
 premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음",
 area:getExcelValue(row,["면적","area"]),
@@ -5022,36 +4785,8 @@ function typeClass(t){
 }
 
 function neighborhood(address){
-
-  const text=
-    String(address||"")
-      .replace(/\r?\n/g," ")
-      .replace(/\s+/g," ")
-      .trim();
-
-  if(!text)return "";
-
-  /*
-    천안·아산 주소에서
-    두정동 / 신부동 / 성정2동 / 배방읍 / 탕정면
-    모두 인식한다.
-  */
-  const matches=
-    text.match(
-      /[가-힣0-9]+(?:동|읍|면)(?=\s|$|[0-9-]|[,(])/g
-    );
-
-  if(matches && matches.length){
-    return matches[matches.length-1];
-  }
-
-  const fallback=
-    text.match(
-      /([가-힣0-9]+(?:동|읍|면))/
-    );
-
-  return fallback ? fallback[1] : "";
-
+  const m=String(address||"").match(/([가-힣0-9]+(?:동|읍|면))\b/);
+  return m?m[1]:"";
 }
 
 function nextPropertyNumber(list){
@@ -5179,13 +4914,49 @@ window.initMap=function(){
 };
 
 window.createMarker=function(p){
-  /*
-    개별 매물 원형 마커는 사용하지 않는다.
-    지도에는 동/읍/면별 개수 오버레이만 표시한다.
-    매물 상세는 목록/관리 화면에서 선택할 때 열도록 유지한다.
-  */
-  return null;
-};;;
+
+  if(!map)return;
+
+  const type=typeClass(p.type);
+
+  const content=
+    '<div class="map-pin '+type+'" title="'+
+    escapeAttr((p.title||"매물"))+
+    '">'+
+    escapeHtml(p.propertyNumber?("#"+p.propertyNumber):"●")+
+    '</div>';
+
+  const overlay=new kakao.maps.CustomOverlay({
+    map:map,
+    position:new kakao.maps.LatLng(Number(p.lat),Number(p.lng)),
+    content:content,
+    yAnchor:1,
+    zIndex:30
+  });
+
+  kakao.maps.event.addListener(
+    overlay,
+    "click",
+    function(){
+      openProperty(p);
+    }
+  );
+
+  /* CustomOverlay는 직접 DOM 이벤트 연결 */
+  setTimeout(()=>{
+    const nodes=document.querySelectorAll(".map-pin");
+    const node=nodes[nodes.length-1];
+    if(node){
+      node.onclick=function(e){
+        e.stopPropagation();
+        openProperty(p);
+      };
+    }
+  },0);
+
+  markers.push(overlay);
+
+};
 
 window.clearMarkers=function(){
   markers.forEach(m=>{
@@ -5198,7 +4969,7 @@ window.geocodeProperty=function(p){
 
   if(!geocoder || !map)return;
 
-  const addr=getPropertyMapAddress(p)||p.address;
+  const addr=p.mapAddress||p.address;
   if(!addr)return;
 
   geocoder.addressSearch(
@@ -5214,6 +4985,7 @@ window.geocodeProperty=function(p){
         p.lng=Number(result[0].x);
         p.dong=neighborhood(p.address||addr);
 
+        createMarker(p);
         refreshDongCount();
         return;
 
@@ -5234,6 +5006,7 @@ window.geocodeProperty=function(p){
             p.lng=Number(result[0].x);
             p.dong=neighborhood(p.address||addr);
 
+            createMarker(p);
             refreshDongCount();
 
           }
@@ -5257,207 +5030,48 @@ window.refreshDongCount=function(){
   const list=getFilteredProperties();
   const groups={};
 
-  /*
-    핵심 수정:
-    동별 개수는 매물의 lat/lng가 없어도 반드시 집계한다.
-    기존에는 좌표가 없는 매물을 바로 return해서
-    두정동처럼 좌표가 저장된 동만 표시되는 문제가 있었다.
-  */
-  list.forEach(function(p){
+  list.forEach(p=>{
 
-    const address=String(
-      p.address||""
-    )
-    .replace(/\s+/g," ")
-    .trim();
+    if(p.lat==null||p.lng==null)return;
 
-    const dong=
-      neighborhood(address) ||
-      neighborhood(String(p.mapAddress||"")) ||
-      String(p.dong||"").trim();
-
+    const dong=p.dong||neighborhood(p.address||p.mapAddress);
     if(!dong)return;
 
     if(!groups[dong]){
-
-      groups[dong]={
-        count:0,
-        lat:0,
-        lng:0,
-        coordCount:0,
-        sampleAddress:address
-      };
-
+      groups[dong]={count:0,lat:0,lng:0};
     }
 
     groups[dong].count++;
-
-    const lat=Number(p.lat);
-    const lng=Number(p.lng);
-
-    if(
-      Number.isFinite(lat) &&
-      Number.isFinite(lng)
-    ){
-
-      groups[dong].lat+=lat;
-      groups[dong].lng+=lng;
-      groups[dong].coordCount++;
-
-    }
-
-    /*
-      좌표가 없는 경우에도 해당 동의 첫 주소를 기억한다.
-      나중에 이 주소 하나만 검색해서 동별 숫자를
-      실제 위치에 배치한다.
-    */
-    if(
-      !groups[dong].sampleAddress &&
-      address
-    ){
-
-      groups[dong].sampleAddress=address;
-
-    }
-
-    p.dong=dong;
+    groups[dong].lat+=Number(p.lat);
+    groups[dong].lng+=Number(p.lng);
 
   });
 
-
-  /*
-    좌표가 있는 동은 기존처럼 실제 매물 좌표의 평균 위치에 표시.
-    좌표가 없는 동은 임시로 한 곳에 겹쳐놓지 않고,
-    각 동의 대표 주소를 Kakao 주소검색해서 실제 위치를 찾는다.
-  */
-  Object.keys(groups).forEach(function(dong){
+  Object.keys(groups).forEach(dong=>{
 
     const g=groups[dong];
 
-    if(!g.count)return;
+    const overlay=new kakao.maps.CustomOverlay({
+      map:map,
+      position:new kakao.maps.LatLng(
+        g.lat/g.count,
+        g.lng/g.count
+      ),
+      content:
+        '<div class="count-overlay"><strong>'+
+        g.count+
+        '</strong> '+
+        escapeHtml(dong)+
+        '</div>',
+      yAnchor:1.7,
+      zIndex:10
+    });
 
-    if(g.coordCount){
-
-      const position=
-        new kakao.maps.LatLng(
-          g.lat/g.coordCount,
-          g.lng/g.coordCount
-        );
-
-      createDongCountOverlay(
-        dong,
-        g.count,
-        position
-      );
-
-      return;
-
-    }
-
-    if(
-      g.sampleAddress &&
-      geocoder
-    ){
-
-      geocoder.addressSearch(
-        g.sampleAddress,
-        function(result,status){
-
-          if(
-            status===
-            kakao.maps.services.Status.OK &&
-            result &&
-            result.length
-          ){
-
-            /*
-              비동기 검색이 끝난 시점에
-              이미 만들어진 다른 동별 오버레이는 유지한다.
-            */
-            const position=
-              new kakao.maps.LatLng(
-                Number(result[0].y),
-                Number(result[0].x)
-              );
-
-            createDongCountOverlay(
-              dong,
-              g.count,
-              position
-            );
-
-          }
-
-        }
-      );
-
-    }
+    dongOverlays.push(overlay);
 
   });
 
 };
-
-
-/*
-  동별 숫자 오버레이 생성 함수.
-  같은 동을 여러 번 그리지 않도록 기존 오버레이를
-  먼저 제거하고 하나만 추가한다.
-*/
-function createDongCountOverlay(
-  dong,
-  count,
-  position
-){
-
-  if(!map || !position)return;
-
-  /*
-    주소검색이 비동기로 여러 번 끝나는 동안
-    같은 동 오버레이가 중복되지 않게 제거한다.
-  */
-  dongOverlays=
-    dongOverlays.filter(function(old){
-
-      const el=old.getContent
-        ? old.getContent()
-        : "";
-
-      if(
-        String(el).includes(
-          'data-dong="'+
-          String(dong).replace(/"/g,'&quot;')+
-          '"'
-        )
-      ){
-
-        old.setMap(null);
-        return false;
-
-      }
-
-      return true;
-
-    });
-
-  const content=
-    '<div class="dong-count-overlay" '+
-    'data-dong="'+escapeAttr(dong)+'">'+
-    '<strong>'+count+'</strong>'+
-    '<span>'+escapeHtml(dong)+'</span>'+
-    '</div>';
-
-  const overlay=
-    new kakao.maps.CustomOverlay({
-      map:map,
-      position:position,
-      content:content,
-      yAnchor:1.2,
-      zIndex:100
-    });
-
-  dongOverlays.push(overlay);
-
-};;;
 
 window.drawMarkers=function(){
 
@@ -5465,61 +5079,24 @@ window.drawMarkers=function(){
 
   clearMarkers();
 
-  const list=getFilteredProperties();
-
-  /*
-    개별 매물 원형 마커는 표시하지 않는다.
-    좌표가 없는 매물은 주소를 이용해 좌표를 확보하고,
-    동별 개수는 좌표 유무와 관계없이 즉시 집계한다.
-  */
-  list.forEach(function(p){
-
-    const address=String(
-      p.address||""
-    )
-    .replace(/\s+/g," ")
-    .trim();
-
-    const dong=
-      neighborhood(address) ||
-      String(p.dong||"").trim();
-
-    if(dong)p.dong=dong;
+  getFilteredProperties().forEach(p=>{
 
     if(
-      p.lat==null ||
-      p.lng==null ||
-      !Number.isFinite(Number(p.lat)) ||
-      !Number.isFinite(Number(p.lng))
+      p.lat!=null &&
+      p.lng!=null
     ){
-
-      if(address){
-        geocodeProperty(p);
-      }
-
+      createMarker(p);
+    }else{
+      geocodeProperty(p);
     }
 
   });
 
-  /*
-    좌표가 없는 동도 대표 주소를 검색해서
-    각각 자기 동 위치에 숫자가 나타나도록 한다.
-  */
-  refreshDongCount();
+  setTimeout(refreshDongCount,700);
 
-  setTimeout(function(){
-    refreshDongCount();
-  },1000);
-
-  setTimeout(function(){
-    refreshDongCount();
-  },2500);
-
-};;
+};
 
 /* ---------- 상세페이지 + 상세지도 ---------- */
-
-
 
 function ensureDetailMap(){
 
@@ -5592,210 +5169,81 @@ function showDetailSplitMap(p){
 
 function moveDetailMapToProperty(p){
 
-  const container=document.getElementById("detailSplitMap");
-
-  if(!container)return;
-
-  /*
-    주소 통합 구조:
-    주소(소재지) + 상세주소에서 번지를 추출해
-    상세 매물의 실제 위치를 검색한다.
-  */
-  const baseAddress=String(
-    p.address||""
-  ).replace(/\s+/g," ").trim();
-
-  const detailAddress=String(
-    p.detailAddress||""
-  ).replace(/\s+/g," ").trim();
-
-  let searchAddress=baseAddress;
-
-  const lotMatch=
-    detailAddress.match(/^(\d+(?:-\d+)?)(?:\s|$)/);
-
-  if(lotMatch){
-
-    const lot=lotMatch[1];
-
-    const escapedLot=
-      lot.replace(
-        /[-\/\\^$*+?.()|[\]{}]/g,
-        "\\$&"
-      );
-
-    if(
-      !new RegExp(
-        "(^|\\s)"+escapedLot+"(\\s|$)"
-      ).test(searchAddress)
-    ){
-
-      searchAddress=
-        (searchAddress+" "+lot)
-          .replace(/\s+/g," ")
-          .trim();
-
-    }
-
-  }
+const address=
+buildExactMapAddress(
+p.address||"",
+p.mapAddress||"",
+p.detailAddress||p.detailUrl||""
+);
 
   /*
-    1차: 도로명/지번 주소검색
-    2차: 키워드 검색
-    3차: 저장된 좌표
+    상세 매물에서는 기존 좌표를 먼저 사용하지 않는다.
+    엑셀/기존 데이터의 잘못된 좌표가 남아 있어도
+    현재 매물의 주소를 기준으로 다시 위치를 찾는다.
   */
-  const useStoredCoordinate=function(){
+  if(address){
 
-    const lat=Number(p.lat);
-    const lng=Number(p.lng);
+    addressToCoords(address)
+      .then(function(coords){
 
-    if(
-      Number.isFinite(lat)&&
-      Number.isFinite(lng)
-    ){
+        p.lat=Number(coords.lat);
+        p.lng=Number(coords.lng);
 
-      showDetailSplitMap(p);
-
-      setTimeout(function(){
-
-        if(detailSplitMapInstance){
-
-          detailSplitMapInstance.relayout();
-
-          detailSplitMapInstance.setCenter(
-            new kakao.maps.LatLng(lat,lng)
-          );
-
-          detailSplitMapInstance.setLevel(4);
-
+        if(!p.dong){
+          p.dong=extractDong(p.address||address);
         }
 
-      },80);
+        showDetailSplitMap(p);
 
-      return true;
+      })
+      .catch(function(error){
 
-    }
-
-    container.innerHTML=
-      '<div class="detail-map-error">'+
-      '📍 주소 위치를 찾지 못했습니다.'+
-      '<br><small>'+
-      escapeHtml(searchAddress||baseAddress||"주소 없음")+
-      '</small></div>';
-
-    return false;
-
-  };
-
-  if(
-    !searchAddress ||
-    !window.kakao ||
-    !kakao.maps ||
-    !kakao.maps.services
-  ){
-
-    useStoredCoordinate();
-    return;
-
-  }
-
-  /*
-    상세페이지가 열린 뒤 지도 컨테이너 크기가 확정된 상태에서
-    지도 객체를 만든다.
-  */
-  showDetailSplitMap(p);
-
-  setTimeout(function(){
-
-    if(!detailSplitMapInstance){
-      useStoredCoordinate();
-      return;
-    }
-
-    const geocoder=
-      new kakao.maps.services.Geocoder();
-
-    const move=function(lat,lng){
-
-      const position=
-        new kakao.maps.LatLng(
-          Number(lat),
-          Number(lng)
+        console.warn(
+          "상세 매물 주소 검색 실패:",
+          error
         );
 
-      detailSplitMapInstance.relayout();
-      detailSplitMapInstance.setCenter(position);
-      detailSplitMapInstance.setLevel(4);
+        /* 주소 검색 실패시에만 저장된 좌표를 보조적으로 사용 */
+        if(
+          p.lat!=null &&
+          p.lng!=null
+        ){
 
-      p.lat=Number(lat);
-      p.lng=Number(lng);
+          showDetailSplitMap(p);
 
-      /*
-        번호는 표시하지 않고 위치만 표시한다.
-      */
+        }else{
 
-    };
+          const container=
+            document.getElementById("detailSplitMap");
 
-    const keywordSearch=function(){
+          if(container){
 
-      const places=
-        new kakao.maps.services.Places();
-
-      places.keywordSearch(
-        searchAddress,
-        function(result,status){
-
-          if(
-            status===kakao.maps.services.Status.OK &&
-            result &&
-            result.length
-          ){
-
-            move(
-              result[0].y,
-              result[0].x
-            );
-
-          }else{
-
-            useStoredCoordinate();
+            container.innerHTML=
+              '<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:#777;font-weight:700">'+
+              '📍 이 매물의 주소 위치를 찾지 못했습니다.<br>'+
+              '<span style="font-size:12px;font-weight:500;margin-top:6px">'+
+              escapeHtml(address)+
+              '</span>'+
+              '</div>';
 
           }
 
         }
-      );
 
-    };
+      });
 
-    geocoder.addressSearch(
-      searchAddress,
-      function(result,status){
+    return;
 
-        if(
-          status===kakao.maps.services.Status.OK &&
-          result &&
-          result.length
-        ){
+  }
 
-          move(
-            result[0].y,
-            result[0].x
-          );
+  if(
+    p.lat!=null &&
+    p.lng!=null
+  ){
 
-        }else{
+    showDetailSplitMap(p);
 
-          /*
-            지번주소 검색이 실패하면
-            키워드 검색으로 한 번 더 시도.
-          */
-          keywordSearch();
-
-        }
-
-      }
-    );
-
-  },120);
+  }
 
 }
 
@@ -5850,11 +5298,6 @@ window.openDetailPage=function(id){
       '<div class="detail-label">방향</div>'+
       '<div class="detail-value">'+
       escapeHtml(p.direction||"-")+
-      '</div></div>'+
-      '<div class="detail-row">'+
-      '<div class="detail-label">매물번호</div>'+
-      '<div class="detail-value">#'+
-      escapeHtml(p.propertyNumber||"-")+
       '</div></div>';
 
   }
@@ -5909,7 +5352,7 @@ window.openDetailPage=function(id){
 
     if(p.lat==null||p.lng==null){
 
-      addressToCoords(getPropertyMapAddress(p)||p.address)
+      addressToCoords(p.mapAddress||p.address)
         .then(coords=>{
           p.lat=coords.lat;
           p.lng=coords.lng;
@@ -6354,6 +5797,12 @@ continue;
 
 }
 
+const rawMapAddress=
+getExcelValue(
+row,
+["지도주소","mapAddress","지도 주소"]
+);
+
 const detailAddress=
 getExcelValue(
 row,
@@ -6362,8 +5811,9 @@ row,
 
 const mapAddress=
 buildExactMapAddress(
-  address,
-  detailAddress
+address,
+rawMapAddress,
+detailAddress
 );
 
 let type=
@@ -6392,7 +5842,7 @@ address:
 String(address).replace(/\s+/g," ").trim(),
 
 mapAddress:
-String(mapAddress||address).replace(/\s+/g," ").trim(),
+String(mapAddress).replace(/\s+/g," ").trim(),
 
 type:type,
 
@@ -6540,17 +5990,6 @@ await excelSleep(80);
 
 await loadProperties();
 
-/* 엑셀 일괄등록 완료 직후 동/읍/면을 주소에서 다시 계산 */
-properties.forEach(function(p){
-  const a=String(p.address||"").replace(/\s+/g," ").trim();
-  const d=neighborhood(a);
-  if(d)p.dong=d;
-});
-
-drawMarkers();
-refreshDongCount();
-
-
 closeExcelImport();
 
 renderAdminList();
@@ -6612,7 +6051,7 @@ function upgradeExcelGuide(){
 
     p.innerHTML=
       '엑셀 첫 행의 열 이름을 아래 순서대로 사용하면 가장 정확합니다.<br>'+
-      '<b>제목 / 주소(소재지) / 종류(매물종류) / '+
+      '<b>제목 / 주소(소재지) / 지도주소 / 종류(매물종류) / '+
       '보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / '+
       '해당층/총층 / 사용승인일 / 방향 / 상세주소 / 설명 / 사진URL</b>';
 
@@ -6804,26 +6243,6 @@ document.addEventListener("click",function(e){
 });
 
 })();
-</script>
-
-
-<script>
-/*
-  [주소 통합 기준]
-  새 엑셀에서는 지도주소 열을 사용하지 않는다.
-  기존 데이터에 mapAddress가 남아 있어도 화면/지도에는
-  address + detailAddress를 우선 사용한다.
-*/
-window.getPropertyMapAddress=function(p){
-
-  if(!p)return "";
-
-  return buildExactMapAddress(
-    p.address||"",
-    p.detailAddress||""
-  ) || String(p.address||"").trim();
-
-};
 </script>
 
 </body>
