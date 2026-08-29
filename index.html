@@ -253,6 +253,15 @@ body{overflow:auto}
   z-index:100 !important;
 }
 </style>
+
+<style>
+.detail-property-number,
+.property-number,
+.admin-property-number,
+.listing-number{
+  display:none !important;
+}
+</style>
 </head>
 
 <body>
@@ -5332,81 +5341,210 @@ function showDetailSplitMap(p){
 
 function moveDetailMapToProperty(p){
 
-const address=
-buildExactMapAddress(
-p.address||"",
-p.mapAddress||"",
-p.detailAddress||p.detailUrl||""
-);
+  const container=document.getElementById("detailSplitMap");
+
+  if(!container)return;
 
   /*
-    상세 매물에서는 기존 좌표를 먼저 사용하지 않는다.
-    엑셀/기존 데이터의 잘못된 좌표가 남아 있어도
-    현재 매물의 주소를 기준으로 다시 위치를 찾는다.
+    주소 통합 구조:
+    주소(소재지) + 상세주소에서 번지를 추출해
+    상세 매물의 실제 위치를 검색한다.
   */
-  if(address){
+  const baseAddress=String(
+    p.address||""
+  ).replace(/\s+/g," ").trim();
 
-    addressToCoords(address)
-      .then(function(coords){
+  const detailAddress=String(
+    p.detailAddress||""
+  ).replace(/\s+/g," ").trim();
 
-        p.lat=Number(coords.lat);
-        p.lng=Number(coords.lng);
+  let searchAddress=baseAddress;
 
-        if(!p.dong){
-          p.dong=extractDong(p.address||address);
+  const lotMatch=
+    detailAddress.match(/^(\d+(?:-\d+)?)(?:\s|$)/);
+
+  if(lotMatch){
+
+    const lot=lotMatch[1];
+
+    const escapedLot=
+      lot.replace(
+        /[-\/\\^$*+?.()|[\]{}]/g,
+        "\\$&"
+      );
+
+    if(
+      !new RegExp(
+        "(^|\\s)"+escapedLot+"(\\s|$)"
+      ).test(searchAddress)
+    ){
+
+      searchAddress=
+        (searchAddress+" "+lot)
+          .replace(/\s+/g," ")
+          .trim();
+
+    }
+
+  }
+
+  /*
+    1차: 도로명/지번 주소검색
+    2차: 키워드 검색
+    3차: 저장된 좌표
+  */
+  const useStoredCoordinate=function(){
+
+    const lat=Number(p.lat);
+    const lng=Number(p.lng);
+
+    if(
+      Number.isFinite(lat)&&
+      Number.isFinite(lng)
+    ){
+
+      showDetailSplitMap(p);
+
+      setTimeout(function(){
+
+        if(detailSplitMapInstance){
+
+          detailSplitMapInstance.relayout();
+
+          detailSplitMapInstance.setCenter(
+            new kakao.maps.LatLng(lat,lng)
+          );
+
+          detailSplitMapInstance.setLevel(4);
+
         }
 
-        showDetailSplitMap(p);
+      },80);
 
-      })
-      .catch(function(error){
+      return true;
 
-        console.warn(
-          "상세 매물 주소 검색 실패:",
-          error
-        );
+    }
 
-        /* 주소 검색 실패시에만 저장된 좌표를 보조적으로 사용 */
-        if(
-          p.lat!=null &&
-          p.lng!=null
-        ){
+    container.innerHTML=
+      '<div class="detail-map-error">'+
+      '📍 주소 위치를 찾지 못했습니다.'+
+      '<br><small>'+
+      escapeHtml(searchAddress||baseAddress||"주소 없음")+
+      '</small></div>';
 
-          showDetailSplitMap(p);
+    return false;
 
-        }else{
+  };
 
-          const container=
-            document.getElementById("detailSplitMap");
+  if(
+    !searchAddress ||
+    !window.kakao ||
+    !kakao.maps ||
+    !kakao.maps.services
+  ){
 
-          if(container){
-
-            container.innerHTML=
-              '<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:#777;font-weight:700">'+
-              '📍 이 매물의 주소 위치를 찾지 못했습니다.<br>'+
-              '<span style="font-size:12px;font-weight:500;margin-top:6px">'+
-              escapeHtml(address)+
-              '</span>'+
-              '</div>';
-
-          }
-
-        }
-
-      });
-
+    useStoredCoordinate();
     return;
 
   }
 
-  if(
-    p.lat!=null &&
-    p.lng!=null
-  ){
+  /*
+    상세페이지가 열린 뒤 지도 컨테이너 크기가 확정된 상태에서
+    지도 객체를 만든다.
+  */
+  showDetailSplitMap(p);
 
-    showDetailSplitMap(p);
+  setTimeout(function(){
 
-  }
+    if(!detailSplitMapInstance){
+      useStoredCoordinate();
+      return;
+    }
+
+    const geocoder=
+      new kakao.maps.services.Geocoder();
+
+    const move=function(lat,lng){
+
+      const position=
+        new kakao.maps.LatLng(
+          Number(lat),
+          Number(lng)
+        );
+
+      detailSplitMapInstance.relayout();
+      detailSplitMapInstance.setCenter(position);
+      detailSplitMapInstance.setLevel(4);
+
+      p.lat=Number(lat);
+      p.lng=Number(lng);
+
+      /*
+        번호는 표시하지 않고 위치만 표시한다.
+      */
+
+    };
+
+    const keywordSearch=function(){
+
+      const places=
+        new kakao.maps.services.Places();
+
+      places.keywordSearch(
+        searchAddress,
+        function(result,status){
+
+          if(
+            status===kakao.maps.services.Status.OK &&
+            result &&
+            result.length
+          ){
+
+            move(
+              result[0].y,
+              result[0].x
+            );
+
+          }else{
+
+            useStoredCoordinate();
+
+          }
+
+        }
+      );
+
+    };
+
+    geocoder.addressSearch(
+      searchAddress,
+      function(result,status){
+
+        if(
+          status===kakao.maps.services.Status.OK &&
+          result &&
+          result.length
+        ){
+
+          move(
+            result[0].y,
+            result[0].x
+          );
+
+        }else{
+
+          /*
+            지번주소 검색이 실패하면
+            키워드 검색으로 한 번 더 시도.
+          */
+          keywordSearch();
+
+        }
+
+      }
+    );
+
+  },120);
 
 }
 
