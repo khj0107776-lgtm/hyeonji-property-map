@@ -2020,137 +2020,10 @@ dongOverlays=[];
 
 
 function refreshDongCount(){
-
-if(!map){
-
-return;
-
-}
-
-
-clearDongOverlays();
-
-
-const list=
-getFilteredProperties();
-
-
-const groups={};
-
-
-list.forEach(
-function(p){
-
-if(
-p.lat===undefined ||
-p.lng===undefined ||
-p.lat===null ||
-p.lng===null
-){
-
-return;
-
-}
-
-
-const dong=
-p.dong||
-extractDong(
-p.address
-);
-
-
-if(!dong){
-
-return;
-
-}
-
-
-if(!groups[dong]){
-
-groups[dong]={
-
-count:0,
-
-lat:0,
-
-lng:0
-
-};
-
-}
-
-
-groups[dong].count++;
-
-groups[dong].lat+=
-Number(p.lat);
-
-groups[dong].lng+=
-Number(p.lng);
-
-}
-);
-
-
-Object.keys(
-groups
-)
-.forEach(
-function(dong){
-
-const group=
-groups[dong];
-
-
-const position=
-new kakao.maps.LatLng(
-
-group.lat/
-group.count,
-
-group.lng/
-group.count
-
-);
-
-
-const content=
-'<div class="count-overlay">'+
-'<strong>'+
-group.count+
-'</strong>'+
-escapeHtml(dong)+
-'</div>';
-
-
-const overlay=
-new kakao.maps.CustomOverlay({
-
-position:position,
-
-content:content,
-
-yAnchor:1.7,
-
-zIndex:10
-
-});
-
-
-overlay.setMap(
-map
-);
-
-
-dongOverlays.push(
-overlay
-);
-
-}
-);
-
+  // 모든 호출 경로가 동일한 동별 개수 로직을 사용하도록 연결
+  if(typeof window.refreshDongCount==="function"){
+    return window.refreshDongCount();
+  }
 }
 
 
@@ -4979,7 +4852,7 @@ window.geocodeProperty=function(p){
         p.dong=neighborhood(p.address||addr);
 
         createMarker(p);
-        refreshDongCount();
+        window.refreshDongCount();
         return;
 
       }
@@ -5192,7 +5065,7 @@ window.drawMarkers=function(){
 
   });
 
-  setTimeout(refreshDongCount,700);
+  setTimeout(window.refreshDongCount,700);
 
 };
 
