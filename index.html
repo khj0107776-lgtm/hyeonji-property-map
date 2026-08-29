@@ -4969,49 +4969,110 @@ window.refreshDongCount=function(){
 
   const list=getFilteredProperties();
   const groups={};
+  const pending=[];
 
-  list.forEach(p=>{
+  list.forEach(function(p){
 
-    if(p.lat==null||p.lng==null)return;
+    const address=String(p.address||"").trim();
+    const dong=String(
+      p.dong||neighborhood(address)||""
+    ).trim();
 
-    const dong=p.dong||neighborhood(p.address||p.mapAddress);
     if(!dong)return;
 
     if(!groups[dong]){
-      groups[dong]={count:0,lat:0,lng:0};
+      groups[dong]={
+        count:0,
+        lat:0,
+        lng:0,
+        coords:0
+      };
     }
 
+    // 좌표 유무와 관계없이 먼저 개수에 포함
     groups[dong].count++;
-    groups[dong].lat+=Number(p.lat);
-    groups[dong].lng+=Number(p.lng);
+
+    if(
+      p.lat!=null && p.lng!=null &&
+      isFinite(Number(p.lat)) &&
+      isFinite(Number(p.lng))
+    ){
+
+      groups[dong].lat+=Number(p.lat);
+      groups[dong].lng+=Number(p.lng);
+      groups[dong].coords++;
+
+    }else if(address){
+
+      pending.push(p);
+
+    }
 
   });
 
-  Object.keys(groups).forEach(dong=>{
+  // 좌표가 있는 매물은 즉시 동별 평균 위치에 표시
+  Object.keys(groups).forEach(function(dong){
 
     const g=groups[dong];
 
+    if(g.coords<=0)return;
+
     const overlay=new kakao.maps.CustomOverlay({
+
       map:map,
+
       position:new kakao.maps.LatLng(
-        g.lat/g.count,
-        g.lng/g.count
+        g.lat/g.coords,
+        g.lng/g.coords
       ),
+
       content:
         '<div class="count-overlay"><strong>'+
         g.count+
         '</strong> '+
         escapeHtml(dong)+
         '</div>',
+
       yAnchor:1.7,
       zIndex:10
+
     });
 
     dongOverlays.push(overlay);
 
   });
 
-};
+  // 엑셀 일괄등록처럼 좌표가 아직 없는 매물은 주소로 좌표를 만든 뒤
+  // 다시 동별 개수를 그린다.
+  if(pending.length && geocoder){
+
+    pending.forEach(function(p){
+
+      geocoder.addressSearch(
+        String(p.address||""),
+        function(result,status){
+
+          if(
+            status===kakao.maps.services.Status.OK &&
+            result && result.length
+          ){
+
+            p.lat=Number(result[0].y);
+            p.lng=Number(result[0].x);
+            p.dong=p.dong||neighborhood(p.address||"");
+
+            window.refreshDongCount();
+
+          }
+
+        }
+      );
+
+    });
+
+  }
+
+};;
 
 window.drawMarkers=function(){
 
