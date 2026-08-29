@@ -197,65 +197,6 @@ body{overflow:auto}
 .form-group.full{grid-column:auto}
 }
 </style>
-
-<style>
-/* 메인 지도 개별 매물은 번호 대신 종류별 색상 점으로 표시 */
-.map-pin .property-dot{
-  display:block;
-  width:13px;
-  height:13px;
-  border-radius:50%;
-  background:currentColor;
-  border:2px solid #fff;
-  box-shadow:0 2px 7px rgba(0,0,0,.35);
-}
-</style>
-
-
-<style>
-.detail-property-number{
-  min-width:40px;
-  height:30px;
-  padding:0 9px;
-  box-sizing:border-box;
-  border-radius:15px;
-  background:#111827;
-  color:#fff;
-  border:2px solid #fff;
-  box-shadow:0 3px 10px rgba(0,0,0,.28);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-  font-weight:900;
-  white-space:nowrap;
-}
-</style>
-
-
-<style>
-.detail-map-error{
-  width:100%;
-  height:100%;
-  min-height:300px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding:20px;
-  box-sizing:border-box;
-  color:#777;
-  font-weight:800;
-}
-.detail-map-error small{
-  display:block;
-  margin-top:8px;
-  font-size:12px;
-  font-weight:500;
-  line-height:1.5;
-}
-</style>
 </head>
 
 <body>
@@ -4974,53 +4915,48 @@ window.initMap=function(){
 
 window.createMarker=function(p){
 
-if(!map)return;
+  if(!map)return;
 
-const type=typeClass(p.type);
+  const type=typeClass(p.type);
 
-/*
-  메인 지도에서는 매물번호를 표시하지 않는다.
-  작은 색상 점만 표시하고, 동별 매물 개수는
-  refreshDongCount()의 큰 숫자 오버레이로 표시한다.
-*/
-const content=
-'<div class="map-pin '+type+'" title="'+
-escapeAttr((p.title||"매물"))+
-'"><span class="property-dot"></span></div>';
+  const content=
+    '<div class="map-pin '+type+'" title="'+
+    escapeAttr((p.title||"매물"))+
+    '">'+
+    escapeHtml(p.propertyNumber?("#"+p.propertyNumber):"●")+
+    '</div>';
 
-const overlay=new kakao.maps.CustomOverlay({
-map:map,
-position:new kakao.maps.LatLng(
-Number(p.lat),
-Number(p.lng)
-),
-content:content,
-yAnchor:1,
-zIndex:20
-});
+  const overlay=new kakao.maps.CustomOverlay({
+    map:map,
+    position:new kakao.maps.LatLng(Number(p.lat),Number(p.lng)),
+    content:content,
+    yAnchor:1,
+    zIndex:30
+  });
 
-setTimeout(()=>{
+  kakao.maps.event.addListener(
+    overlay,
+    "click",
+    function(){
+      openProperty(p);
+    }
+  );
 
-const nodes=document.querySelectorAll(".map-pin");
+  /* CustomOverlay는 직접 DOM 이벤트 연결 */
+  setTimeout(()=>{
+    const nodes=document.querySelectorAll(".map-pin");
+    const node=nodes[nodes.length-1];
+    if(node){
+      node.onclick=function(e){
+        e.stopPropagation();
+        openProperty(p);
+      };
+    }
+  },0);
 
-const node=nodes[nodes.length-1];
-
-if(node){
-
-node.onclick=function(e){
-
-e.stopPropagation();
-openProperty(p);
+  markers.push(overlay);
 
 };
-
-}
-
-},0);
-
-markers.push(overlay);
-
-};;
 
 window.clearMarkers=function(){
   markers.forEach(m=>{
@@ -5131,64 +5067,6 @@ window.refreshDongCount=function(){
       zIndex:10
     });
 
-    /*
-      동별 개수 숫자를 클릭하면 해당 동의 매물 위치가
-      지도 중앙에 오도록 한다.
-    */
-    kakao.maps.event.addListener(
-      overlay,
-      "click",
-      function(){
-
-        const dongProperties=list.filter(function(p){
-
-          const pdong=
-            p.dong ||
-            neighborhood(
-              p.address ||
-              p.mapAddress ||
-              ""
-            );
-
-          return pdong===dong;
-
-        });
-
-        if(
-          dongProperties.length &&
-          map
-        ){
-
-          const bounds=
-            new kakao.maps.LatLngBounds();
-
-          dongProperties.forEach(function(p){
-
-            if(
-              p.lat!=null &&
-              p.lng!=null
-            ){
-
-              bounds.extend(
-                new kakao.maps.LatLng(
-                  Number(p.lat),
-                  Number(p.lng)
-                )
-              );
-
-            }
-
-          });
-
-          try{
-            map.setBounds(bounds);
-          }catch(e){}
-
-        }
-
-      }
-    );
-
     dongOverlays.push(overlay);
 
   });
@@ -5275,27 +5153,9 @@ function showDetailSplitMap(p){
     detailSplitMarker.setMap(null);
   }
 
-  /*
-    상세매물 지도에서는 선택한 매물의 번호를 표시한다.
-    메인 지도와 달리 여기서는 "이 위치가 어떤 매물인지"
-    바로 확인할 수 있도록 #번호를 표시한다.
-  */
-  const numberText=
-    p.propertyNumber
-      ? "#"+String(p.propertyNumber)
-      : "매물";
-
-  const markerContent=
-    '<div class="detail-property-number">'+
-    escapeHtml(numberText)+
-    '</div>';
-
-  detailSplitMarker=new kakao.maps.CustomOverlay({
+  detailSplitMarker=new kakao.maps.Marker({
     map:detailSplitMapInstance,
-    position:position,
-    content:markerContent,
-    yAnchor:1.45,
-    zIndex:100
+    position:position
   });
 
   setTimeout(function(){
@@ -5309,124 +5169,81 @@ function showDetailSplitMap(p){
 
 function moveDetailMapToProperty(p){
 
-  const container=document.getElementById("detailSplitMap");
-
-  if(!container){
-    console.warn("상세 지도 영역이 없습니다.");
-    return;
-  }
-
-  /*
-    지도 검색은 반드시
-    지도주소 → 주소 → 상세주소 결합
-    순서로 정확한 주소를 만든 뒤 실행한다.
-  */
-  const exactAddress=buildExactMapAddress(
-    p.address||"",
-    p.mapAddress||"",
-    p.detailAddress||p.detailUrl||""
-  );
-
-  const showStored=function(){
-
-    const lat=Number(p.lat);
-    const lng=Number(p.lng);
-
-    if(
-      isFinite(lat)&&
-      isFinite(lng)
-    ){
-
-      showDetailSplitMap(p);
-      return true;
-
-    }
-
-    container.innerHTML=
-      '<div class="detail-map-error">'+
-      '📍 이 매물의 위치를 찾지 못했습니다.'+
-      '<br><small>'+
-      escapeHtml(exactAddress||p.address||"주소 없음")+
-      '</small></div>';
-
-    return false;
-
-  };
-
-  if(!exactAddress){
-
-    showStored();
-    return;
-
-  }
+const address=
+buildExactMapAddress(
+p.address||"",
+p.mapAddress||"",
+p.detailAddress||p.detailUrl||""
+);
 
   /*
-    상세페이지가 열린 뒤 주소를 다시 검색한다.
-    기존 Firestore 좌표가 잘못되어 있어도 현재 주소를 우선한다.
+    상세 매물에서는 기존 좌표를 먼저 사용하지 않는다.
+    엑셀/기존 데이터의 잘못된 좌표가 남아 있어도
+    현재 매물의 주소를 기준으로 다시 위치를 찾는다.
   */
-  addressToCoords(exactAddress)
-    .then(function(coords){
+  if(address){
 
-      const lat=Number(coords.lat);
-      const lng=Number(coords.lng);
+    addressToCoords(address)
+      .then(function(coords){
 
-      if(
-        !isFinite(lat)||
-        !isFinite(lng)
-      ){
+        p.lat=Number(coords.lat);
+        p.lng=Number(coords.lng);
 
-        throw new Error("유효하지 않은 좌표");
+        if(!p.dong){
+          p.dong=extractDong(p.address||address);
+        }
 
-      }
+        showDetailSplitMap(p);
 
-      p.lat=lat;
-      p.lng=lng;
-      p.mapAddress=exactAddress;
+      })
+      .catch(function(error){
 
-      if(!p.dong){
-        p.dong=extractDong(
-          p.address||exactAddress
+        console.warn(
+          "상세 매물 주소 검색 실패:",
+          error
         );
-      }
 
-      /*
-        display:none 상태에서 지도를 만들면 크기가 0이 되는
-        문제를 피하기 위해 상세페이지가 실제 표시된 뒤
-        지도 생성/이동을 실행한다.
-      */
-      requestAnimationFrame(function(){
-
-        setTimeout(function(){
+        /* 주소 검색 실패시에만 저장된 좌표를 보조적으로 사용 */
+        if(
+          p.lat!=null &&
+          p.lng!=null
+        ){
 
           showDetailSplitMap(p);
 
-          if(detailSplitMapInstance){
+        }else{
 
-            detailSplitMapInstance.relayout();
-            detailSplitMapInstance.setCenter(
-              new kakao.maps.LatLng(lat,lng)
-            );
-            detailSplitMapInstance.setLevel(4);
+          const container=
+            document.getElementById("detailSplitMap");
+
+          if(container){
+
+            container.innerHTML=
+              '<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:#777;font-weight:700">'+
+              '📍 이 매물의 주소 위치를 찾지 못했습니다.<br>'+
+              '<span style="font-size:12px;font-weight:500;margin-top:6px">'+
+              escapeHtml(address)+
+              '</span>'+
+              '</div>';
 
           }
 
-        },50);
+        }
 
       });
 
-    })
-    .catch(function(error){
+    return;
 
-      console.warn(
-        "상세페이지 지도주소 검색 실패:",
-        exactAddress,
-        error
-      );
+  }
 
-      /* 주소 검색 실패 시에만 저장된 좌표를 사용 */
-      showStored();
+  if(
+    p.lat!=null &&
+    p.lng!=null
+  ){
 
-    });
+    showDetailSplitMap(p);
+
+  }
 
 }
 
@@ -5521,35 +5338,38 @@ window.openDetailPage=function(id){
     admin.classList.remove("show");
   }
 
-  const detailPage=document.getElementById("detailPage");
+  document.getElementById("detailPage").classList.add("show");
+  document.getElementById("detailPage").classList.add("detail-split");
 
-  detailPage.classList.add("show");
-  detailPage.classList.add("detail-split");
-
-  /*
-    상세페이지를 먼저 화면에 표시한 다음
-    정확한 주소를 검색하여 왼쪽 지도 위치를 이동한다.
-    지도는 사라지지 않고 상세내용과 50:50으로 유지한다.
-  */
-  requestAnimationFrame(function(){
-
-    setTimeout(function(){
-
-      moveDetailMapToProperty(p);
-
-      if(detailSplitMapInstance){
-
-        detailSplitMapInstance.relayout();
-
-      }
-
-    },80);
-
-  });
+  /* 기존 전체화면 상세페이지 대신 왼쪽 50%에 해당 매물 지도를 표시 */
+  setTimeout(function(){
+    moveDetailMapToProperty(p);
+  },80);
 
   ensureDetailMap();
 
-  /* 기존 보조 상세지도는 사용하지 않고 detailSplitMap만 사용 */
+  setTimeout(()=>{
+
+    const container=document.getElementById("detailMap");
+    if(!container)return;
+
+    if(!window.kakao||!kakao.maps)return;
+
+    if(p.lat==null||p.lng==null){
+
+      addressToCoords(p.mapAddress||p.address)
+        .then(coords=>{
+          p.lat=coords.lat;
+          p.lng=coords.lng;
+          showDetailMap(p);
+        })
+        .catch(()=>{});
+
+    }else{
+      showDetailMap(p);
+    }
+
+  },100);
 
 };
 
@@ -5924,21 +5744,30 @@ window.renderAdminList=function(){
 
 window.importExcelProperties=async function(){
 
-if(!auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
+if(
+!auth.currentUser ||
+auth.currentUser.email!==ADMIN_EMAIL
+){
+
 alert("관리자만 엑셀 매물을 등록할 수 있습니다.");
 return;
+
 }
 
 if(!excelRows.length){
+
 alert("먼저 엑셀 파일을 선택해주세요.");
 return;
+
 }
 
 const btn=document.getElementById("excelImportBtn");
+
 btn.disabled=true;
 
 let success=0;
 let failed=0;
+
 const errors=[];
 
 try{
@@ -5949,203 +5778,171 @@ for(let i=0;i<excelRows.length;i++){
 
 const row=excelRows[i];
 
-const title=getExcelValue(row,[
-"제목","매물명","title"
-]);
+const title=getExcelValue(
+row,
+["제목","매물명","title"]
+);
 
-const address=getExcelValue(row,[
-"주소(소재지)","주소","소재지","address"
-]);
+const address=getExcelValue(
+row,
+["주소(소재지)","주소","소재지","address"]
+);
 
-if(!title && !address)continue;
+if(!title&&!address)continue;
 
-if(!title || !address){
+if(!title||!address){
+
 failed++;
-errors.push((i+2)+"행: 제목 또는 주소 없음");
+
+errors.push(
+(i+2)+"행: 제목 또는 주소 없음"
+);
+
 continue;
+
 }
 
-let type=getExcelValue(row,[
-"종류(매물종류)","종류","매물종류","type"
-])||"상가";
+const rawMapAddress=
+getExcelValue(
+row,
+["지도주소","mapAddress","지도 주소"]
+);
 
-type=normalizedType(type);
+const detailAddress=
+getExcelValue(
+row,
+["상세주소","상세"]
+);
 
-const rawMapAddress=getExcelValue(row,[
-"지도주소","mapAddress","지도 주소"
-]);
-
-const detailAddress=getExcelValue(row,[
-"상세주소","상세"
-]);
-
-const exactMapAddress=buildExactMapAddress(
+const mapAddress=
+buildExactMapAddress(
 address,
 rawMapAddress,
 detailAddress
 );
 
-const rawArea=getExcelValue(row,[
-"면적(m²)","면적(㎡)","면적","area"
-]);
+let type=
+getExcelValue(
+row,
+["종류(매물종류)","종류","매물종류","type"]
+)||"상가";
 
-/* ★ 아파트 매매가격 전용 열 */
-const salePrice=getExcelValue(row,[
+type=normalizedType(type);
+
+const rawArea=
+getExcelValue(
+row,
+["면적(m²)","면적(㎡)","면적","area"]
+);
+
+const data={
+
+propertyNumber:
+String(nextNo++),
+
+title:
+String(title).trim(),
+
+address:
+String(address).replace(/\s+/g," ").trim(),
+
+mapAddress:
+String(mapAddress).replace(/\s+/g," ").trim(),
+
+type:type,
+
+deposit:
+getExcelValue(
+row,
+["보증금(만원)","보증금","deposit"]
+),
+
+rent:
+getExcelValue(
+row,
+["월세(만원)","월세","rent"]
+),
+
+salePrice:
+getExcelValue(
+row,
+[
+"매물가(만원)",
+"매물가",
 "매매가(만원)",
 "매매가",
 "매매가격(만원)",
 "매매가격",
 "매매금액(만원)",
 "매매금액",
-"매물가(만원)",
-"매물가",
-"거래가",
-"거래가격",
 "가격",
 "price",
 "salePrice"
-]);
+]
+),
 
-const data={
+premium:
+getExcelValue(
+row,
+["권리금(만원)","권리금","premium"]
+)||"없음",
 
-propertyNumber:String(nextNo++),
+area:
+normalizeImportedArea(rawArea),
 
-title:String(title).trim(),
+floor:
+getExcelValue(
+row,
+["해당층/총층","해당층","층","층수","floor"]
+),
 
-address:String(address)
-.replace(/\s+/g," ")
-.trim(),
+approvalDate:
+getExcelValue(
+row,
+["사용승인일","approvalDate","사용승인"]
+),
 
-mapAddress:String(exactMapAddress)
-.replace(/\s+/g," ")
-.trim(),
+direction:
+getExcelValue(
+row,
+["방향","direction"]
+),
 
-type:type,
+detailAddress:
+getExcelValue(
+row,
+["상세주소","상세"]
+),
 
-deposit:getExcelValue(row,[
-"보증금(만원)","보증금","deposit"
-]),
+detailUrl:
+getExcelValue(
+row,
+["상세페이지주소","상세정보","detailUrl","url"]
+),
 
-rent:getExcelValue(row,[
-"월세(만원)","월세","rent"
-]),
+description:
+getExcelValue(
+row,
+["설명","매물설명","description"]
+),
 
-/* 반드시 Firestore에 salePrice라는 별도 필드로 저장 */
-salePrice:salePrice,
+image:
+getExcelValue(
+row,
+["사진URL","사진 URL","사진주소","image","imageUrl"]
+),
 
-premium:getExcelValue(row,[
-"권리금(만원)","권리금","premium"
-])||"없음",
+dong:
+extractDong(address),
 
-area:normalizeImportedArea(rawArea),
+createdBy:
+auth.currentUser.email,
 
-floor:getExcelValue(row,[
-"해당층/총층","해당층","층","층수","floor"
-]),
+createdAt:
+firebase.firestore.FieldValue.serverTimestamp(),
 
-approvalDate:getExcelValue(row,[
-"사용승인일","approvalDate","사용승인"
-]),
-
-direction:getExcelValue(row,[
-"방향","direction"
-]),
-
-detailAddress:detailAddress,
-
-detailUrl:getExcelValue(row,[
-"상세페이지주소","상세정보","detailUrl","url"
-]),
-
-description:getExcelValue(row,[
-"설명","매물설명","description"
-]),
-
-image:getExcelValue(row,[
-"사진URL","사진 URL","사진주소","image","imageUrl"
-]),
-
-dong:extractDong(address),
-
-createdBy:auth.currentUser.email,
-
-createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-
-updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-
-};
-
-try{
-
-const coords=await addressToCoords(
-data.mapAddress||data.address
-);
-
-if(coords){
-data.lat=coords.lat;
-data.lng=coords.lng;
-}
-
-}catch(e){
-console.warn("주소 좌표 변환 실패:",data.address,e);
-}
-
-try{
-
-await db.collection("properties").add(data);
-success++;
-
-}catch(e){
-
-failed++;
-errors.push((i+2)+"행: "+e.message);
-
-}
-
-btn.textContent=
-"등록 중... "+(i+1)+" / "+excelRows.length;
-
-await excelSleep(80);
-
-}
-
-await loadProperties();
-closeExcelImport();
-renderAdminList();
-
-let message=
-"엑셀 등록 완료\n\n"+
-"성공: "+success+"개\n"+
-"실패: "+failed+"개";
-
-if(errors.length){
-
-message+=
-"\n\n실패 내역\n"+
-errors.slice(0,15).join("\n");
-
-if(errors.length>15)
-message+="\n외 "+(errors.length-15)+"건";
-
-}
-
-alert(message);
-
-}catch(error){
-
-console.error(error);
-
-alert(
-"엑셀 등록 중 오류가 발생했습니다.\n\n"+
-error.message
-);
-
-}finally{
-
-btn.disabled=false;
-btn.textContent="엑셀 매물 등록하기";
-
-}
+updatedAt:
+firebase.firestore.FieldValue.serverTimestamp()
 
 };
 
@@ -6498,41 +6295,3 @@ document.addEventListener("click",function(e){
 
 })();
 </script>
-
-<script>
-(function(){
-  function normalizeLegacySalePrice(p){
-    if(!p || p.salePrice) return;
-    const keys=[
-      "매매가(만원)","매매가","매매가격(만원)","매매가격",
-      "매매금액(만원)","매매금액","매물가(만원)","매물가",
-      "거래가","거래가격","가격","price"
-    ];
-    for(const k of keys){
-      if(p[k]!==undefined && p[k]!==null && String(p[k]).trim()!==""){
-        p.salePrice=String(p[k]).trim();
-        return;
-      }
-    }
-  }
-  const oldLoad=window.loadProperties;
-  if(typeof oldLoad==="function"){
-    window.loadProperties=async function(){
-      const r=await oldLoad();
-      try{
-        if(Array.isArray(window.properties))
-          window.properties.forEach(normalizeLegacySalePrice);
-      }catch(e){}
-      return r;
-    };
-  }
-})();
-</script>
-
-<style>
-.count-overlay{
-  position:relative;
-  z-index:100;
-  cursor:pointer;
-}
-</style>
