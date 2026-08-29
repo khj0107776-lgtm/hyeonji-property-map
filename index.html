@@ -8,6 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer"></script>
 
 <style>
@@ -576,6 +577,57 @@ onclick="closePropertyForm()">
 </div>
 
 
+<!-- 엑셀 일괄등록 -->
+
+<div
+class="modal-bg"
+id="excelModal">
+
+<div class="modal">
+
+<button
+class="modal-x"
+onclick="closeExcelImport()">
+×
+</button>
+
+<div class="form">
+
+<h2>📥 엑셀 매물 일괄등록</h2>
+
+<p style="color:#6f7480;font-size:13px;line-height:1.6;margin-top:-8px">
+엑셀의 첫 번째 행은 제목으로 사용됩니다. 아래 열 이름을 그대로 사용하면 가장 정확합니다.<br>
+제목 / 주소 / 종류 / 보증금 / 월세 / 권리금 / 면적 / 층 / 상세주소 / 설명 / 사진URL
+</p>
+
+<div class="file-box">
+<input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="previewExcel(this)">
+</div>
+
+<div id="excelPreview" style="margin-top:12px;max-height:280px;overflow:auto"></div>
+
+<button
+class="submit-btn"
+id="excelImportBtn"
+style="margin-top:10px;background:#2f7d32"
+onclick="importExcelProperties()"
+disabled>
+엑셀 매물 등록하기
+</button>
+
+<button
+class="cancel-form"
+onclick="closeExcelImport()">
+취소
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
 <!-- 고객 매물접수 -->
 
 <div
@@ -718,6 +770,13 @@ onclick="closeAdminPanel()">
 class="submit-btn"
 onclick="openPropertyForm()">
 + 매물 등록
+</button>
+
+<button
+class="submit-btn"
+style="background:#2f7d32;margin-top:8px"
+onclick="openExcelImport()">
+📥 엑셀 일괄등록
 </button>
 
 
@@ -2882,6 +2941,168 @@ error.message
 
 }
 
+
+
+/* =====================================================
+   엑셀 매물 일괄등록
+   첫 행은 제목, 이후 행은 매물 1건
+===================================================== */
+
+let excelRows=[];
+
+function openExcelImport(){
+
+if(!auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
+alert("관리자만 엑셀 매물 등록을 할 수 있습니다.");
+return;
+}
+
+excelRows=[];
+document.getElementById("excelFile").value="";
+document.getElementById("excelPreview").innerHTML="";
+const btn=document.getElementById("excelImportBtn");
+btn.disabled=true;
+btn.textContent="엑셀 매물 등록하기";
+document.getElementById("excelModal").classList.add("show");
+}
+
+function closeExcelImport(){
+document.getElementById("excelModal").classList.remove("show");
+}
+
+function normalizeExcelKey(key){
+return String(key||"").trim().replace(/\s+/g,"").replace(/[()\[\]{}]/g,"").toLowerCase();
+}
+
+function getExcelValue(row,names){
+const keys=Object.keys(row);
+for(const name of names){
+const target=normalizeExcelKey(name);
+const found=keys.find(k=>normalizeExcelKey(k)===target);
+if(found!==undefined && row[found]!==undefined && row[found]!==null){
+return String(row[found]).trim();
+}
+}
+return "";
+}
+
+function previewExcel(input){
+const file=input.files&&input.files[0];
+if(!file)return;
+
+const reader=new FileReader();
+reader.onload=function(e){
+try{
+const workbook=XLSX.read(e.target.result,{type:"array"});
+const sheet=workbook.Sheets[workbook.SheetNames[0]];
+excelRows=XLSX.utils.sheet_to_json(sheet,{defval:""});
+
+if(!excelRows.length){
+excelRows=[];
+document.getElementById("excelPreview").innerHTML='<div class="empty">엑셀에 매물 데이터가 없습니다.</div>';
+document.getElementById("excelImportBtn").disabled=true;
+return;
+}
+
+const preview=excelRows.slice(0,8);
+let html='<div style="font-size:13px;font-weight:900;margin-bottom:7px">총 '+excelRows.length+'개 매물 / 미리보기 '+preview.length+'개</div>';
+html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+html+='<tr>'+Object.keys(excelRows[0]).map(k=>'<th style="border:1px solid #ddd;padding:6px;background:#f5f6f8;white-space:nowrap">'+escapeHtml(k)+'</th>').join('')+'</tr>';
+preview.forEach(row=>{html+='<tr>'+Object.keys(excelRows[0]).map(k=>'<td style="border:1px solid #ddd;padding:6px;white-space:nowrap">'+escapeHtml(row[k])+'</td>').join('')+'</tr>';});
+html+='</table>';
+document.getElementById("excelPreview").innerHTML=html;
+document.getElementById("excelImportBtn").disabled=false;
+}catch(error){
+console.error(error);
+excelRows=[];
+document.getElementById("excelPreview").innerHTML='<div class="empty">엑셀 파일을 읽을 수 없습니다.</div>';
+document.getElementById("excelImportBtn").disabled=true;
+}
+};
+reader.readAsArrayBuffer(file);
+}
+
+function excelSleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+
+async function importExcelProperties(){
+if(!auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
+alert("관리자만 엑셀 매물을 등록할 수 있습니다.");
+return;
+}
+if(!excelRows.length){
+alert("먼저 엑셀 파일을 선택해주세요.");
+return;
+}
+
+const btn=document.getElementById("excelImportBtn");
+btn.disabled=true;
+let success=0;
+let failed=0;
+const errors=[];
+
+try{
+for(let i=0;i<excelRows.length;i++){
+const row=excelRows[i];
+const title=getExcelValue(row,["제목","매물명","title"]);
+const address=getExcelValue(row,["주소","소재지","address"]);
+const type=getExcelValue(row,["종류","매물종류","type"])||"상가";
+
+if(!title || !address){
+failed++;
+errors.push((i+2)+"행: 제목 또는 주소 없음");
+continue;
+}
+
+const data={
+title:title,
+address:address,
+type:type,
+deposit:getExcelValue(row,["보증금","deposit"]),
+rent:getExcelValue(row,["월세","rent"]),
+premium:getExcelValue(row,["권리금","premium"])||"없음",
+area:getExcelValue(row,["면적","area"]),
+floor:getExcelValue(row,["층","층수","floor"]),
+detailUrl:getExcelValue(row,["상세주소","상세페이지주소","상세정보","detailUrl","url"]),
+description:getExcelValue(row,["설명","매물설명","description"]),
+image:getExcelValue(row,["사진URL","사진주소","image","imageUrl"]),
+dong:extractDong(address),
+createdBy:auth.currentUser.email,
+createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+};
+
+try{
+const coords=await addressToCoords(address);
+if(coords){data.lat=coords.lat;data.lng=coords.lng;}
+}catch(e){}
+
+try{
+await db.collection("properties").add(data);
+success++;
+}catch(e){
+failed++;
+errors.push((i+2)+"행: "+e.message);
+}
+
+btn.textContent="등록 중... "+(i+1)+" / "+excelRows.length;
+await excelSleep(180);
+}
+
+await loadProperties();
+closeExcelImport();
+renderAdminList();
+
+let message="엑셀 등록 완료\n\n성공: "+success+"개\n실패: "+failed+"개";
+if(errors.length){message+="\n\n실패 내역\n"+errors.slice(0,15).join("\n");if(errors.length>15)message+="\n외 "+(errors.length-15)+"건";}
+alert(message);
+}catch(error){
+console.error(error);
+alert("엑셀 등록 중 오류가 발생했습니다.\n\n"+error.message);
+}finally{
+btn.disabled=false;
+btn.textContent="엑셀 매물 등록하기";
+}
+}
 
 /* =====================================================
    고객 매물접수
