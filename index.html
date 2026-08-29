@@ -247,6 +247,15 @@ overflow:visible;
 padding:15px;
 }
 }
+
+
+#receptionOpenBtn,
+#adminManageBtn{
+position:relative;
+z-index:100;
+pointer-events:auto !important;
+cursor:pointer !important;
+}
 </style>
 </head>
 
@@ -310,11 +319,11 @@ Google 로그인
 
 </div>
 
-<button class="reception-btn" onclick="openReception()">
+<button class="reception-btn" id="receptionOpenBtn" type="button">
 📝 매물접수
 </button>
 
-<button class="admin-btn" id="adminManageBtn" onclick="openAdminPanel()" style="display:none">
+<button class="admin-btn" id="adminManageBtn" type="button" style="display:none">
 🔐 관리자 매물관리
 </button>
 
@@ -1065,6 +1074,8 @@ mapBox.innerHTML=
 
 auth.onAuthStateChanged(
 async function(user){
+
+bindMainActionButtons();
 
 if(user){
 
@@ -4571,6 +4582,53 @@ error.message
 
 }
 
+
+/* receptionOpenBtnClickFix */
+function bindMainActionButtons(){
+
+const receptionBtn=
+document.getElementById("receptionOpenBtn");
+
+if(receptionBtn && !receptionBtn.dataset.bound){
+
+receptionBtn.dataset.bound="1";
+
+receptionBtn.addEventListener(
+"click",
+function(event){
+
+event.preventDefault();
+event.stopPropagation();
+
+openReception();
+
+}
+);
+
+}
+
+const adminBtn=
+document.getElementById("adminManageBtn");
+
+if(adminBtn && !adminBtn.dataset.bound){
+
+adminBtn.dataset.bound="1";
+
+adminBtn.addEventListener(
+"click",
+function(event){
+
+event.preventDefault();
+event.stopPropagation();
+
+openAdminPanel();
+
+}
+);
+
+}
+
+}
 
 function closeAdminPanel(){
 
