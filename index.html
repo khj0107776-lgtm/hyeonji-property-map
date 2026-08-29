@@ -3635,6 +3635,7 @@ await excelSleep(180);
 }
 
 await loadProperties();
+window.refreshDongCount();
 closeExcelImport();
 renderAdminList();
 
@@ -4945,49 +4946,10 @@ window.initMap=function(){
 };
 
 window.createMarker=function(p){
-
-  if(!map)return;
-
-  const type=typeClass(p.type);
-
-  const content=
-    '<div class="map-pin '+type+'" title="'+
-    escapeAttr((p.title||"매물"))+
-    '">'+
-    escapeHtml(p.propertyNumber?("#"+p.propertyNumber):"●")+
-    '</div>';
-
-  const overlay=new kakao.maps.CustomOverlay({
-    map:map,
-    position:new kakao.maps.LatLng(Number(p.lat),Number(p.lng)),
-    content:content,
-    yAnchor:1,
-    zIndex:30
-  });
-
-  kakao.maps.event.addListener(
-    overlay,
-    "click",
-    function(){
-      openProperty(p);
-    }
-  );
-
-  /* CustomOverlay는 직접 DOM 이벤트 연결 */
-  setTimeout(()=>{
-    const nodes=document.querySelectorAll(".map-pin");
-    const node=nodes[nodes.length-1];
-    if(node){
-      node.onclick=function(e){
-        e.stopPropagation();
-        openProperty(p);
-      };
-    }
-  },0);
-
-  markers.push(overlay);
-
-};
+  // 개별 매물 마커/매물번호는 지도에 표시하지 않는다.
+  // 동별 개수 오버레이만 refreshDongCount()에서 표시한다.
+  return null;
+};;
 
 window.clearMarkers=function(){
   markers.forEach(m=>{
@@ -5000,7 +4962,7 @@ window.geocodeProperty=function(p){
 
   if(!geocoder || !map)return;
 
-  const addr=p.mapAddress||p.address;
+  const addr=p.address;
   if(!addr)return;
 
   geocoder.addressSearch(
@@ -5058,51 +5020,78 @@ window.refreshDongCount=function(){
 
   clearDongOverlays();
 
-  const list=getFilteredProperties();
+  const list=Array.isArray(properties)?properties:[];
   const groups={};
 
-  list.forEach(p=>{
+  list.forEach(function(p){
 
-    if(p.lat==null||p.lng==null)return;
+    const address=String(p.address||"").trim();
+    if(!address)return;
 
-    const dong=p.dong||neighborhood(p.address||p.mapAddress);
+    let dong=String(p.dong||"").trim();
+
+    if(!dong && typeof neighborhood==="function"){
+      dong=String(neighborhood(address)||"").trim();
+    }
+
+    if(!dong && typeof extractDong==="function"){
+      dong=String(extractDong(address)||"").trim();
+    }
+
     if(!dong)return;
 
     if(!groups[dong]){
-      groups[dong]={count:0,lat:0,lng:0};
+      groups[dong]={
+        count:0,
+        lat:0,
+        lng:0,
+        coordCount:0,
+        pending:false
+      };
     }
 
     groups[dong].count++;
-    groups[dong].lat+=Number(p.lat);
-    groups[dong].lng+=Number(p.lng);
+
+    const lat=Number(p.lat);
+    const lng=Number(p.lng);
+
+    if(isFinite(lat) && isFinite(lng) && lat!==0 && lng!==0){
+      groups[dong].lat+=lat;
+      groups[dong].lng+=lng;
+      groups[dong].coordCount++;
+    }
 
   });
 
-  Object.keys(groups).forEach(dong=>{
+  Object.keys(groups).forEach(function(dong){
 
     const g=groups[dong];
+    if(g.coordCount<=0)return;
+
+    const position=new kakao.maps.LatLng(
+      g.lat/g.coordCount,
+      g.lng/g.coordCount
+    );
+
+    const content=
+      '<div class="count-overlay">'+
+      '<strong>'+g.count+'</strong> '+
+      '<span>'+escapeHtml(dong)+'</span>'+
+      '</div>';
 
     const overlay=new kakao.maps.CustomOverlay({
       map:map,
-      position:new kakao.maps.LatLng(
-        g.lat/g.count,
-        g.lng/g.count
-      ),
-      content:
-        '<div class="count-overlay"><strong>'+
-        g.count+
-        '</strong> '+
-        escapeHtml(dong)+
-        '</div>',
-      yAnchor:1.7,
-      zIndex:10
+      position:position,
+      content:content,
+      yAnchor:1.4,
+      zIndex:20
     });
 
     dongOverlays.push(overlay);
 
   });
 
-};
+};;
 
 window.drawMarkers=function(){
 
@@ -5381,7 +5370,7 @@ window.openDetailPage=function(id){
 
     if(p.lat==null||p.lng==null){
 
-      addressToCoords(p.mapAddress||p.address)
+      addressToCoords(p.address)
         .then(coords=>{
           p.lat=coords.lat;
           p.lng=coords.lng;
