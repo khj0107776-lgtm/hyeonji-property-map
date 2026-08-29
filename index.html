@@ -5020,15 +5020,8 @@ window.refreshDongCount=function(){
 
   clearDongOverlays();
 
-  /*
-    동별 개수는 현재 선택된 종류가 아니라
-    전체 매물을 기준으로 계산한다.
-    따라서 상가/공장/아파트/원·투룸/주택/토지에 관계없이
-    모든 동·읍·면의 총 매물 수가 표시된다.
-  */
   const list=Array.isArray(properties)?properties:[];
   const groups={};
-  const missingCoords=[];
 
   list.forEach(function(p){
 
@@ -5052,11 +5045,11 @@ window.refreshDongCount=function(){
         count:0,
         lat:0,
         lng:0,
-        coordCount:0
+        coordCount:0,
+        sampleAddress:address
       };
     }
 
-    // 좌표가 없어도 반드시 개수에는 포함
     groups[dong].count++;
 
     const lat=Number(p.lat);
@@ -5068,16 +5061,47 @@ window.refreshDongCount=function(){
       lat!==0 &&
       lng!==0
     ){
-
       groups[dong].lat+=lat;
       groups[dong].lng+=lng;
       groups[dong].coordCount++;
+    }
+
+  });
+
+  const unresolved=[];
+
+  Object.keys(groups).forEach(function(dong){
+
+    const g=groups[dong];
+
+    if(g.coordCount>0){
+
+      const position=new kakao.maps.LatLng(
+        g.lat/g.coordCount,
+        g.lng/g.coordCount
+      );
+
+      const content=
+        '<div class="count-overlay">'+
+        '<strong>'+g.count+'</strong> '+
+        '<span>'+escapeHtml(dong)+'</span>'+
+        '</div>';
+
+      const overlay=new kakao.maps.CustomOverlay({
+        map:map,
+        position:position,
+        content:content,
+        yAnchor:1.4,
+        zIndex:20
+      });
+
+      dongOverlays.push(overlay);
 
     }else{
 
-      missingCoords.push({
-        property:p,
-        dong:dong
+      unresolved.push({
+        dong:dong,
+        group:g
       });
 
     }
@@ -5085,56 +5109,22 @@ window.refreshDongCount=function(){
   });
 
   /*
-    좌표가 하나라도 있는 동은 바로 표시.
-    같은 동의 여러 매물 좌표 평균값을 위치로 사용한다.
-  */
-  Object.keys(groups).forEach(function(dong){
-
-    const g=groups[dong];
-
-    if(g.coordCount<=0)return;
-
-    const position=new kakao.maps.LatLng(
-      g.lat/g.coordCount,
-      g.lng/g.coordCount
-    );
-
-    const content=
-      '<div class="count-overlay">'+
-      '<strong>'+g.count+'</strong> '+
-      '<span>'+escapeHtml(dong)+'</span>'+
-      '</div>';
-
-    const overlay=new kakao.maps.CustomOverlay({
-      map:map,
-      position:position,
-      content:content,
-      yAnchor:1.4,
-      zIndex:20
-    });
-
-    dongOverlays.push(overlay);
-
-  });
-
-  /*
-    엑셀 일괄등록처럼 좌표가 없는 매물은 주소를 기준으로
-    카카오 지도를 검색한다. 좌표를 찾으면 다시 한 번만
-    동별 개수를 그려서 해당 동에도 반드시 표시한다.
+    엑셀 일괄등록 매물은 저장 직후 좌표가 비어 있을 수 있다.
+    이 경우 해당 동의 대표 주소 1개만 검색해서
+    그 동의 개수 위치를 만든다.
   */
   if(
-    missingCoords.length &&
+    unresolved.length &&
     typeof geocoder!=="undefined" &&
     geocoder
   ){
 
-    let remaining=missingCoords.length;
-    let changed=false;
+    let left=unresolved.length;
 
-    missingCoords.forEach(function(item){
+    unresolved.forEach(function(item){
 
       geocoder.addressSearch(
-        item.property.address,
+        item.group.sampleAddress,
         function(result,status){
 
           if(
@@ -5143,20 +5133,35 @@ window.refreshDongCount=function(){
             result.length
           ){
 
-            item.property.lat=Number(result[0].y);
-            item.property.lng=Number(result[0].x);
-            item.property.dong=item.dong;
-            changed=true;
+            const position=new kakao.maps.LatLng(
+              Number(result[0].y),
+              Number(result[0].x)
+            );
+
+            const content=
+              '<div class="count-overlay">'+
+              '<strong>'+item.group.count+'</strong> '+
+              '<span>'+escapeHtml(item.dong)+'</span>'+
+              '</div>';
+
+            const overlay=new kakao.maps.CustomOverlay({
+              map:map,
+              position:position,
+              content:content,
+              yAnchor:1.4,
+              zIndex:20
+            });
+
+            dongOverlays.push(overlay);
 
           }
 
-          remaining--;
+          left--;
 
-          if(remaining===0 && changed){
-
-            // 새 좌표를 얻은 뒤 동별 위치를 다시 계산
-            window.refreshDongCount();
-
+          if(left===0){
+            // 모든 동별 대표 주소 검색 완료
+            // 좌표가 있는 기존 동은 그대로 두고,
+            // 새로 찾은 동도 현재 화면에 표시됨.
           }
 
         }
@@ -5166,7 +5171,7 @@ window.refreshDongCount=function(){
 
   }
 
-};;;
+};;;;
 
 window.drawMarkers=function(){
 
