@@ -5738,7 +5738,10 @@ window.saveProperty=async function(){
 
   try{
 
-    const mapAddr=data.mapAddress||data.address;
+    const mapAddr =
+      document.getElementById("fMapAddress")?.value.trim() ||
+      data.mapAddress ||
+      data.address;
 
     try{
       const coords=await addressToCoords(mapAddr);
@@ -5746,8 +5749,11 @@ window.saveProperty=async function(){
         data.lat=coords.lat;
         data.lng=coords.lng;
       }
-    }catch(e){}
+    }catch(e){
+      console.warn("개별등록 지도주소 검색 실패:",e);
+    }
 
+    data.mapAddress=mapAddr;
     data.dong=neighborhood(data.address);
 
     if(editingId){
