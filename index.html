@@ -1,1466 +1,273 @@
-// 카카오맵 JavaScript 키
-window.KAKAO_APP_KEY = "175758acb1d968a612c27e344b435346";
-
-// 관리자 비밀번호
-window.ADMIN_PASSWORD = "6192";<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-
 <title>현지공인중개사 매물지도</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:"Malgun Gothic","Noto Sans KR",Arial,sans-serif;color:#222;overflow:hidden}button,input,select{font:inherit}.header{height:91px;border-bottom:1px solid #ddd;display:flex;align-items:center;padding:0 22px;gap:24px;background:#fff}.logo-area{display:flex;align-items:center;min-width:470px}.logo-symbol{width:48px;height:54px;position:relative;margin-right:12px}.logo-symbol:before{content:"";position:absolute;left:7px;top:2px;width:33px;height:33px;border:5px solid #222;transform:rotate(45deg);border-left:0;border-top:0}.logo-symbol i{position:absolute;left:8px;top:16px;width:32px;height:31px;border-left:5px solid #222;border-right:5px solid #222;border-bottom:5px solid #222}.logo-symbol b{position:absolute;left:20px;bottom:0;width:10px;height:21px;background:#70aa88}.logo-title{font-size:29px;font-weight:900;letter-spacing:-1.5px}.logo-title span{font-size:31px}.logo-en{font-size:9px;color:#777;letter-spacing:2px;margin-top:2px}.header-contact{margin-left:auto;display:flex;align-items:center;gap:23px;font-weight:800}.header-contact a{color:#222;text-decoration:none;white-space:nowrap;font-size:21px}.header-contact .tel-main{font-size:13px;color:#4d8f68;border:1px solid #74a98b;border-radius:5px;padding:7px 12px}.office{font-size:12px;line-height:1.55;color:#687d99;min-width:345px}.topnav{height:49px;display:flex;align-items:center;border-bottom:1px solid #ddd;padding:0 8px;gap:2px;white-space:nowrap;overflow:hidden}.topnav button{height:48px;border:0;background:#fff;padding:0 12px;font-weight:700;cursor:pointer}.topnav button:hover,.topnav button.active{color:#3e9362}.nav-grow{flex:1}.filters{height:57px;background:#f8f8f8;border-bottom:1px solid #ddd;display:flex;align-items:center;gap:6px;padding:0 9px}.filters input,.filters select,.filters button{height:39px;border:1px solid #d4d4d4;background:#fff;border-radius:4px;padding:0 11px;color:#444}.filters input{width:258px}.filters select{min-width:92px}.filters .green{background:#5c9a76;color:#fff;border-color:#5c9a76;font-weight:800}.filters .upload{color:#367e59;font-weight:700}.filters .reset{border-color:#eb4960;color:#e33f58}.count{margin-left:auto;background:#eaf2ed;border-radius:4px;padding:10px 13px;color:#607366;white-space:nowrap}.switch{height:39px;display:flex}.switch button{border-radius:0}.switch .on{color:#418b61;border-color:#71a387;background:#f1f8f3}.main{display:flex;height:calc(100vh - 197px);min-height:500px}.map-wrap{position:relative;flex:1;min-width:0;background:#e9f0e7}.map-wrap #map{position:absolute;inset:0}.notice{position:absolute;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;padding:18px 22px;border:1px solid #ddd;border-radius:9px;box-shadow:0 5px 25px #0002;text-align:center}.notice span{display:block;color:#777;font-size:12px;margin-top:6px}.map-tools{position:absolute;right:18px;top:18px;z-index:6;width:52px;background:#fff;border:1px solid #ddd;border-radius:8px;overflow:hidden;box-shadow:0 2px 7px #0002}.map-tools button{width:52px;min-height:47px;border:0;border-bottom:1px solid #eee;background:#fff;font-weight:700;cursor:pointer}.real{position:absolute;z-index:5;left:18px;bottom:23px;background:#6238df;color:#fff;width:100px;height:82px;text-align:center;padding-top:10px;clip-path:polygon(50% 0,100% 28%,88% 100%,12% 100%,0 28%);font-size:12px}.real strong{font-size:13px}.scale{position:absolute;bottom:4px;left:18px;font-size:10px}.side{width:470px;border-left:1px solid #ddd;background:#fff;overflow:auto}.side-head{height:55px;border-bottom:1px solid #ddd;display:flex;align-items:center;justify-content:space-between;padding:0 13px;position:sticky;top:0;z-index:8;background:#fff}.side-head small{display:block;color:#999;font-size:10px;margin-top:3px}.side-head select{border:1px solid #ddd;padding:5px;border-radius:3px}.card{height:154px;display:grid;grid-template-columns:165px 1fr;gap:11px;padding:10px 12px;border-bottom:1px solid #e3e3e3;cursor:pointer}.card:hover{background:#fafafa}.photo{height:118px;background:#eee;position:relative;overflow:hidden;border-radius:2px}.photo img{width:100%;height:100%;object-fit:cover}.tag{position:absolute;left:0;top:0;background:#666;color:#fff;padding:5px 7px;font-size:11px;font-weight:800}.ribbon{position:absolute;right:-38px;top:10px;width:130px;transform:rotate(45deg);text-align:center;background:#e5422b;color:#fff;font-size:10px;padding:4px;font-weight:900}.content{min-width:0}.no{color:#999;font-size:11px}.addr{color:#999;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:900;font-size:15px;margin:4px 0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{font-size:11px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.prices{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:8px}.pill{display:flex;align-items:center;gap:4px;font-weight:900;font-size:14px}.pill b{font-size:10px;color:#fff;padding:3px 5px;border-radius:2px}.dep b,.rent b{background:#53a63f}.sale b{background:#f0aa25}.fee{font-size:10px;background:#efa62a;color:#fff;padding:4px 5px;border-radius:2px}.empty{text-align:center;color:#888;padding:60px 20px}.custom-marker{background:#4f946c;color:#fff;border:2px solid #fff;box-shadow:0 2px 5px #0004;border-radius:20px;padding:5px 8px;font-size:11px;font-weight:900;white-space:nowrap}.custom-marker.sale{background:#df5945}.dialog{padding:22px;width:380px}.dialog h3{margin-top:0}.dialog label{display:block;font-size:13px;margin:12px 0}.dialog input[type=number]{width:100%;margin-top:5px;padding:9px;border:1px solid #ddd;border-radius:4px}.dialog .check{display:flex;align-items:center}.dialog-buttons{display:flex;justify-content:flex-end;gap:7px;margin-top:20px}.dialog-buttons button{padding:9px 15px;border:1px solid #ddd;background:#fff;border-radius:4px}.dialog-buttons .apply{background:#4f936c;color:#fff;border-color:#4f936c}@media(max-width:1200px){.office{display:none}.logo-area{min-width:330px}.header-contact{gap:10px}.side{width:410px}.filters .upload{display:none}}@media(max-width:800px){body{overflow:auto}.header{height:auto;min-height:68px;padding:8px 12px}.logo-area{min-width:0}.logo-symbol{display:none}.logo-title,.logo-title span{font-size:20px}.logo-en{display:none}.header-contact{margin-left:auto}.header-contact a{font-size:13px}.header-contact .tel-main{display:none}.topnav{height:42px}.topnav button{height:42px;font-size:11px;padding:0 7px}.nav-grow,.topnav button:not([data-cat]){display:none}.filters{height:auto;min-height:50px;flex-wrap:wrap;padding:6px}.filters input{width:calc(100vw - 100px)}.filters select{flex:1;min-width:70px;height:35px}.count{display:none}.main{height:calc(100vh - 165px)}.side{display:none}.main.list-mode .map-wrap{display:none}.main.list-mode .side{display:block;width:100%}.card{grid-template-columns:125px 1fr}.photo{height:110px}}
+.admin-login{height:39px;border:1px solid #777;background:#fff;border-radius:4px;padding:0 11px;color:#444;font-weight:700;white-space:nowrap}
+.admin-login.logged{background:#333;color:#fff;border-color:#333}
+.admin-only{display:none!important}
+body.admin-mode .admin-only{display:block!important}
+.delete-btn{position:absolute;right:5px;bottom:5px;border:0;border-radius:4px;background:#d94444;color:#fff;font-size:10px;padding:4px 7px;cursor:pointer;z-index:3}
+.card{position:relative}
+.login-help{font-size:13px;color:#777;margin:-5px 0 15px}
+#loginDialog{border:0;border-radius:10px;box-shadow:0 15px 60px #0004}
+#loginDialog::backdrop{background:#0005}
 
-<link rel="stylesheet" href="style.css">
+</style>
 </head>
-
 <body>
-
 <header class="header">
-
   <div class="logo-area">
-
-    <div class="logo-symbol">
-      <i></i>
-      <b></b>
-    </div>
-
+    <div class="logo-symbol"><i></i><b></b></div>
     <div>
-      <div class="logo-title">
-        현지공인중개사 <span>매물지도</span>
-      </div>
-
-      <div class="logo-en">
-        REAL ESTATE · CHEONAN / ASAN
-      </div>
+      <div class="logo-title">현지공인중개사 <span>매물지도</span></div>
+      <div class="logo-en">REAL ESTATE · CHEONAN / ASAN</div>
     </div>
-
   </div>
-
-
   <div class="header-contact">
-
-    <a href="tel:0414141124" class="tel-main">
-      ☎ 문의전화
-    </a>
-
-    <a href="tel:0414141124">
-      041-414-1124
-    </a>
-
-    <a href="tel:01082793919">
-      010-8279-3919
-    </a>
-
+    <a href="tel:0414141124" class="tel-main">☎ 문의전화</a>
+    <a href="tel:0414141124">041-414-1124</a>
+    <a href="tel:01082793919">010-8279-3919</a>
   </div>
-
-
   <div class="office">
-
-    <div>
-      ◆ 현지공인중개사사무소
-    </div>
-
-    <div>
-      ◆ 대표 : 김현지
-    </div>
-
-    <div>
-      ◆ 등록번호 : 제44131-2026-00006호
-    </div>
-
-    <div>
-      ◆ 주소 : 천안시 동남구 신부동 631번지 102호
-    </div>
-
+    <div>◆ 현지공인중개사사무소</div>
+    <div>◆ 대표 : 김현지</div>
+    <div>◆ 등록번호 : 제44131-2026-00006호</div>
+    <div>◆ 주소 : 천안시 동남구 신부동 631번지 102호</div>
   </div>
-
 </header>
 
-
 <nav class="topnav">
-
-  <button data-cat="원룸·투룸·쓰리룸">
-    원룸·투룸·쓰리룸
-  </button>
-
-  <button data-cat="오피스텔">
-    오피스텔
-  </button>
-
-  <button data-cat="아파트">
-    아파트
-  </button>
-
-  <button data-cat="상가·사무실">
-    상가·사무실
-  </button>
-
-  <button data-cat="수익형 건물">
-    수익형 건물
-  </button>
-
-  <button data-cat="토지">
-    토지
-  </button>
-
-  <button data-cat="주택">
-    주택
-  </button>
-
-  <button data-cat="공장창고">
-    공장창고
-  </button>
-
+  <button data-cat="">원룸·투룸·쓰리룸</button>
+  <button data-cat="오피스텔">오피스텔</button>
+  <button data-cat="아파트">아파트</button>
+  <button data-cat="상가·사무실">상가·사무실</button>
+  <button data-cat="수익형 건물">수익형 건물</button>
+  <button data-cat="토지">토지</button>
+  <button data-cat="주택">주택</button>
+  <button data-cat="공장창고">공장창고</button>
   <span class="nav-grow"></span>
-
-  <button>
-    매물 투어 요청!
-  </button>
-
-  <button>
-    매물 무료 접수!
-  </button>
-
-  <button>
-    부동산 소식
-  </button>
-
-  <button>
-    오시는 길
-  </button>
-
+  <button>매물 투어 요청!</button><button>매물 무료 접수!</button><button>부동산 소식</button><button>오시는 길</button>
 </nav>
 
-
 <section class="filters">
-
-  <button id="allFilter" class="green">
-    ☷ 전체필터
-  </button>
-
-
-  <input
-    id="search"
-    placeholder="매물번호, 제목, 주소 검색"
-  >
-
-
-  <select id="trade">
-
-    <option value="">
-      거래 유형
-    </option>
-
-    <option>
-      매매
-    </option>
-
-    <option>
-      전세
-    </option>
-
-    <option>
-      월세
-    </option>
-
-  </select>
-
-
-  <select id="area">
-
-    <option value="">
-      면적
-    </option>
-
-    <option value="30">
-      30㎡ 이하
-    </option>
-
-    <option value="100">
-      30~100㎡
-    </option>
-
-    <option value="101">
-      100㎡ 초과
-    </option>
-
-  </select>
-
-
-  <select id="price">
-
-    <option value="">
-      금액
-    </option>
-
-    <option value="1000">
-      1,000만원 이하
-    </option>
-
-    <option value="5000">
-      5,000만원 이하
-    </option>
-
-    <option value="10000">
-      1억원 이하
-    </option>
-
-    <option value="10001">
-      1억원 초과
-    </option>
-
-  </select>
-
-
-  <select id="type">
-
-    <option value="">
-      매물 종류
-    </option>
-
-    <option>
-      상가·사무실
-    </option>
-
-    <option>
-      원룸·투룸·쓰리룸
-    </option>
-
-    <option>
-      오피스텔
-    </option>
-
-    <option>
-      아파트
-    </option>
-
-    <option>
-      공장창고
-    </option>
-
-    <option>
-      주택
-    </option>
-
-    <option>
-      토지
-    </option>
-
-    <option>
-      수익형 건물
-    </option>
-
-  </select>
-
-
-  <select id="theme">
-
-    <option value="">
-      테마 종류
-    </option>
-
-    <option>
-      추천
-    </option>
-
-    <option>
-      무권리
-    </option>
-
-    <option>
-      급매
-    </option>
-
-    <option>
-      공실
-    </option>
-
-    <option>
-      주차좋음
-    </option>
-
-    <option>
-      코너
-    </option>
-
-  </select>
-
-
-  <button
-    id="uploadBtn"
-    class="upload admin-only"
-  >
-    📁 매물 등록(엑셀)
-  </button>
-
-
-  <input
-    id="excelFile"
-    type="file"
-    accept=".xlsx,.xls,.csv"
-    hidden
-  >
-
-
-  <button
-    id="adminBtn"
-    class="admin-login"
-  >
-    🔐 관리자 로그인
-  </button>
-
-
-  <button
-    id="reset"
-    class="reset"
-  >
-    ↻ 초기화
-  </button>
-
-
-  <div class="count">
-
-    지도내 매물 :
-    <b id="count">0</b>개
-
-  </div>
-
-
-  <div class="switch">
-
-    <button
-      id="mapBtn"
-      class="on"
-    >
-      지도
-    </button>
-
-    <button
-      id="listBtn"
-    >
-      목록
-    </button>
-
-  </div>
-
+  <button id="allFilter" class="green">☷ 전체필터</button>
+  <input id="search" placeholder="매물번호, 제목, 주소 검색">
+  <select id="trade"><option value="">거래 유형</option><option>매매</option><option>전세</option><option>월세</option></select>
+  <select id="area"><option value="">면적</option><option value="30">30㎡ 이하</option><option value="100">30~100㎡</option><option value="101">100㎡ 초과</option></select>
+  <select id="price"><option value="">금액</option><option value="1000">1,000만원 이하</option><option value="5000">5,000만원 이하</option><option value="10000">1억원 이하</option><option value="10001">1억원 초과</option></select>
+  <select id="type"><option value="">매물 종류</option><option>상가·사무실</option><option>원룸·투룸·쓰리룸</option><option>오피스텔</option><option>아파트</option><option>공장창고</option><option>주택</option><option>토지</option><option>수익형 건물</option></select>
+  <select id="theme"><option value="">테마 종류</option><option>추천</option><option>무권리</option><option>급매</option><option>공실</option><option>주차좋음</option><option>코너</option></select>
+  <button id="uploadBtn" class="upload admin-only">📁 매물 등록(엑셀)</button>
+  <input id="excelFile" type="file" accept=".xlsx,.xls,.csv" hidden>
+  <button id="adminBtn" class="admin-login">🔐 관리자 로그인</button><button id="reset" class="reset">↻ 초기화</button>
+  <div class="count">지도내 매물 : <b id="count">0</b>개</div>
+  <div class="switch"><button id="mapBtn" class="on">지도</button><button id="listBtn">목록</button></div>
 </section>
 
-
 <main class="main">
-
-
   <section class="map-wrap">
-
     <div id="map"></div>
-
-
-    <div
-      id="apiNotice"
-      class="notice"
-    >
-
-      <b>
-        카카오맵을 불러오는 중입니다.
-      </b>
-
-      <span>
-        GitHub Pages 도메인이 카카오 앱의 Web 플랫폼에 등록되어 있어야 합니다.
-      </span>
-
+    <div id="apiNotice" class="notice">
+      <b>카카오맵을 불러오는 중입니다.</b>
+      <span>GitHub Pages 도메인이 카카오 앱의 Web 플랫폼에 등록되어 있어야 합니다.</span>
     </div>
-
-
     <div class="map-tools">
-
-      <button id="plus">
-        ＋
-      </button>
-
-      <button id="minus">
-        －
-      </button>
-
-      <button id="myLocation">
-        ◎
-      </button>
-
-      <button id="mapType">
-        지도<br>유형
-      </button>
-
-      <button id="copyLoc">
-        위치<br>복사
-      </button>
-
-      <button id="around">
-        주변
-      </button>
-
+      <button id="plus">＋</button><button id="minus">－</button><button id="myLocation">◎</button>
+      <button id="mapType">지도<br>유형</button><button id="copyLoc">위치<br>복사</button><button id="around">주변</button>
     </div>
-
-
-    <div class="real">
-
-      ↗<br>
-
-      <strong>
-        실거래가
-      </strong>
-
-    </div>
-
-
-    <div class="scale">
-      2 km
-    </div>
-
+    <div class="real">↗<br><strong>실거래가</strong></div>
+    <div class="scale">2 km</div>
   </section>
 
-
   <aside class="side">
-
     <div class="side-head">
-
-      <div>
-
-        <b>
-          천안·아산 매물
-        </b>
-
-        <small id="fileStatus">
-          샘플 매물
-        </small>
-
-      </div>
-
-
-      <select id="sort">
-
-        <option value="latest">
-          최신순
-        </option>
-
-        <option value="low">
-          금액 낮은순
-        </option>
-
-        <option value="high">
-          금액 높은순
-        </option>
-
-        <option value="area">
-          면적 큰순
-        </option>
-
-      </select>
-
+      <div><b>천안·아산 매물</b><small id="fileStatus">샘플 매물</small></div>
+      <select id="sort"><option value="latest">최신순</option><option value="low">금액 낮은순</option><option value="high">금액 높은순</option><option value="area">면적 큰순</option></select>
     </div>
-
-
     <div id="cards"></div>
-
   </aside>
-
 </main>
 
-
 <dialog id="advanced">
-
-  <form
-    method="dialog"
-    class="dialog"
-  >
-
-    <h3>
-      전체 필터
-    </h3>
-
-
-    <label>
-
-      최소 면적(㎡)
-
-      <input
-        id="minArea"
-        type="number"
-      >
-
-    </label>
-
-
-    <label>
-
-      최대 면적(㎡)
-
-      <input
-        id="maxArea"
-        type="number"
-      >
-
-    </label>
-
-
-    <label>
-
-      최대 보증금(만원)
-
-      <input
-        id="maxDeposit"
-        type="number"
-      >
-
-    </label>
-
-
-    <label>
-
-      최대 월세(만원)
-
-      <input
-        id="maxRent"
-        type="number"
-      >
-
-    </label>
-
-
-    <label class="check">
-
-      <input
-        id="parking"
-        type="checkbox"
-      >
-
-      주차 가능한 매물만
-
-    </label>
-
-
-    <div class="dialog-buttons">
-
-      <button value="cancel">
-        닫기
-      </button>
-
-      <button
-        id="apply"
-        class="apply"
-        value="default"
-      >
-        적용
-      </button>
-
-    </div>
-
+  <form method="dialog" class="dialog">
+    <h3>전체 필터</h3>
+    <label>최소 면적(㎡)<input id="minArea" type="number"></label>
+    <label>최대 면적(㎡)<input id="maxArea" type="number"></label>
+    <label>최대 보증금(만원)<input id="maxDeposit" type="number"></label>
+    <label>최대 월세(만원)<input id="maxRent" type="number"></label>
+    <label class="check"><input id="parking" type="checkbox"> 주차 가능한 매물만</label>
+    <div class="dialog-buttons"><button value="cancel">닫기</button><button id="apply" class="apply" value="default">적용</button></div>
   </form>
-
 </dialog>
-
 
 <dialog id="loginDialog">
-
-  <form
-    method="dialog"
-    class="dialog"
-  >
-
-    <h3>
-      관리자 로그인
-    </h3>
-
-
-    <p class="login-help">
-      매물 등록·삭제는 관리자만 가능합니다.
-    </p>
-
-
-    <label>
-
-      관리자 비밀번호
-
-      <input
-        id="adminPassword"
-        type="password"
-        autocomplete="current-password"
-        placeholder="비밀번호 입력"
-      >
-
-    </label>
-
-
-    <div class="dialog-buttons">
-
-      <button value="cancel">
-        취소
-      </button>
-
-      <button
-        id="loginSubmit"
-        class="apply"
-        value="default"
-      >
-        로그인
-      </button>
-
-    </div>
-
+  <form method="dialog" class="dialog">
+    <h3>관리자 로그인</h3>
+    <p class="login-help">매물 등록·삭제는 관리자만 가능합니다.</p>
+    <label>관리자 비밀번호<input id="adminPassword" type="password" autocomplete="current-password" placeholder="비밀번호 입력"></label>
+    <div class="dialog-buttons"><button value="cancel">취소</button><button id="loginSubmit" class="apply" value="default">로그인</button></div>
   </form>
-
 </dialog>
 
-
-<script
-  src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
-</script>
-
-
-<script src="config.js"></script>
-
-<script src="script.js"></script>
-
-
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+// 카카오맵 JavaScript 키
+window.KAKAO_APP_KEY = "175758acb1d968a612c27e344b435346";
 
-(function(){
-
-  const s =
-    document.createElement('script');
-
-  s.src =
-    'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' +
-    encodeURIComponent(
-      window.KAKAO_APP_KEY
-    ) +
-    '&libraries=services&autoload=false';
-
-  s.onload = () =>
-    window.kakao.maps.load(
-      () => window.initListingMap()
-    );
-
-  s.onerror = () =>
-    window.mapLoadFailed();
-
-  document.head.appendChild(s);
-
-})();
+// 관리자 비밀번호
+window.ADMIN_PASSWORD = "6192";
 
 </script>
+<script>
+let LISTINGS=[
+{id:"10428",category:"상가·사무실",trade:"월세",address:"충남 천안시 서북구 성정동 1323",title:"성정동 메인 코너 횡단보도 1층 무권리",area:58.23,floor:"1층",deposit:3000,rent:250,fee:200000,theme:["추천","무권리","코너"],parking:true,lat:36.8184,lng:127.1397,image:""},
+{id:"10427",category:"원룸·투룸·쓰리룸",trade:"매매",address:"충남 천안시 동남구 봉명동 270-3",title:"봉리형 쓰리룸 매매 공실",area:49.83,floor:"3층 / 욕실 1개",sale:7500,theme:["추천","공실"],parking:true,lat:36.8079,lng:127.1425,image:""},
+{id:"10426",category:"오피스텔",trade:"월세",address:"충남 천안시 동남구 원성동 652-15",title:"원성동 뻥뷰 메리시티",area:14.95,floor:"방 1개 / 욕실 1개",deposit:300,rent:40,fee:70000,theme:["추천"],parking:true,lat:36.8067,lng:127.1577,image:""},
+{id:"10425",category:"원룸·투룸·쓰리룸",trade:"월세",address:"충남 천안시 서북구 성정동 815",title:"성정동 넓고 깔끔한 투룸원룸",area:24.57,floor:"방 1개 / 욕실 1개",deposit:100,rent:32,fee:70000,theme:["추천"],parking:true,lat:36.8188,lng:127.1357,image:""},
+{id:"10424",category:"상가·사무실",trade:"월세",address:"충남 천안시 서북구 두정동 1450",title:"두정동부근 1층 소형 상가 주차좋음",area:38.88,floor:"1층",deposit:1000,rent:70,fee:100000,theme:["추천","주차좋음"],parking:true,lat:36.8332,lng:127.1355,image:""},
+{id:"10423",category:"상가·사무실",trade:"월세",address:"충남 천안시 서북구 두정동",title:"두정역 인근 대로변 상가",area:72.4,floor:"1층",deposit:2000,rent:120,fee:150000,theme:["추천","코너"],parking:true,lat:36.8352,lng:127.1359,image:""},
+{id:"10422",category:"공장창고",trade:"매매",address:"충남 천안시 서북구 직산읍",title:"직산 산업단지 인근 공장 매매",area:396.7,floor:"1층",sale:68000,theme:["급매","추천"],parking:true,lat:36.878,lng:127.137,image:""},
+{id:"10421",category:"아파트",trade:"전세",address:"충남 천안시 서북구 불당동",title:"불당동 신축급 아파트 전세",area:84.9,floor:"중층",deposit:26000,theme:["추천"],parking:true,lat:36.8168,lng:127.1078,image:""}
+];
+// 관리자 전용 설정은 config.js에서 변경합니다.
+let map=null, overlays=[], geocoder=null;
+let isAdmin = false;
+const STORAGE_KEY = "hyunji_listing_map_data_v1";
+const savedListings = localStorage.getItem(STORAGE_KEY);
+if (savedListings) {
+  try { LISTINGS = JSON.parse(savedListings); } catch(e) {}
+}
+function saveListings(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(LISTINGS)); }
+function setAdminMode(v){
+  isAdmin=!!v;
+  document.body.classList.toggle("admin-mode",isAdmin);
+  const b=document.querySelector("#adminBtn");
+  b.textContent=isAdmin?"🔓 관리자 로그아웃":"🔐 관리자 로그인";
+  b.classList.toggle("logged",isAdmin);
+  render();
+}
 
+let advanced={minArea:"",maxArea:"",maxDeposit:"",maxRent:"",parking:false};
+const $=s=>document.querySelector(s), money=n=>Number(n||0).toLocaleString("ko-KR");
+const py=m=>(Number(m||0)/3.305785).toFixed(1);
+
+function amount(x){return x.sale||x.deposit||0}
+function match(x){
+ const q=$("#search").value.trim().toLowerCase(),tr=$("#trade").value,ar=$("#area").value,pr=$("#price").value,tp=$("#type").value,th=$("#theme").value;
+ const text=(x.id+" "+x.title+" "+x.address).toLowerCase();
+ if(q&&!text.includes(q))return false;if(tr&&x.trade!==tr)return false;if(tp&&x.category!==tp)return false;if(th&&!(x.theme||[]).includes(th))return false;
+ if(ar==="30"&&x.area>30)return false;if(ar==="100"&&(x.area<30||x.area>100))return false;if(ar==="101"&&x.area<=100)return false;
+ if(pr==="1000"&&amount(x)>1000)return false;if(pr==="5000"&&amount(x)>5000)return false;if(pr==="10000"&&amount(x)>10000)return false;if(pr==="10001"&&amount(x)<=10000)return false;
+ if(advanced.minArea&&x.area<+advanced.minArea)return false;if(advanced.maxArea&&x.area>+advanced.maxArea)return false;
+ if(advanced.maxDeposit&&x.deposit>+advanced.maxDeposit)return false;if(advanced.maxRent&&x.rent>+advanced.maxRent)return false;if(advanced.parking&&!x.parking)return false;
+ return true;
+}
+function sorted(){
+ let a=LISTINGS.filter(match),s=$("#sort").value;
+ return a.sort((x,y)=>s==="low"?amount(x)-amount(y):s==="high"?amount(y)-amount(x):s==="area"?y.area-x.area:+y.id-+x.id)
+}
+function price(x){
+ if(x.trade==="매매")return `<div class="pill sale"><b>매매</b>${money(x.sale)}만</div>`;
+ let z=`<div class="pill dep"><b>보증금</b>${money(x.deposit)}만</div>`;
+ if(x.rent)z+=`<div class="pill rent"><b>월세</b>${money(x.rent)}만</div>`;
+ if(x.fee)z+=`<span class="fee">관리비 ${money(x.fee)}원</span>`;
+ return z
+}
+function card(x){
+ const img=x.image?`<img src="${esc(x.image)}" alt="">`:"";
+ return `<article class="card" data-id="${esc(x.id)}"><div class="photo">${img}<span class="tag">${x.trade==="매매"?"매매":"추천"}</span>${x.theme?.includes("추천")?'<span class="ribbon">추천매물</span>':""}${isAdmin?`<button class="delete-btn" data-delete="${esc(x.id)}">삭제</button>`:""}</div><div class="content"><div class="no">${esc(x.id)}</div><div class="addr">${esc(x.address)}</div><div class="title">○ ${esc(x.title)}</div><div class="meta">전용 ${x.area||0}㎡ (${py(x.area)}평) · ${esc(x.category||"")} · ${esc(x.floor||"")}</div><div class="prices">${price(x)}</div></div></article>`
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function render(){
+ let a=sorted();$("#count").textContent=a.length;$("#cards").innerHTML=a.length?a.map(card).join(""):`<div class="empty">조건에 맞는 매물이 없습니다.</div>`;
+ document.querySelectorAll(".card").forEach(c=>c.onclick=(e)=>{if(e.target.closest(".delete-btn"))return;focus(c.dataset.id)});
+ document.querySelectorAll(".delete-btn").forEach(b=>b.onclick=(e)=>{
+   e.stopPropagation();
+   if(!isAdmin)return;
+   const id=b.dataset.delete;
+   const item=LISTINGS.find(v=>String(v.id)===String(id));
+   if(item && confirm(`매물 ${id}번을 삭제하시겠습니까?`)){
+     LISTINGS=LISTINGS.filter(v=>String(v.id)!==String(id));
+     saveListings(); render();
+   }
+ });
+ drawMarkers()
+}
+function drawMarkers(){
+ if(!map||!window.kakao)return;overlays.forEach(o=>o.setMap(null));overlays=[];
+ sorted().forEach(x=>{if(!x.lat||!x.lng)return;let el=document.createElement("div");el.className="custom-marker"+(x.trade==="매매"?" sale":"");el.textContent=x.id;let o=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(x.lat,x.lng),content:el,yAnchor:1.2,clickable:true});o.setMap(map);el.onclick=()=>focus(x.id);overlays.push(o)})
+}
+function focus(id){
+ let x=LISTINGS.find(v=>v.id==id);if(!x)return;
+ document.querySelectorAll(".card").forEach(c=>c.style.outline="");let c=document.querySelector(`.card[data-id="${CSS.escape(String(id))}"]`);if(c){c.style.outline="2px solid #4f956e";c.scrollIntoView({behavior:"smooth",block:"nearest"})}
+ if(map&&x.lat&&x.lng){map.setCenter(new kakao.maps.LatLng(x.lat,x.lng));map.setLevel(4)}
+}
+window.initListingMap=function(){
+ const box=$("#map");map=new kakao.maps.Map(box,{center:new kakao.maps.LatLng(36.815,127.14),level:8});geocoder=new kakao.maps.services.Geocoder();$("#apiNotice").style.display="none";
+ $("#plus").onclick=()=>map.setLevel(map.getLevel()-1);$("#minus").onclick=()=>map.setLevel(map.getLevel()+1);
+ $("#mapType").onclick=()=>map.setMapTypeId(map.getMapTypeId()===kakao.maps.MapTypeId.ROADMAP?kakao.maps.MapTypeId.HYBRID:kakao.maps.MapTypeId.ROADMAP);
+ $("#myLocation").onclick=()=>navigator.geolocation?.getCurrentPosition(p=>{map.setCenter(new kakao.maps.LatLng(p.coords.latitude,p.coords.longitude));map.setLevel(4)},()=>alert("현재 위치를 확인할 수 없습니다."));
+ $("#copyLoc").onclick=()=>navigator.clipboard?.writeText(`${map.getCenter().getLat()}, ${map.getCenter().getLng()}`).then(()=>alert("현재 지도 위치 좌표를 복사했습니다."));
+ $("#around").onclick=()=>map.setLevel(Math.min(13,map.getLevel()+2));drawMarkers()
+}
+window.mapLoadFailed=function(){$("#apiNotice").innerHTML="<b>카카오맵을 불러오지 못했습니다.</b><span>카카오 개발자 콘솔에 GitHub Pages 도메인을 Web 플랫폼으로 등록하세요.</span>";render()}
+function addressToCoord(address,cb){if(!geocoder||!address)return cb();geocoder.addressSearch(address,(r,s)=>s===kakao.maps.services.Status.OK?cb(+r[0].y,+r[0].x):cb())}
+function normalize(row,i){
+ let keys=Object.keys(row),get=(...names)=>{let k=keys.find(k=>names.some(n=>String(k).replace(/\s/g,"").toLowerCase()===n.replace(/\s/g,"").toLowerCase()));return k!==undefined?row[k]:""};
+ let address=get("주소","소재지","주소지","도로명주소"),title=get("제목","매물제목","물건명")||`현지 매물 ${i+1}`,type=get("종류","매물종류","중개대상물종류")||"상가·사무실";
+ let area=Number(String(get("면적","전용면적","전용면적㎡")).replace(/[^0-9.]/g,""))||0;
+ let dep=Number(String(get("보증금","보증금만원")).replace(/[^0-9.]/g,""))||0,rent=Number(String(get("월세","월세만원")).replace(/[^0-9.]/g,""))||0,fee=Number(String(get("관리비","관리비원")).replace(/[^0-9.]/g,""))||0;
+ let sale=Number(String(get("매매가","매매금액","매매")).replace(/[^0-9.]/g,""))||0,trade=get("거래유형","거래형태")||(sale?"매매":rent?"월세":"");
+ return {id:String(get("매물번호","번호","id")||10000+i+1),category:type,trade,address,title,area,floor:get("층","층수")||"",deposit:dep,rent,fee,sale,theme:String(get("테마","테마종류")||"").split(/[,/ ]+/).filter(Boolean),parking:String(get("주차","주차대수")||"").trim()!=="",image:get("사진URL","사진url","사진","이미지")||"",lat:Number(get("위도","lat"))||0,lng:Number(get("경도","lng"))||0}
+}
+async function importExcel(file){
+ if(!isAdmin){alert("관리자 로그인 후 매물을 등록할 수 있습니다.");return}
+ const data=await file.arrayBuffer(),wb=XLSX.read(data,{type:"array"}),sheet=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(sheet,{defval:""});
+ if(!rows.length){alert("엑셀에서 데이터를 찾지 못했습니다.");return}
+ LISTINGS=rows.map(normalize);
+ $("#fileStatus").textContent=`${file.name} · ${LISTINGS.length}개`;
+ if(geocoder){let pending=LISTINGS.filter(x=>x.address&&!x.lat&&!x.lng);for(let i=0;i<pending.length;i++)await new Promise(r=>addressToCoord(pending[i].address,(lat,lng)=>{pending[i].lat=lat||0;pending[i].lng=lng||0;r()}))}
+ saveListings();render();alert(`${LISTINGS.length}개 매물을 등록했습니다.`)
+}
+document.addEventListener("DOMContentLoaded",()=>{
+ ["search","trade","area","price","type","theme","sort"].forEach(id=>$("#"+id).addEventListener("input",render));
+ document.querySelectorAll(".topnav [data-cat]").forEach(b=>b.onclick=()=>{$("#type").value=b.dataset.cat==="원룸·투룸·쓰리룸"?"원룸·투룸·쓰리룸":b.dataset.cat;render()});
+ $("#reset").onclick=()=>{["search","trade","area","price","type","theme"].forEach(id=>$("#"+id).value="");advanced={minArea:"",maxArea:"",maxDeposit:"",maxRent:"",parking:false};render()};
+ $("#allFilter").onclick=()=>$("#advanced").showModal();
+ $("#apply").onclick=()=>{advanced={minArea:$("#minArea").value,maxArea:$("#maxArea").value,maxDeposit:$("#maxDeposit").value,maxRent:$("#maxRent").value,parking:$("#parking").checked};setTimeout(render,0)};
+ $("#uploadBtn").onclick=()=>{if(!isAdmin){$("#loginDialog").showModal();return}$("#excelFile").click()};
+ $("#excelFile").onchange=e=>e.target.files[0]&&importExcel(e.target.files[0]);
+ $("#adminBtn").onclick=()=>{
+   if(isAdmin){setAdminMode(false);return}
+   $("#adminPassword").value="";
+   $("#loginDialog").showModal();
+ };
+ $("#loginSubmit").onclick=(e)=>{
+   const password=$("#adminPassword").value;
+   if(password!==window.ADMIN_PASSWORD){
+     e.preventDefault();
+     alert("관리자 비밀번호가 올바르지 않습니다.");
+     return;
+   }
+   setAdminMode(true);
+ };
+ $("#mapBtn").onclick=()=>{$(".main").classList.remove("list-mode");$("#mapBtn").classList.add("on");$("#listBtn").classList.remove("on")};
+ $("#listBtn").onclick=()=>{$(".main").classList.add("list-mode");$("#listBtn").classList.add("on");$("#mapBtn").classList.remove("on")};
+ render()
+});
+</script>
+<script>
+(function(){
+  const s=document.createElement('script');
+  s.src='https://dapi.kakao.com/v2/maps/sdk.js?appkey='+encodeURIComponent(window.KAKAO_APP_KEY)+'&libraries=services&autoload=false';
+  s.onload=()=>window.kakao.maps.load(()=>window.initListingMap());
+  s.onerror=()=>window.mapLoadFailed();
+  document.head.appendChild(s);
+})();
+</script>
 </body>
-</html>*{
-box-sizing:border-box
-}
-
-html,
-body{
-margin:0;
-height:100%;
-font-family:"Malgun Gothic","Noto Sans KR",Arial,sans-serif;
-color:#222;
-overflow:hidden
-}
-
-button,
-input,
-select{
-font:inherit
-}
-
-
-/* HEADER */
-
-.header{
-height:91px;
-border-bottom:1px solid #ddd;
-display:flex;
-align-items:center;
-padding:0 22px;
-gap:24px;
-background:#fff
-}
-
-.logo-area{
-display:flex;
-align-items:center;
-min-width:470px
-}
-
-.logo-symbol{
-width:48px;
-height:54px;
-position:relative;
-margin-right:12px
-}
-
-.logo-symbol:before{
-content:"";
-position:absolute;
-left:7px;
-top:2px;
-width:33px;
-height:33px;
-border:5px solid #222;
-transform:rotate(45deg);
-border-left:0;
-border-top:0
-}
-
-.logo-symbol i{
-position:absolute;
-left:8px;
-top:16px;
-width:32px;
-height:31px;
-border-left:5px solid #222;
-border-right:5px solid #222;
-border-bottom:5px solid #222
-}
-
-.logo-symbol b{
-position:absolute;
-left:20px;
-bottom:0;
-width:10px;
-height:21px;
-background:#70aa88
-}
-
-.logo-title{
-font-size:29px;
-font-weight:900;
-letter-spacing:-1.5px
-}
-
-.logo-title span{
-font-size:31px
-}
-
-.logo-en{
-font-size:9px;
-color:#777;
-letter-spacing:2px;
-margin-top:2px
-}
-
-
-/* CONTACT */
-
-.header-contact{
-margin-left:auto;
-display:flex;
-align-items:center;
-gap:23px;
-font-weight:800
-}
-
-.header-contact a{
-color:#222;
-text-decoration:none;
-white-space:nowrap;
-font-size:21px
-}
-
-.header-contact .tel-main{
-font-size:13px;
-color:#4d8f68;
-border:1px solid #74a98b;
-border-radius:5px;
-padding:7px 12px
-}
-
-
-/* OFFICE */
-
-.office{
-font-size:12px;
-line-height:1.55;
-color:#687d99;
-min-width:345px
-}
-
-
-/* NAV */
-
-.topnav{
-height:49px;
-display:flex;
-align-items:center;
-border-bottom:1px solid #ddd;
-padding:0 8px;
-gap:2px;
-white-space:nowrap;
-overflow:hidden
-}
-
-.topnav button{
-height:48px;
-border:0;
-background:#fff;
-padding:0 12px;
-font-weight:700;
-cursor:pointer
-}
-
-.topnav button:hover,
-.topnav button.active{
-color:#3e9362
-}
-
-.nav-grow{
-flex:1
-}
-
-
-/* FILTER */
-
-.filters{
-height:57px;
-background:#f8f8f8;
-border-bottom:1px solid #ddd;
-display:flex;
-align-items:center;
-gap:6px;
-padding:0 9px
-}
-
-.filters input,
-.filters select,
-.filters button{
-height:39px;
-border:1px solid #d4d4d4;
-background:#fff;
-border-radius:4px;
-padding:0 11px;
-color:#444
-}
-
-.filters input{
-width:258px
-}
-
-.filters select{
-min-width:92px
-}
-
-.filters .green{
-background:#5c9a76;
-color:#fff;
-border-color:#5c9a76;
-font-weight:800
-}
-
-.filters .upload{
-color:#367e59;
-font-weight:700
-}
-
-.filters .reset{
-border-color:#eb4960;
-color:#e33f58
-}
-
-
-/* COUNT */
-
-.count{
-margin-left:auto;
-background:#eaf2ed;
-border-radius:4px;
-padding:10px 13px;
-color:#607366;
-white-space:nowrap
-}
-
-
-/* SWITCH */
-
-.switch{
-height:39px;
-display:flex
-}
-
-.switch button{
-border-radius:0
-}
-
-.switch .on{
-color:#418b61;
-border-color:#71a387;
-background:#f1f8f3
-}
-
-
-/* MAIN */
-
-.main{
-display:flex;
-height:calc(100vh - 197px);
-min-height:500px
-}
-
-
-/* MAP */
-
-.map-wrap{
-position:relative;
-flex:1;
-min-width:0;
-background:#e9f0e7
-}
-
-.map-wrap #map{
-position:absolute;
-inset:0
-}
-
-
-/* NOTICE */
-
-.notice{
-position:absolute;
-z-index:5;
-left:50%;
-top:50%;
-transform:translate(-50%,-50%);
-background:#fff;
-padding:18px 22px;
-border:1px solid #ddd;
-border-radius:9px;
-box-shadow:0 5px 25px #0002;
-text-align:center
-}
-
-.notice span{
-display:block;
-color:#777;
-font-size:12px;
-margin-top:6px
-}
-
-
-/* MAP TOOLS */
-
-.map-tools{
-position:absolute;
-right:18px;
-top:18px;
-z-index:6;
-width:52px;
-background:#fff;
-border:1px solid #ddd;
-border-radius:8px;
-overflow:hidden;
-box-shadow:0 2px 7px #0002
-}
-
-.map-tools button{
-width:52px;
-min-height:47px;
-border:0;
-border-bottom:1px solid #eee;
-background:#fff;
-font-weight:700;
-cursor:pointer
-}
-
-.map-tools button:hover{
-background:#f4f4f4
-}
-
-
-/* REAL PRICE */
-
-.real{
-position:absolute;
-z-index:5;
-left:18px;
-bottom:23px;
-background:#6238df;
-color:#fff;
-width:100px;
-height:82px;
-text-align:center;
-padding-top:10px;
-clip-path:polygon(
-50% 0,
-100% 28%,
-88% 100%,
-12% 100%,
-0 28%
-);
-font-size:12px
-}
-
-.real strong{
-font-size:13px
-}
-
-.scale{
-position:absolute;
-bottom:4px;
-left:18px;
-font-size:10px
-}
-
-
-/* SIDE */
-
-.side{
-width:470px;
-border-left:1px solid #ddd;
-background:#fff;
-overflow:auto
-}
-
-
-/* SIDE HEADER */
-
-.side-head{
-height:55px;
-border-bottom:1px solid #ddd;
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:0 13px;
-position:sticky;
-top:0;
-z-index:8;
-background:#fff
-}
-
-.side-head small{
-display:block;
-color:#999;
-font-size:10px;
-margin-top:3px
-}
-
-.side-head select{
-border:1px solid #ddd;
-padding:5px;
-border-radius:3px
-}
-
-
-/* CARD */
-
-.card{
-height:154px;
-display:grid;
-grid-template-columns:165px 1fr;
-gap:11px;
-padding:10px 12px;
-border-bottom:1px solid #e3e3e3;
-cursor:pointer;
-position:relative
-}
-
-.card:hover{
-background:#fafafa
-}
-
-
-/* PHOTO */
-
-.photo{
-height:118px;
-background:#eee;
-position:relative;
-overflow:hidden;
-border-radius:2px
-}
-
-.photo img{
-width:100%;
-height:100%;
-object-fit:cover
-}
-
-
-/* TAG */
-
-.tag{
-position:absolute;
-left:0;
-top:0;
-background:#666;
-color:#fff;
-padding:5px 7px;
-font-size:11px;
-font-weight:800
-}
-
-
-/* RIBBON */
-
-.ribbon{
-position:absolute;
-right:-38px;
-top:10px;
-width:130px;
-transform:rotate(45deg);
-text-align:center;
-background:#e5422b;
-color:#fff;
-font-size:10px;
-padding:4px;
-font-weight:900
-}
-
-
-/* CONTENT */
-
-.content{
-min-width:0
-}
-
-.no{
-color:#999;
-font-size:11px
-}
-
-.addr{
-color:#999;
-font-size:12px;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis
-}
-
-.title{
-font-weight:900;
-font-size:15px;
-margin:4px 0 7px;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis
-}
-
-.meta{
-font-size:11px;
-color:#666;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis
-}
-
-
-/* PRICE */
-
-.prices{
-display:flex;
-gap:4px;
-align-items:center;
-flex-wrap:wrap;
-margin-top:8px
-}
-
-.pill{
-display:flex;
-align-items:center;
-gap:4px;
-font-weight:900;
-font-size:14px
-}
-
-.pill b{
-font-size:10px;
-color:#fff;
-padding:3px 5px;
-border-radius:2px
-}
-
-.dep b,
-.rent b{
-background:#53a63f
-}
-
-.sale b{
-background:#f0aa25
-}
-
-.fee{
-font-size:10px;
-background:#efa62a;
-color:#fff;
-padding:4px 5px;
-border-radius:2px
-}
-
-
-/* DELETE */
-
-.delete-btn{
-position:absolute;
-right:5px;
-bottom:5px;
-border:0;
-border-radius:4px;
-background:#d94444;
-color:#fff;
-font-size:10px;
-padding:4px 7px;
-cursor:pointer;
-z-index:3
-}
-
-
-/* EMPTY */
-
-.empty{
-text-align:center;
-color:#888;
-padding:60px 20px
-}
-
-
-/* ADMIN */
-
-.admin-only{
-display:none!important
-}
-
-body.admin-mode .admin-only{
-display:block!important
-}
-
-.admin-login{
-height:39px;
-border:1px solid #777;
-background:#fff;
-border-radius:4px;
-padding:0 11px;
-color:#444;
-font-weight:700;
-white-space:nowrap
-}
-
-.admin-login.logged{
-background:#333;
-color:#fff;
-border-color:#333
-}
-
-
-/* DIALOG */
-
-dialog{
-border:0;
-border-radius:10px;
-box-shadow:0 15px 60px #0004
-}
-
-dialog::backdrop{
-background:#0005
-}
-
-.dialog{
-padding:22px;
-width:380px
-}
-
-.dialog h3{
-margin-top:0
-}
-
-.login-help{
-font-size:13px;
-color:#777;
-margin:-5px 0 15px
-}
-
-.dialog label{
-display:block;
-font-size:13px;
-margin:12px 0
-}
-
-.dialog input[type=number],
-.dialog input[type=password]{
-width:100%;
-margin-top:5px;
-padding:9px;
-border:1px solid #ddd;
-border-radius:4px
-}
-
-.dialog .check{
-display:flex;
-align-items:center
-}
-
-.dialog-buttons{
-display:flex;
-justify-content:flex-end;
-gap:7px;
-margin-top:20px
-}
-
-.dialog-buttons button{
-padding:9px 15px;
-border:1px solid #ddd;
-background:#fff;
-border-radius:4px
-}
-
-.dialog-buttons .apply{
-background:#4f936c;
-color:#fff;
-border-color:#4f936c
-}
-
-
-/* MAP MARKER */
-
-.custom-marker{
-background:#4f946c;
-color:#fff;
-border:2px solid #fff;
-box-shadow:0 2px 5px #0004;
-border-radius:20px;
-padding:5px 8px;
-font-size:11px;
-font-weight:900;
-white-space:nowrap
-}
-
-.custom-marker.sale{
-background:#df5945
-}
-
-
-/* TABLET */
-
-@media(max-width:1200px){
-
-.office{
-display:none
-}
-
-.logo-area{
-min-width:330px
-}
-
-.header-contact{
-gap:10px
-}
-
-.side{
-width:410px
-}
-
-.filters .upload{
-display:none
-}
-
-}
-
-
-/* MOBILE */
-
-@media(max-width:800px){
-
-body{
-overflow:auto
-}
-
-.header{
-height:auto;
-min-height:68px;
-padding:8px 12px
-}
-
-.logo-area{
-min-width:0
-}
-
-.logo-symbol{
-display:none
-}
-
-.logo-title,
-.logo-title span{
-font-size:20px
-}
-
-.logo-en{
-display:none
-}
-
-.header-contact{
-margin-left:auto
-}
-
-.header-contact a{
-font-size:13px
-}
-
-.header-contact .tel-main{
-display:none
-}
-
-.topnav{
-height:42px
-}
-
-.topnav button{
-height:42px;
-font-size:11px;
-padding:0 7px
-}
-
-.nav-grow{
-display:none
-}
-
-.filters{
-height:auto;
-min-height:50px;
-flex-wrap:wrap;
-padding:6px
-}
-
-.filters input{
-width:calc(100vw - 100px)
-}
-
-.filters select{
-flex:1;
-min-width:70px;
-height:35px
-}
-
-.count{
-display:none
-}
-
-.main{
-height:calc(100vh - 165px)
-}
-
-.side{
-display:none
-}
-
-.main.list-mode .map-wrap{
-display:none
-}
-
-.main.list-mode .side{
-display:block;
-width:100%
-}
-
-.card{
-grid-template-columns:125px 1fr
-}
-
-.photo{
-height:110px
-}
-
-}index.html
-style.css
-script.js
-config.js
+</html>
