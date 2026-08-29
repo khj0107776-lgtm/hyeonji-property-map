@@ -3332,18 +3332,31 @@ function normalizeExcelKey(key){
 return String(key||"").trim().replace(/\s+/g,"").replace(/[()\[\]{}]/g,"").toLowerCase();
 }
 
-function getExcelValue(row,names){
-const keys=Object.keys(row);
-for(const name of names){
+function normalizeExcelKey(v){
+return String(v??"").trim().toLowerCase()
+.replace(/\\s+/g,"")
+.replace(/[()（）]/g,"")
+.replace(/㎡/g,"m²")
+.replace(/[._-]/g,"");
+}
+
+function getExcelValue(row,names,fallbackIndex){
+const keys=Object.keys(row||{});
+for(const name of names||[]){
 const target=normalizeExcelKey(name);
 const found=keys.find(k=>normalizeExcelKey(k)===target);
-if(found!==undefined && row[found]!==undefined && row[found]!==null){
+if(found!==undefined && row[found]!==undefined && row[found]!==null && String(row[found]).trim()!==""){
 return String(row[found]).trim();
+}
+}
+if(Number.isInteger(fallbackIndex) && fallbackIndex>=0){
+const key=keys[fallbackIndex];
+if(key!==undefined && row[key]!==undefined && row[key]!==null){
+return String(row[key]).trim();
 }
 }
 return "";
 }
-
 
 function normalizeImportedRows(rows){
 
@@ -3525,7 +3538,7 @@ preview.length+
 
 html+=
 '<div style="font-size:11px;color:#777;margin-bottom:8px">'+
-'주소가 다음 행으로 나뉜 경우 자동으로 앞 매물에 합쳐집니다.</div>';
+'주소(소재지)는 2번째 열, 지도주소는 3번째 열, 설명은 14번째 열을 우선 사용합니다. 주소와 설명이 섞이지 않도록 고정 열도 함께 확인합니다.</div>';
 
 html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
 
@@ -3607,9 +3620,9 @@ const errors=[];
 try{
 for(let i=0;i<excelRows.length;i++){
 const row=excelRows[i];
-const title=getExcelValue(row,["제목","매물명","title"]);
-const address=getExcelValue(row,["주소","소재지","address"]);
-const type=getExcelValue(row,["종류","매물종류","type"])||"상가";
+const title=getExcelValue(row,["제목","매물명","title"],0);
+const address=getExcelValue(row,["주소(소재지)","주소","소재지","address"],1);
+const type=getExcelValue(row,["종류(매물종류)","종류","매물종류","type"],3)||"상가";
 
 if(!title || !address){
 failed++;
@@ -3617,9 +3630,9 @@ errors.push((i+2)+"행: 제목 또는 주소 없음");
 continue;
 }
 
-let excelDeposit=getExcelValue(row,["보증금(만원)","보증금","deposit"]);
-let excelRent=getExcelValue(row,["월세(만원)","월세","rent"]);
-let excelSale=getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"]);
+let excelDeposit=getExcelValue(row,["보증금(만원)","보증금","deposit"],4);
+let excelRent=getExcelValue(row,["월세(만원)","월세","rent"],5);
+let excelSale=getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"],6);
 
 /* 기존 매물장처럼 매물가 칸에 5000/340이 들어온 경우 임대로 변환 */
 const excelCombined=String(excelSale||"")
@@ -3650,8 +3663,8 @@ premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음"
 area:getExcelValue(row,["면적","area"]),
 floor:getExcelValue(row,["층","층수","floor"]),
 detailUrl:getExcelValue(row,["상세주소","상세페이지주소","상세정보","detailUrl","url"]),
-description:getExcelValue(row,["설명","매물설명","description"]),
-image:getExcelValue(row,["사진URL","사진주소","image","imageUrl"]),
+description:getExcelValue(row,["설명","매물설명","description"],13),
+image:getExcelValue(row,["사진URL","사진 URL","사진주소","image","imageUrl"],14),
 dong:extractDong(address),
 createdBy:auth.currentUser.email,
 createdAt:firebase.firestore.FieldValue.serverTimestamp(),
@@ -3659,7 +3672,7 @@ updatedAt:firebase.firestore.FieldValue.serverTimestamp()
 };
 
 try{
-const coords=await addressToCoords(address);
+const coords=await addressToCoords(data.mapAddress||data.address);
 if(coords){data.lat=coords.lat;data.lng=coords.lng;}
 }catch(e){}
 
@@ -5670,7 +5683,10 @@ window.saveProperty=async function(){
 
   const area=document.getElementById("fArea").value.trim();
 
-  const data={
+  const safeAddress=String(address||"").replace(/\\s+/g," ").trim();
+const safeMapAddress=String(mapAddress||safeAddress).replace(/\\s+/g," ").trim();
+
+const data={
     title:title,
     address:address,
     mapAddress:
@@ -5850,10 +5866,7 @@ for(let i=0;i<excelRows.length;i++){
 
 const row=excelRows[i];
 
-const title=getExcelValue(
-row,
-["제목","매물명","title"]
-);
+const title=getExcelValue(row,["제목","매물명","title"],0);
 
 const address=getExcelValue(
 row,
@@ -5874,17 +5887,9 @@ continue;
 
 }
 
-const rawMapAddress=
-getExcelValue(
-row,
-["지도주소","mapAddress","지도 주소"]
-);
+const rawMapAddress=getExcelValue(row,["지도주소","mapAddress","지도 주소"],2);
 
-const detailAddress=
-getExcelValue(
-row,
-["상세주소","상세"]
-);
+const detailAddress=getExcelValue(row,["상세주소","상세"],12);
 
 const mapAddress=
 buildExactMapAddress(
@@ -5902,10 +5907,7 @@ row,
 type=normalizedType(type);
 
 const rawArea=
-getExcelValue(
-row,
-["면적(m²)","면적(㎡)","면적","area"]
-);
+getExcelValue(row,["면적(m²)","면적(㎡)","면적","area"],8);
 
 const data={
 
@@ -5916,24 +5918,18 @@ title:
 String(title).trim(),
 
 address:
-String(address).replace(/\s+/g," ").trim(),
+safeAddress,
 
 mapAddress:
-String(mapAddress).replace(/\s+/g," ").trim(),
+safeMapAddress,
 
 type:type,
 
 deposit:
-getExcelValue(
-row,
-["보증금(만원)","보증금","deposit"]
-),
+getExcelValue(row,["보증금(만원)","보증금","deposit"],4),
 
 rent:
-getExcelValue(
-row,
-["월세(만원)","월세","rent"]
-),
+getExcelValue(row,["월세(만원)","월세","rent"],5),
 
 salePrice:
 getExcelValue(
@@ -5954,31 +5950,19 @@ row,
 ),
 
 premium:
-getExcelValue(
-row,
-["권리금(만원)","권리금","premium"]
-)||"없음",
+getExcelValue(row,["권리금(만원)","권리금","premium"],7)||"없음",
 
 area:
 normalizeImportedArea(rawArea),
 
 floor:
-getExcelValue(
-row,
-["해당층/총층","해당층","층","층수","floor"]
-),
+getExcelValue(row,["해당층/총층","해당층","층","층수","floor"],9),
 
 approvalDate:
-getExcelValue(
-row,
-["사용승인일","approvalDate","사용승인"]
-),
+getExcelValue(row,["사용승인일","approvalDate","사용승인"],10),
 
 direction:
-getExcelValue(
-row,
-["방향","direction"]
-),
+getExcelValue(row,["방향","direction"],11),
 
 detailAddress:
 getExcelValue(
@@ -5993,10 +5977,7 @@ row,
 ),
 
 description:
-getExcelValue(
-row,
-["설명","매물설명","description"]
-),
+getExcelValue(row,["설명","매물설명","description"],13),
 
 image:
 getExcelValue(
