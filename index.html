@@ -197,6 +197,41 @@ body{overflow:auto}
 .form-group.full{grid-column:auto}
 }
 </style>
+
+<style>
+/* 메인 지도 개별 매물은 번호 대신 종류별 색상 점으로 표시 */
+.map-pin .property-dot{
+  display:block;
+  width:13px;
+  height:13px;
+  border-radius:50%;
+  background:currentColor;
+  border:2px solid #fff;
+  box-shadow:0 2px 7px rgba(0,0,0,.35);
+}
+</style>
+
+
+<style>
+.detail-property-number{
+  min-width:40px;
+  height:30px;
+  padding:0 9px;
+  box-sizing:border-box;
+  border-radius:15px;
+  background:#111827;
+  color:#fff;
+  border:2px solid #fff;
+  box-shadow:0 3px 10px rgba(0,0,0,.28);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+}
+</style>
+
 </head>
 
 <body>
@@ -4915,48 +4950,53 @@ window.initMap=function(){
 
 window.createMarker=function(p){
 
-  if(!map)return;
+if(!map)return;
 
-  const type=typeClass(p.type);
+const type=typeClass(p.type);
 
-  const content=
-    '<div class="map-pin '+type+'" title="'+
-    escapeAttr((p.title||"매물"))+
-    '">'+
-    escapeHtml(p.propertyNumber?("#"+p.propertyNumber):"●")+
-    '</div>';
+/*
+  메인 지도에서는 매물번호를 표시하지 않는다.
+  작은 색상 점만 표시하고, 동별 매물 개수는
+  refreshDongCount()의 큰 숫자 오버레이로 표시한다.
+*/
+const content=
+'<div class="map-pin '+type+'" title="'+
+escapeAttr((p.title||"매물"))+
+'"><span class="property-dot"></span></div>';
 
-  const overlay=new kakao.maps.CustomOverlay({
-    map:map,
-    position:new kakao.maps.LatLng(Number(p.lat),Number(p.lng)),
-    content:content,
-    yAnchor:1,
-    zIndex:30
-  });
+const overlay=new kakao.maps.CustomOverlay({
+map:map,
+position:new kakao.maps.LatLng(
+Number(p.lat),
+Number(p.lng)
+),
+content:content,
+yAnchor:1,
+zIndex:20
+});
 
-  kakao.maps.event.addListener(
-    overlay,
-    "click",
-    function(){
-      openProperty(p);
-    }
-  );
+setTimeout(()=>{
 
-  /* CustomOverlay는 직접 DOM 이벤트 연결 */
-  setTimeout(()=>{
-    const nodes=document.querySelectorAll(".map-pin");
-    const node=nodes[nodes.length-1];
-    if(node){
-      node.onclick=function(e){
-        e.stopPropagation();
-        openProperty(p);
-      };
-    }
-  },0);
+const nodes=document.querySelectorAll(".map-pin");
 
-  markers.push(overlay);
+const node=nodes[nodes.length-1];
+
+if(node){
+
+node.onclick=function(e){
+
+e.stopPropagation();
+openProperty(p);
 
 };
+
+}
+
+},0);
+
+markers.push(overlay);
+
+};;
 
 window.clearMarkers=function(){
   markers.forEach(m=>{
@@ -5067,6 +5107,64 @@ window.refreshDongCount=function(){
       zIndex:10
     });
 
+    /*
+      동별 개수 숫자를 클릭하면 해당 동의 매물 위치가
+      지도 중앙에 오도록 한다.
+    */
+    kakao.maps.event.addListener(
+      overlay,
+      "click",
+      function(){
+
+        const dongProperties=list.filter(function(p){
+
+          const pdong=
+            p.dong ||
+            neighborhood(
+              p.address ||
+              p.mapAddress ||
+              ""
+            );
+
+          return pdong===dong;
+
+        });
+
+        if(
+          dongProperties.length &&
+          map
+        ){
+
+          const bounds=
+            new kakao.maps.LatLngBounds();
+
+          dongProperties.forEach(function(p){
+
+            if(
+              p.lat!=null &&
+              p.lng!=null
+            ){
+
+              bounds.extend(
+                new kakao.maps.LatLng(
+                  Number(p.lat),
+                  Number(p.lng)
+                )
+              );
+
+            }
+
+          });
+
+          try{
+            map.setBounds(bounds);
+          }catch(e){}
+
+        }
+
+      }
+    );
+
     dongOverlays.push(overlay);
 
   });
@@ -5153,9 +5251,27 @@ function showDetailSplitMap(p){
     detailSplitMarker.setMap(null);
   }
 
-  detailSplitMarker=new kakao.maps.Marker({
+  /*
+    상세매물 지도에서는 선택한 매물의 번호를 표시한다.
+    메인 지도와 달리 여기서는 "이 위치가 어떤 매물인지"
+    바로 확인할 수 있도록 #번호를 표시한다.
+  */
+  const numberText=
+    p.propertyNumber
+      ? "#"+String(p.propertyNumber)
+      : "매물";
+
+  const markerContent=
+    '<div class="detail-property-number">'+
+    escapeHtml(numberText)+
+    '</div>';
+
+  detailSplitMarker=new kakao.maps.CustomOverlay({
     map:detailSplitMapInstance,
-    position:position
+    position:position,
+    content:markerContent,
+    yAnchor:1.45,
+    zIndex:100
   });
 
   setTimeout(function(){
@@ -5744,30 +5860,21 @@ window.renderAdminList=function(){
 
 window.importExcelProperties=async function(){
 
-if(
-!auth.currentUser ||
-auth.currentUser.email!==ADMIN_EMAIL
-){
-
+if(!auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
 alert("관리자만 엑셀 매물을 등록할 수 있습니다.");
 return;
-
 }
 
 if(!excelRows.length){
-
 alert("먼저 엑셀 파일을 선택해주세요.");
 return;
-
 }
 
 const btn=document.getElementById("excelImportBtn");
-
 btn.disabled=true;
 
 let success=0;
 let failed=0;
-
 const errors=[];
 
 try{
@@ -5778,171 +5885,203 @@ for(let i=0;i<excelRows.length;i++){
 
 const row=excelRows[i];
 
-const title=getExcelValue(
-row,
-["제목","매물명","title"]
-);
+const title=getExcelValue(row,[
+"제목","매물명","title"
+]);
 
-const address=getExcelValue(
-row,
-["주소(소재지)","주소","소재지","address"]
-);
+const address=getExcelValue(row,[
+"주소(소재지)","주소","소재지","address"
+]);
 
-if(!title&&!address)continue;
+if(!title && !address)continue;
 
-if(!title||!address){
-
+if(!title || !address){
 failed++;
-
-errors.push(
-(i+2)+"행: 제목 또는 주소 없음"
-);
-
+errors.push((i+2)+"행: 제목 또는 주소 없음");
 continue;
-
 }
 
-const rawMapAddress=
-getExcelValue(
-row,
-["지도주소","mapAddress","지도 주소"]
-);
+let type=getExcelValue(row,[
+"종류(매물종류)","종류","매물종류","type"
+])||"상가";
 
-const detailAddress=
-getExcelValue(
-row,
-["상세주소","상세"]
-);
+type=normalizedType(type);
 
-const mapAddress=
-buildExactMapAddress(
+const rawMapAddress=getExcelValue(row,[
+"지도주소","mapAddress","지도 주소"
+]);
+
+const detailAddress=getExcelValue(row,[
+"상세주소","상세"
+]);
+
+const exactMapAddress=buildExactMapAddress(
 address,
 rawMapAddress,
 detailAddress
 );
 
-let type=
-getExcelValue(
-row,
-["종류(매물종류)","종류","매물종류","type"]
-)||"상가";
+const rawArea=getExcelValue(row,[
+"면적(m²)","면적(㎡)","면적","area"
+]);
 
-type=normalizedType(type);
-
-const rawArea=
-getExcelValue(
-row,
-["면적(m²)","면적(㎡)","면적","area"]
-);
-
-const data={
-
-propertyNumber:
-String(nextNo++),
-
-title:
-String(title).trim(),
-
-address:
-String(address).replace(/\s+/g," ").trim(),
-
-mapAddress:
-String(mapAddress).replace(/\s+/g," ").trim(),
-
-type:type,
-
-deposit:
-getExcelValue(
-row,
-["보증금(만원)","보증금","deposit"]
-),
-
-rent:
-getExcelValue(
-row,
-["월세(만원)","월세","rent"]
-),
-
-salePrice:
-getExcelValue(
-row,
-[
-"매물가(만원)",
-"매물가",
+/* ★ 아파트 매매가격 전용 열 */
+const salePrice=getExcelValue(row,[
 "매매가(만원)",
 "매매가",
 "매매가격(만원)",
 "매매가격",
 "매매금액(만원)",
 "매매금액",
+"매물가(만원)",
+"매물가",
+"거래가",
+"거래가격",
 "가격",
 "price",
 "salePrice"
-]
-),
+]);
 
-premium:
-getExcelValue(
-row,
-["권리금(만원)","권리금","premium"]
-)||"없음",
+const data={
 
-area:
-normalizeImportedArea(rawArea),
+propertyNumber:String(nextNo++),
 
-floor:
-getExcelValue(
-row,
-["해당층/총층","해당층","층","층수","floor"]
-),
+title:String(title).trim(),
 
-approvalDate:
-getExcelValue(
-row,
-["사용승인일","approvalDate","사용승인"]
-),
+address:String(address)
+.replace(/\s+/g," ")
+.trim(),
 
-direction:
-getExcelValue(
-row,
-["방향","direction"]
-),
+mapAddress:String(exactMapAddress)
+.replace(/\s+/g," ")
+.trim(),
 
-detailAddress:
-getExcelValue(
-row,
-["상세주소","상세"]
-),
+type:type,
 
-detailUrl:
-getExcelValue(
-row,
-["상세페이지주소","상세정보","detailUrl","url"]
-),
+deposit:getExcelValue(row,[
+"보증금(만원)","보증금","deposit"
+]),
 
-description:
-getExcelValue(
-row,
-["설명","매물설명","description"]
-),
+rent:getExcelValue(row,[
+"월세(만원)","월세","rent"
+]),
 
-image:
-getExcelValue(
-row,
-["사진URL","사진 URL","사진주소","image","imageUrl"]
-),
+/* 반드시 Firestore에 salePrice라는 별도 필드로 저장 */
+salePrice:salePrice,
 
-dong:
-extractDong(address),
+premium:getExcelValue(row,[
+"권리금(만원)","권리금","premium"
+])||"없음",
 
-createdBy:
-auth.currentUser.email,
+area:normalizeImportedArea(rawArea),
 
-createdAt:
-firebase.firestore.FieldValue.serverTimestamp(),
+floor:getExcelValue(row,[
+"해당층/총층","해당층","층","층수","floor"
+]),
 
-updatedAt:
-firebase.firestore.FieldValue.serverTimestamp()
+approvalDate:getExcelValue(row,[
+"사용승인일","approvalDate","사용승인"
+]),
+
+direction:getExcelValue(row,[
+"방향","direction"
+]),
+
+detailAddress:detailAddress,
+
+detailUrl:getExcelValue(row,[
+"상세페이지주소","상세정보","detailUrl","url"
+]),
+
+description:getExcelValue(row,[
+"설명","매물설명","description"
+]),
+
+image:getExcelValue(row,[
+"사진URL","사진 URL","사진주소","image","imageUrl"
+]),
+
+dong:extractDong(address),
+
+createdBy:auth.currentUser.email,
+
+createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+
+updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+
+};
+
+try{
+
+const coords=await addressToCoords(
+data.mapAddress||data.address
+);
+
+if(coords){
+data.lat=coords.lat;
+data.lng=coords.lng;
+}
+
+}catch(e){
+console.warn("주소 좌표 변환 실패:",data.address,e);
+}
+
+try{
+
+await db.collection("properties").add(data);
+success++;
+
+}catch(e){
+
+failed++;
+errors.push((i+2)+"행: "+e.message);
+
+}
+
+btn.textContent=
+"등록 중... "+(i+1)+" / "+excelRows.length;
+
+await excelSleep(80);
+
+}
+
+await loadProperties();
+closeExcelImport();
+renderAdminList();
+
+let message=
+"엑셀 등록 완료\n\n"+
+"성공: "+success+"개\n"+
+"실패: "+failed+"개";
+
+if(errors.length){
+
+message+=
+"\n\n실패 내역\n"+
+errors.slice(0,15).join("\n");
+
+if(errors.length>15)
+message+="\n외 "+(errors.length-15)+"건";
+
+}
+
+alert(message);
+
+}catch(error){
+
+console.error(error);
+
+alert(
+"엑셀 등록 중 오류가 발생했습니다.\n\n"+
+error.message
+);
+
+}finally{
+
+btn.disabled=false;
+btn.textContent="엑셀 매물 등록하기";
+
+}
 
 };
 
@@ -6295,3 +6434,41 @@ document.addEventListener("click",function(e){
 
 })();
 </script>
+
+<script>
+(function(){
+  function normalizeLegacySalePrice(p){
+    if(!p || p.salePrice) return;
+    const keys=[
+      "매매가(만원)","매매가","매매가격(만원)","매매가격",
+      "매매금액(만원)","매매금액","매물가(만원)","매물가",
+      "거래가","거래가격","가격","price"
+    ];
+    for(const k of keys){
+      if(p[k]!==undefined && p[k]!==null && String(p[k]).trim()!==""){
+        p.salePrice=String(p[k]).trim();
+        return;
+      }
+    }
+  }
+  const oldLoad=window.loadProperties;
+  if(typeof oldLoad==="function"){
+    window.loadProperties=async function(){
+      const r=await oldLoad();
+      try{
+        if(Array.isArray(window.properties))
+          window.properties.forEach(normalizeLegacySalePrice);
+      }catch(e){}
+      return r;
+    };
+  }
+})();
+</script>
+
+<style>
+.count-overlay{
+  position:relative;
+  z-index:100;
+  cursor:pointer;
+}
+</style>
