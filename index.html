@@ -225,6 +225,34 @@ body{overflow:auto}
 }
 </style>
 
+
+<style>
+/* 지도와 상세화면에서 매물번호는 표시하지 않음.
+   동/읍/면별 매물 개수만 지도에 표시 */
+.property-number,
+.admin-property-number,
+.detail-property-number,
+.property-no,
+.listing-number{
+  display:none !important;
+}
+</style>
+
+<style>
+.property-dot{
+  display:block;
+  width:13px;
+  height:13px;
+  border-radius:50%;
+  background:currentColor;
+  border:2px solid #fff;
+  box-shadow:0 2px 7px rgba(0,0,0,.35);
+}
+.count-overlay{
+  cursor:pointer;
+  z-index:100 !important;
+}
+</style>
 </head>
 
 <body>
@@ -995,11 +1023,7 @@ let currentCategory="상가";
 
 let currentProperty=null;
 
-const detailNumberEl=document.getElementById("detailPropertyNumber");
-if(detailNumberEl){
-  detailNumberEl.textContent="";
-  detailNumberEl.style.display="none";
-}
+
 
 let editingId=null;
 
@@ -5060,44 +5084,42 @@ window.createMarker=function(p){
 
   const type=typeClass(p.type);
 
+  /* 개별 매물번호는 표시하지 않고 종류별 색상 점만 표시 */
   const content=
     '<div class="map-pin '+type+'" title="'+
-    escapeAttr((p.title||"매물"))+
+    escapeAttr(p.title||"매물")+
     '">'+
-    escapeHtml(p.propertyNumber?("#"+p.propertyNumber):"●")+
+    '<span class="property-dot"></span>'+
     '</div>';
 
   const overlay=new kakao.maps.CustomOverlay({
     map:map,
-    position:new kakao.maps.LatLng(Number(p.lat),Number(p.lng)),
+    position:new kakao.maps.LatLng(
+      Number(p.lat),
+      Number(p.lng)
+    ),
     content:content,
     yAnchor:1,
-    zIndex:30
+    zIndex:20
   });
 
-  kakao.maps.event.addListener(
-    overlay,
-    "click",
-    function(){
-      openProperty(p);
-    }
-  );
+  setTimeout(function(){
 
-  /* CustomOverlay는 직접 DOM 이벤트 연결 */
-  setTimeout(()=>{
     const nodes=document.querySelectorAll(".map-pin");
     const node=nodes[nodes.length-1];
+
     if(node){
       node.onclick=function(e){
         e.stopPropagation();
         openProperty(p);
       };
     }
+
   },0);
 
   markers.push(overlay);
 
-};
+};;
 
 window.clearMarkers=function(){
   markers.forEach(m=>{
