@@ -250,6 +250,19 @@ padding:15px;
 
 
 </style>
+
+<style>
+/* Isolated UI safety layer */
+#receptionOpenBtn,#adminManageBtn{
+  position:relative !important;
+  pointer-events:auto !important;
+  cursor:pointer !important;
+}
+#receptionModal,#adminModal{
+  pointer-events:auto;
+}
+</style>
+
 </head>
 
 <body>
@@ -312,22 +325,9 @@ Google 로그인
 
 </div>
 
-<button
-class="reception-btn"
-id="receptionOpenBtn"
-type="button"
-onclick="document.getElementById('receptionModal').style.display='flex';document.getElementById('receptionModal').style.visibility='visible';document.getElementById('receptionModal').style.opacity='1';document.getElementById('receptionModal').style.pointerEvents='auto';">
-📝 매물접수
-</button>
+<button class="reception-btn" id="receptionOpenBtn" type="button">📝 매물접수</button>
 
-<button
-class="admin-btn"
-id="adminManageBtn"
-type="button"
-style="display:none"
-onclick="if(window.auth && auth.currentUser && auth.currentUser.email===ADMIN_EMAIL){var m=document.getElementById('adminModal');m.style.display='flex';m.style.visibility='visible';m.style.opacity='1';m.style.pointerEvents='auto';m.style.zIndex='20000';renderAdminList();document.body.style.overflow='hidden';}else{alert('관리자만 이용할 수 있습니다.');}">
-🔐 관리자 매물관리
-</button>
+<button class="admin-btn" id="adminManageBtn" type="button" style="display:none">🔐 관리자 매물관리</button>
 
 <div class="count-line" id="countLine">
 현재 0개 매물
@@ -5217,6 +5217,124 @@ refreshDongCount,
   window.addEventListener('load',forceBind);
   setTimeout(forceBind,100);
   setTimeout(forceBind,500);
+})();
+</script>
+
+
+<script>
+/* ISOLATED UI CONTROLLER: map/buttons must not depend on Firebase initialization */
+(function(){
+  "use strict";
+
+  function showModal(id){
+    var el=document.getElementById(id);
+    if(!el) return false;
+    el.style.display="flex";
+    el.style.visibility="visible";
+    el.style.opacity="1";
+    el.style.pointerEvents="auto";
+    el.style.zIndex=(id==="adminModal" ? "20000" : "12000");
+    el.classList.add("show");
+    return true;
+  }
+
+  function hideModal(id){
+    var el=document.getElementById(id);
+    if(!el) return false;
+    el.style.display="none";
+    el.style.visibility="hidden";
+    el.style.opacity="0";
+    el.style.pointerEvents="none";
+    el.classList.remove("show");
+    return true;
+  }
+
+  function bind(){
+    var reception=document.getElementById("receptionOpenBtn");
+    if(reception && !reception.dataset.uiBound){
+      reception.dataset.uiBound="1";
+      reception.addEventListener("click",function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if(window.openReception) window.openReception();
+        else showModal("receptionModal");
+      },true);
+    }
+
+    var admin=document.getElementById("adminManageBtn");
+    if(admin && !admin.dataset.uiBound){
+      admin.dataset.uiBound="1";
+      admin.addEventListener("click",function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if(window.auth && window.ADMIN_EMAIL &&
+           window.auth.currentUser &&
+           window.auth.currentUser.email===window.ADMIN_EMAIL){
+          if(window.openAdminPanel) window.openAdminPanel();
+          else {
+            showModal("adminModal");
+            if(window.renderAdminList) window.renderAdminList();
+          }
+        }else{
+          alert("관리자만 이용할 수 있습니다.");
+        }
+      },true);
+    }
+  }
+
+  function mapBoot(){
+    /* Never let map initialization failure stop the rest of the UI. */
+    try{
+      if(window.kakao && kakao.maps){
+        if(window.initMap){
+          initMap();
+        }
+      }
+    }catch(e){
+      console.error("Kakao map initialization:",e);
+    }
+  }
+
+  window.addEventListener("error",function(e){
+    console.error("Runtime error:",e.error||e.message);
+    /* UI controller remains alive even if another script fails. */
+  });
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",function(){
+      bind();
+      setTimeout(bind,500);
+      setTimeout(mapBoot,50);
+      setTimeout(mapBoot,1000);
+    });
+  }else{
+    bind();
+    setTimeout(bind,500);
+    setTimeout(mapBoot,50);
+    setTimeout(mapBoot,1000);
+  }
+
+  /* Re-bind after authentication changes without making buttons depend on it. */
+  if(window.auth && window.auth.onAuthStateChanged){
+    try{
+      window.auth.onAuthStateChanged(function(){
+        bind();
+      });
+    }catch(e){}
+  }
+
+  document.addEventListener("keydown",function(e){
+    if(e.key!=="Escape") return;
+    hideModal("receptionModal");
+    hideModal("adminModal");
+  });
+
+  document.addEventListener("click",function(e){
+    var r=document.getElementById("receptionModal");
+    var a=document.getElementById("adminModal");
+    if(e.target===r) hideModal("receptionModal");
+    if(e.target===a) hideModal("adminModal");
+  });
 })();
 </script>
 
