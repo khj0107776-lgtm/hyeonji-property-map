@@ -1472,6 +1472,16 @@ page.classList.remove("show");
 page.classList.remove("detail-split");
 
 currentProperty=null;
+document.body.style.overflow="";
+
+if(window.__hyeonjiDetailHistoryActive){
+  window.__hyeonjiDetailHistoryActive=false;
+  try{
+    if(history.state && history.state.hyeonjiPropertyDetail){
+      history.back();
+    }
+  }catch(e){}
+}
 
 }
 
@@ -3499,6 +3509,11 @@ p.detailAddress||p.detailUrl||""
 }
 
 window.openDetailPage=function(id){
+  const detailPageHistoryEl=document.getElementById("detailPage");
+  const detailWasAlreadyOpen=
+    !!(detailPageHistoryEl && detailPageHistoryEl.classList.contains("show"));
+
+
 
   const p=properties.find(x=>x.id===id);
   if(!p)return;
@@ -3594,6 +3609,17 @@ window.openDetailPage=function(id){
 
   document.getElementById("detailPage").classList.add("show");
   document.getElementById("detailPage").classList.add("detail-split");
+
+  if(!detailWasAlreadyOpen){
+    try{
+      history.pushState(
+        {hyeonjiPropertyDetail:true,propertyId:id},
+        "",
+        location.href
+      );
+      window.__hyeonjiDetailHistoryActive=true;
+    }catch(e){}
+  }
 
   /* 기존 전체화면 상세페이지 대신 왼쪽 50%에 해당 매물 지도를 표시 */
   setTimeout(function(){
@@ -5254,78 +5280,28 @@ document.addEventListener("click",function(e){
 </style>
 
 
-<script>
-/* =========================================================
-   상세페이지 브라우저 뒤로가기 처리만 추가
-========================================================= */
-(function(){
-  "use strict";
 
-  const originalOpenDetailPage = window.openDetailPage;
-  const originalCloseDetailPage = window.closeDetailPage;
+
+
+<script>
+/* 상세페이지 브라우저 뒤로가기 - 단일 처리 */
+window.__hyeonjiDetailHistoryActive=false;
+
+window.addEventListener("popstate",function(){
+  const page=document.getElementById("detailPage");
 
   if(
-    typeof originalOpenDetailPage !== "function" ||
-    typeof originalCloseDetailPage !== "function"
+    window.__hyeonjiDetailHistoryActive &&
+    page &&
+    page.classList.contains("show")
   ){
-    return;
+    window.__hyeonjiDetailHistoryActive=false;
+    page.classList.remove("show");
+    page.classList.remove("detail-split");
+    currentProperty=null;
+    document.body.style.overflow="";
   }
-
-  let detailHistoryActive = false;
-  const DETAIL_STATE_KEY = "hyeonjiPropertyDetail";
-
-  window.openDetailPage = function(id){
-    const page = document.getElementById("detailPage");
-    const wasOpen = !!(page && page.classList.contains("show"));
-
-    originalOpenDetailPage(id);
-
-    const isOpen = !!(page && page.classList.contains("show"));
-
-    if(isOpen && !wasOpen && !detailHistoryActive){
-      try{
-        history.pushState(
-          { [DETAIL_STATE_KEY]: true, propertyId: id },
-          "",
-          location.href
-        );
-        detailHistoryActive = true;
-      }catch(e){}
-    }
-  };
-
-  window.closeDetailPage = function(){
-    const page = document.getElementById("detailPage");
-    const isOpen = !!(page && page.classList.contains("show"));
-
-    if(isOpen){
-      originalCloseDetailPage();
-    }
-
-    if(detailHistoryActive){
-      detailHistoryActive = false;
-
-      try{
-        if(history.state && history.state[DETAIL_STATE_KEY]){
-          history.back();
-        }
-      }catch(e){}
-    }
-  };
-
-  window.addEventListener("popstate", function(){
-    const page = document.getElementById("detailPage");
-
-    if(
-      detailHistoryActive &&
-      page &&
-      page.classList.contains("show")
-    ){
-      detailHistoryActive = false;
-      originalCloseDetailPage();
-    }
-  });
-})();
+});
 </script>
 
 </body>
