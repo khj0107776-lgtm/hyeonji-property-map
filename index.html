@@ -286,6 +286,14 @@ Google 로그인
 
 <div class="detail-page">
 
+<!-- 매물 선택 시 지도와 상세정보를 좌우 50:50으로 표시 -->
+<div class="detail-split-map">
+  <div class="detail-split-map-title">📍 선택한 매물 위치</div>
+  <div id="detailSplitMap"></div>
+</div>
+
+<div class="detail-split-content">
+
 <div class="detail-header">
 
 <button class="detail-back" onclick="closeDetailPage()">
@@ -385,6 +393,8 @@ class="detail-delete"
 onclick="deleteCurrentProperty()">
 🗑 삭제
 </button>
+
+</div>
 
 </div>
 
@@ -2239,17 +2249,12 @@ document
 
 function closeDetailPage(){
 
-document
-.getElementById(
-"detailPage"
-)
-.classList.remove(
-"show"
-);
+const page=document.getElementById("detailPage");
 
+page.classList.remove("show");
+page.classList.remove("detail-split");
 
-currentProperty=
-null;
+currentProperty=null;
 
 }
 
@@ -4339,6 +4344,110 @@ closeAdminPanel();
 #fMapAddress{
   width:100%;
 }
+
+/* 매물 클릭 시: 화면을 지도 50% + 상세 50%로 분할 */
+#detailPage.detail-split{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:none;
+  background:#fff;
+  overflow:hidden;
+}
+#detailPage.detail-split.show{
+  display:flex;
+}
+#detailPage.detail-split .detail-split-map{
+  width:50%;
+  height:100%;
+  position:relative;
+  flex:none;
+  background:#eef0f4;
+}
+#detailPage.detail-split .detail-split-map #detailSplitMap{
+  width:100%;
+  height:100%;
+}
+#detailPage.detail-split .detail-split-map-title{
+  position:absolute;
+  left:16px;
+  top:16px;
+  z-index:5;
+  background:#fff;
+  border-radius:11px;
+  padding:9px 13px;
+  box-shadow:0 3px 12px rgba(0,0,0,.16);
+  font-size:14px;
+  font-weight:900;
+}
+#detailPage.detail-split .detail-split-pin{
+  min-width:42px;
+  height:42px;
+  padding:0 10px;
+  border-radius:23px;
+  background:#5968dd;
+  color:#fff;
+  border:3px solid #fff;
+  box-shadow:0 3px 12px rgba(0,0,0,.28);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  font-weight:900;
+  white-space:nowrap;
+}
+#detailPage.detail-split .detail-split-content{
+  width:50%;
+  height:100%;
+  overflow-y:auto;
+  background:#fff;
+  position:relative;
+}
+#detailPage.detail-split .detail-header{
+  position:sticky;
+  top:0;
+  z-index:20;
+}
+#detailPage.detail-split .detail-page-content{
+  width:100%;
+  max-width:760px;
+  padding:25px 30px 40px;
+}
+#detailPage.detail-split .detail-page-content .detail-main-photo{
+  height:310px;
+}
+#detailPage.detail-split #detailMapWrap{
+  display:none;
+}
+
+@media(max-width:900px){
+  #detailPage.detail-split.show{
+    display:block;
+    overflow-y:auto;
+  }
+  #detailPage.detail-split .detail-split-map{
+    width:100%;
+    height:45vh;
+    min-height:280px;
+  }
+  #detailPage.detail-split .detail-split-content{
+    width:100%;
+    height:auto;
+    overflow:visible;
+  }
+  #detailPage.detail-split .detail-page-content{
+    padding:15px;
+  }
+  #detailPage.detail-split .detail-page-content .detail-main-photo{
+    height:240px;
+  }
+  #detailPage.detail-split .detail-split-map-title{
+    left:10px;
+    top:10px;
+    font-size:12px;
+    padding:7px 10px;
+  }
+}
 </style>
 
 <script>
@@ -4699,6 +4808,87 @@ function ensureDetailMap(){
 
 }
 
+
+let detailSplitMapInstance=null;
+let detailSplitMarker=null;
+
+function showDetailSplitMap(p){
+
+  const container=document.getElementById("detailSplitMap");
+  if(!container || !window.kakao || !kakao.maps)return;
+
+  const lat=Number(p.lat);
+  const lng=Number(p.lng);
+
+  if(!isFinite(lat)||!isFinite(lng))return;
+
+  const position=new kakao.maps.LatLng(lat,lng);
+
+  if(!detailSplitMapInstance){
+
+    detailSplitMapInstance=new kakao.maps.Map(
+      container,
+      {
+        center:position,
+        level:4
+      }
+    );
+
+  }else{
+
+    detailSplitMapInstance.relayout();
+    detailSplitMapInstance.setCenter(position);
+    detailSplitMapInstance.setLevel(4);
+
+  }
+
+  if(detailSplitMarker){
+    detailSplitMarker.setMap(null);
+  }
+
+  detailSplitMarker=new kakao.maps.Marker({
+    map:detailSplitMapInstance,
+    position:position
+  });
+
+  setTimeout(function(){
+    try{
+      detailSplitMapInstance.relayout();
+      detailSplitMapInstance.setCenter(position);
+    }catch(e){}
+  },100);
+
+}
+
+function moveDetailMapToProperty(p){
+
+  const address=p.mapAddress||p.address||"";
+
+  if(p.lat!=null && p.lng!=null){
+
+    showDetailSplitMap(p);
+    return;
+
+  }
+
+  if(!address || typeof addressToCoords!=="function")return;
+
+  addressToCoords(address)
+    .then(function(coords){
+
+      p.lat=coords.lat;
+      p.lng=coords.lng;
+      p.dong=p.dong||neighborhood(p.address||address);
+
+      showDetailSplitMap(p);
+
+    })
+    .catch(function(error){
+      console.warn("상세 지도 주소 변환 실패:",error);
+    });
+
+}
+
 window.openDetailPage=function(id){
 
   const p=properties.find(x=>x.id===id);
@@ -4791,6 +4981,12 @@ window.openDetailPage=function(id){
   }
 
   document.getElementById("detailPage").classList.add("show");
+  document.getElementById("detailPage").classList.add("detail-split");
+
+  /* 기존 전체화면 상세페이지 대신 왼쪽 50%에 해당 매물 지도를 표시 */
+  setTimeout(function(){
+    moveDetailMapToProperty(p);
+  },80);
 
   ensureDetailMap();
 
@@ -5546,3 +5742,11 @@ document.addEventListener("click",function(e){
 
 </body>
 </html>
+<style>
+#detailPage.detail-split.show{
+  display:flex !important;
+}
+#detailPage.detail-split.show .detail-page{
+  display:contents;
+}
+</style>
