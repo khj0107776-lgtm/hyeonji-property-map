@@ -320,6 +320,11 @@ Google 로그인
 <div class="detail-info">
 
 <div class="detail-row">
+<div class="detail-label">매물번호</div>
+<div class="detail-value" id="detailPropertyNumber"></div>
+</div>
+
+<div class="detail-row">
 <div class="detail-label">주소</div>
 <div class="detail-value" id="detailAddress"></div>
 </div>
@@ -1349,6 +1354,7 @@ function(p){
 
 const text=
 [
+p.propertyNumber,
 p.title,
 p.address,
 p.type,
@@ -1475,6 +1481,7 @@ ${escapeHtml(p.type||"")}
 </span>
 
 <div class="card-title">
+${p.propertyNumber ? '<span style="color:#5968dd;font-size:11px;margin-right:4px">#'+escapeHtml(p.propertyNumber)+'</span>' : ''}
 ${escapeHtml(p.title||"매물")}
 </div>
 
@@ -2245,6 +2252,15 @@ property.title||"매물";
 
 
 document
+.getElementById("detailPropertyNumber")
+.textContent=
+property.propertyNumber
+?
+"#"+property.propertyNumber
+:
+"-";
+
+document
 .getElementById("detailAddress")
 .textContent=
 property.address||"-";
@@ -2780,7 +2796,7 @@ return nextNumber;
 }
 
 
-function saveProperty(){
+async function saveProperty(){
 
 if(
 !auth.currentUser ||
@@ -4349,6 +4365,7 @@ return `
 <div class="admin-property">
 
 <div class="admin-property-title">
+${p.propertyNumber ? "#"+escapeHtml(p.propertyNumber)+" · " : ""}
 ${escapeHtml(
 p.title||
 "매물"
