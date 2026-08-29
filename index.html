@@ -2442,6 +2442,13 @@ document
 .getElementById("fAddress")
 .value="";
 
+const mapAddressInput=
+document.getElementById("fMapAddress");
+
+if(mapAddressInput){
+  mapAddressInput.value="";
+}
+
 
 document
 .getElementById("fType")
@@ -3089,6 +3096,18 @@ document
 .getElementById("fAddress")
 .value=
 currentProperty.address||"";
+
+addMapAddressField();
+
+const editMapAddressInput=
+document.getElementById("fMapAddress");
+
+if(editMapAddressInput){
+  editMapAddressInput.value=
+    currentProperty.mapAddress||
+    currentProperty.address||
+    "";
+}
 
 
 document
@@ -5681,7 +5700,7 @@ window.openPropertyForm=(function(old){
 
     old();
 
-    setTimeout(addMapAddressField,0);
+    addMapAddressField();
 
   };
 
@@ -5738,23 +5757,39 @@ window.saveProperty=async function(){
 
   try{
 
-    const mapAddr =
-      document.getElementById("fMapAddress")?.value.trim() ||
-      data.mapAddress ||
-      data.address;
+    const mapAddressInput=
+      document.getElementById("fMapAddress");
+
+    const mapAddr=
+      mapAddressInput &&
+      mapAddressInput.value.trim()
+        ? mapAddressInput.value.trim()
+        : data.address;
+
+    data.mapAddress=mapAddr;
 
     try{
       const coords=await addressToCoords(mapAddr);
+
       if(coords){
-        data.lat=coords.lat;
-        data.lng=coords.lng;
+        data.lat=Number(coords.lat);
+        data.lng=Number(coords.lng);
       }
+
     }catch(e){
-      console.warn("개별등록 지도주소 검색 실패:",e);
+
+      console.warn(
+        "개별등록 지도주소 검색 실패:",
+        e
+      );
+
     }
 
-    data.mapAddress=mapAddr;
-    data.dong=neighborhood(data.address);
+    /* 동별 전체 매물 개수에도 개별등록 매물을 포함 */
+    data.dong=
+      extractDong(data.address) ||
+      neighborhood(data.address||mapAddr) ||
+      "";
 
     if(editingId){
 
