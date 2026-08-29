@@ -3347,89 +3347,158 @@ return "";
 
 function normalizeImportedRows(rows){
 
-const clean=v=>{
-if(v===undefined||v===null)return "";
-return String(v)
-.replace(/\r\n/g,"\n")
-.replace(/\r/g,"\n")
-.split("\n")
-.map(x=>x.trim())
-.filter(Boolean)
-.join(" ")
-.replace(/\s+/g," ")
-.trim();
-};
+  const clean=v=>{
+    if(v===undefined||v===null)return "";
 
-const normKey=v=>
-String(v||"")
-.trim()
-.toLowerCase()
-.replace(/\s+/g,"")
-.replace(/[()]/g,"");
+    return String(v)
+      .replace(/\r\n/g,"\n")
+      .replace(/\r/g,"\n")
+      .split("\n")
+      .map(x=>x.trim())
+      .filter(Boolean)
+      .join(" ")
+      .replace(/\s+/g," ")
+      .trim();
+  };
 
-const findKey=(obj,names)=>{
-const keys=Object.keys(obj||{});
-for(const name of names){
-const target=normKey(name);
-const found=keys.find(k=>normKey(k)===target);
-if(found!==undefined)return found;
+  const normKey=v=>
+    String(v||"")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g,"")
+      .replace(/[()]/g,"");
+
+  const findKey=(obj,names)=>{
+    const keys=Object.keys(obj||{});
+
+    for(const name of names){
+      const target=normKey(name);
+
+      const found=keys.find(
+        k=>normKey(k)===target
+      );
+
+      if(found!==undefined)return found;
+    }
+
+    return null;
+  };
+
+  const result=[];
+
+  rows.forEach(raw=>{
+
+    const row={};
+
+    Object.keys(raw||{}).forEach(k=>{
+      row[k]=clean(raw[k]);
+    });
+
+    const titleKey=findKey(
+      row,
+      ["제목","매물명","title"]
+    );
+
+    const addrKey=findKey(
+      row,
+      ["주소(소재지)","주소","소재지","소재지 주소","address"]
+    );
+
+    const title=
+      titleKey ? row[titleKey] : "";
+
+    const address=
+      addrKey ? row[addrKey] : "";
+
+    const meaningful=
+      Object.values(row).some(
+        v=>String(v||"").trim()!==""
+      );
+
+    if(!meaningful)return;
+
+    /*
+      제목 없이 주소만 있는 보조 행은
+      바로 앞 매물의 주소에 합친다.
+      지도주소 열은 더 이상 사용하지 않는다.
+    */
+    if(!title && address && result.length){
+
+      const prev=result[result.length-1];
+
+      const pk=findKey(
+        prev,
+        ["주소(소재지)","주소","소재지","소재지 주소","address"]
+      );
+
+      if(pk){
+
+        prev[pk]=clean(
+          (prev[pk]||"")+" "+address
+        );
+
+      }
+
+      return;
+    }
+
+    if(!title && !address)return;
+
+    result.push(row);
+
+  });
+
+  return result;
+
 }
-return null;
-};
 
-const result=[];
 
-rows.forEach(raw=>{
+function buildExactMapAddress(address,detailAddress){
 
-const row={};
+  const base=
+    String(address||"")
+      .replace(/\s+/g," ")
+      .trim();
 
-Object.keys(raw||{}).forEach(k=>{
-row[k]=clean(raw[k]);
-});
+  const detail=
+    String(detailAddress||"")
+      .replace(/\s+/g," ")
+      .trim();
 
-const titleKey=findKey(row,["제목","매물명","title"]);
-const addrKey=findKey(row,["주소(소재지)","주소","소재지","address"]);
-const mapKey=findKey(row,["지도주소","mapAddress","지도 주소"]);
+  if(!base)return "";
 
-const title=titleKey?row[titleKey]:"";
-const address=addrKey?row[addrKey]:"";
-const mapAddress=mapKey?row[mapKey]:"";
+  /*
+    상세주소가 '631-4 301호'처럼 시작하면
+    주소에 지번만 붙여 정확한 지도 검색주소를 만든다.
+  */
+  const lotMatch=
+    detail.match(/^(\d+(?:-\d+)?)(?:\s|$)/);
 
-const meaningful=
-Object.values(row).some(v=>String(v||"").trim()!=="");
+  if(!lotMatch)return base;
 
-if(!meaningful)return;
+  const lot=lotMatch[1];
 
-/* 제목이 없고 주소만 있는 줄은 직전 매물의 주소에 합친다. */
-if(!title && address && result.length){
+  if(
+    new RegExp(
+      "(^|\\s)"+
+      lot.replace(
+        /[-\/\\^$*+?.()|[\]{}]/g,
+        "\\$&"
+      )+
+      "(\\s|$)"
+    ).test(base)
+  ){
+    return base;
+  }
 
-const prev=result[result.length-1];
-
-const pk=findKey(prev,["주소(소재지)","주소","소재지","address"]);
-const pmk=findKey(prev,["지도주소","mapAddress","지도 주소"]);
-
-if(pk){
-prev[pk]=clean((prev[pk]||"")+" "+address);
-}
-
-if(pmk){
-prev[pmk]=clean((prev[pmk]||"")+" "+mapAddress);
-}
-
-return;
-}
-
-if(!title && !address)return;
-
-result.push(row);
-
-});
-
-return result;
+  return (base+" "+lot)
+    .replace(/\s+/g," ")
+    .trim();
 
 }
 
-function buildExactMapAddress(address,mapAddress,detailAddress){
+
+function buildExactMapAddress(address,detailAddress){
 
 const base=String(mapAddress||address||"")
 .replace(/\s+/g," ")
@@ -5041,7 +5110,7 @@ window.geocodeProperty=function(p){
 
   if(!geocoder || !map)return;
 
-  const addr=p.mapAddress||p.address;
+  const addr=getPropertyMapAddress(p)||p.address;
   if(!addr)return;
 
   geocoder.addressSearch(
@@ -5429,7 +5498,7 @@ window.openDetailPage=function(id){
 
     if(p.lat==null||p.lng==null){
 
-      addressToCoords(p.mapAddress||p.address)
+      addressToCoords(getPropertyMapAddress(p)||p.address)
         .then(coords=>{
           p.lat=coords.lat;
           p.lng=coords.lng;
@@ -5874,12 +5943,6 @@ continue;
 
 }
 
-const rawMapAddress=
-getExcelValue(
-row,
-["지도주소","mapAddress","지도 주소"]
-);
-
 const detailAddress=
 getExcelValue(
 row,
@@ -5888,9 +5951,8 @@ row,
 
 const mapAddress=
 buildExactMapAddress(
-address,
-rawMapAddress,
-detailAddress
+  address,
+  detailAddress
 );
 
 let type=
@@ -5919,7 +5981,7 @@ address:
 String(address).replace(/\s+/g," ").trim(),
 
 mapAddress:
-String(mapAddress).replace(/\s+/g," ").trim(),
+String(mapAddress||address).replace(/\s+/g," ").trim(),
 
 type:type,
 
@@ -6128,7 +6190,7 @@ function upgradeExcelGuide(){
 
     p.innerHTML=
       '엑셀 첫 행의 열 이름을 아래 순서대로 사용하면 가장 정확합니다.<br>'+
-      '<b>제목 / 주소(소재지) / 지도주소 / 종류(매물종류) / '+
+      '<b>제목 / 주소(소재지) / 종류(매물종류) / '+
       '보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / '+
       '해당층/총층 / 사용승인일 / 방향 / 상세주소 / 설명 / 사진URL</b>';
 
@@ -6320,6 +6382,26 @@ document.addEventListener("click",function(e){
 });
 
 })();
+</script>
+
+
+<script>
+/*
+  [주소 통합 기준]
+  새 엑셀에서는 지도주소 열을 사용하지 않는다.
+  기존 데이터에 mapAddress가 남아 있어도 화면/지도에는
+  address + detailAddress를 우선 사용한다.
+*/
+window.getPropertyMapAddress=function(p){
+
+  if(!p)return "";
+
+  return buildExactMapAddress(
+    p.address||"",
+    p.detailAddress||""
+  ) || String(p.address||"").trim();
+
+};
 </script>
 
 </body>
