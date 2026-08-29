@@ -5124,7 +5124,9 @@ document.addEventListener("click",function(e){
   }
 
   function renderDongPropertyList(dong){
+
     dong = normalizeDongName(dong);
+
     if(!dong) return;
 
     const source =
@@ -5138,62 +5140,97 @@ document.addEventListener("click",function(e){
       })
       .sort(typeof propertySort === "function" ? propertySort : function(){return 0;});
 
-    const count = document.getElementById("countLine");
-    if(count){
-      count.textContent = dong + " 매물 " + list.length + "개";
+    const countLine = document.getElementById("countLine");
+    const propertyList = document.getElementById("propertyList");
+
+    if(countLine){
+      countLine.textContent = dong + " 매물 " + list.length + "개";
     }
 
-    const box = document.getElementById("propertyList");
-    if(!box) return;
+    if(!propertyList) return;
 
-    box.innerHTML = "";
+    propertyList.innerHTML = "";
 
     if(!list.length){
-      box.innerHTML =
-        '<div class="empty">' +
-        escapeHtml(dong) +
-        '의 현재 카테고리 매물이 없습니다.</div>';
+      propertyList.innerHTML =
+        '<div style="padding:28px 12px;text-align:center;color:#777;">' +
+        escapeHtml(dong) + '에 표시할 매물이 없습니다.' +
+        '</div>';
       return;
     }
 
+    /* 전체 매물목록과 동일한 카드 구조를 사용한다.
+       각 카드 클릭 시 기존 openProperty()를 그대로 호출해 상세페이지로 연결한다. */
     list.forEach(function(p){
+
       const card = document.createElement("div");
       card.className = "property-card";
+      card.style.cursor = "pointer";
 
-      card.addEventListener("click", function(){
+      const image = p.image || "";
+      const title = p.title || "매물";
+      const address = p.address || "";
+      const area = p.area || "";
+      const floor = p.floor || "";
+
+      let priceText = "";
+
+      if(p.deposit || p.rent){
+        if(p.deposit){
+          priceText += "보증금 " + escapeHtml(String(p.deposit));
+        }
+        if(p.rent){
+          if(priceText) priceText += " / ";
+          priceText += "월세 " + escapeHtml(String(p.rent));
+        }
+      }else if(p.salePrice){
+        priceText = "매매 " + escapeHtml(String(p.salePrice));
+      }
+
+      let infoText = "";
+      if(area){
+        infoText += escapeHtml(String(area)) + "㎡";
+      }
+      if(floor){
+        if(infoText) infoText += " · ";
+        infoText += escapeHtml(String(floor));
+      }
+
+      card.innerHTML =
+        '<div class="card-photo">' +
+          (image
+            ? '<img src="' + escapeAttr(image) + '" alt="">'
+            : '<div class="no-photo">사진 없음</div>') +
+        '</div>' +
+        '<div class="card-body">' +
+          '<div class="card-title">' + escapeHtml(String(title)) + '</div>' +
+          (priceText
+            ? '<div class="card-price">' + priceText + '</div>'
+            : '') +
+          (address
+            ? '<div class="card-address">' + escapeHtml(String(address)) + '</div>'
+            : '') +
+          (infoText
+            ? '<div class="card-right">' + infoText + '</div>'
+            : '') +
+        '</div>';
+
+      card.addEventListener("click", function(event){
+        event.preventDefault();
+        event.stopPropagation();
+
         if(typeof openProperty === "function"){
           openProperty(p);
+        }else if(typeof window.openProperty === "function"){
+          window.openProperty(p);
+        }else if(typeof window.openDetailPage === "function" && p.id){
+          window.openDetailPage(p.id);
         }
       });
 
-      const photo = p.image
-        ? '<img src="' + escapeAttr(p.image) + '" loading="lazy">'
-        : '<span>대표사진 없음</span>';
-
-      card.innerHTML =
-        '<div class="card-photo">' + photo + '</div>' +
-        '<div class="card-body">' +
-          '<span class="type-badge">' +
-            escapeHtml(normalizedType(p.type) || "") +
-          '</span>' +
-          '<div class="card-title">' +
-            escapeHtml(p.title || "매물") +
-          '</div>' +
-          '<div class="card-address">' +
-            escapeHtml(p.address || "") +
-          '</div>' +
-          '<div class="card-price">' +
-            formatPrice(p) +
-            '<span class="card-right">' +
-              escapeHtml(areaWithPyeong(p.area)) +
-            '</span>' +
-          '</div>' +
-        '</div>';
-
-      box.appendChild(card);
+      propertyList.appendChild(card);
     });
 
-    /* 우측 목록을 위쪽부터 바로 볼 수 있게 함 */
     const side = document.querySelector(".side");
     if(side){
       side.scrollTop = 0;
