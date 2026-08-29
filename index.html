@@ -3384,7 +3384,7 @@ row[k]=clean(raw[k]);
 
 const titleKey=findKey(row,["제목","매물명","title"]);
 const addrKey=findKey(row,["주소(소재지)","주소","소재지","address"]);
-const mapKey=findKey(row,["지도주소","mapAddress","지도 주소"]);
+const mapKey=findKey(row,["mapAddress","지도 주소"]);
 
 const title=titleKey?row[titleKey]:"";
 const address=addrKey?row[addrKey]:"";
@@ -3401,7 +3401,7 @@ if(!title && address && result.length){
 const prev=result[result.length-1];
 
 const pk=findKey(prev,["주소(소재지)","주소","소재지","address"]);
-const pmk=findKey(prev,["지도주소","mapAddress","지도 주소"]);
+const pmk=findKey(prev,["mapAddress","지도 주소"]);
 
 if(pk){
 prev[pk]=clean((prev[pk]||"")+" "+address);
@@ -4897,7 +4897,6 @@ window.getFilteredProperties=function(){
       p.propertyNumber,
       p.title,
       p.address,
-      p.mapAddress,
       p.type,
       p.description,
       p.dong,
@@ -4931,7 +4930,7 @@ window.searchProperties=function(){
       new kakao.maps.LatLng(Number(first.lat),Number(first.lng))
     );
 
-  }else if(first.mapAddress||first.address){
+  }else if(first.address){
 
     addressToCoords(
 buildExactMapAddress(
@@ -5650,7 +5649,7 @@ window.loadProperties=async function(){
       data.type=normalizedType(data.type);
       data.dong=
         data.dong||
-        neighborhood(data.address||data.mapAddress);
+        neighborhood(data.address);
 
       properties.push({
         id:doc.id,
@@ -5692,7 +5691,7 @@ function addMapAddressField(){
   const group=document.createElement("div");
   group.className="form-group full";
   group.innerHTML=
-    '<label>지도주소</label>'+
+    ''+
     '<input id="fMapAddress" '+
     'placeholder="지도 위치용 정확한 주소(번지까지)">'+
     '<div style="font-size:11px;color:#777;margin-top:5px">'+
@@ -5740,8 +5739,6 @@ window.saveProperty=async function(){
   const data={
     title:title,
     address:address,
-    mapAddress:
-      document.getElementById("fMapAddress")?.value.trim()||
       address,
     type:normalizedType(document.getElementById("fType").value),
     deposit:document.getElementById("fDeposit").value.trim(),
@@ -5766,7 +5763,7 @@ window.saveProperty=async function(){
 
   try{
 
-    const mapAddr=data.mapAddress||data.address;
+    const mapAddr=data.address;
 
     try{
       const coords=await addressToCoords(mapAddr);
@@ -5942,7 +5939,7 @@ continue;
 const rawMapAddress=
 getExcelValue(
 row,
-["지도주소","mapAddress","지도 주소"]
+["mapAddress","지도 주소"]
 );
 
 const detailAddress=
@@ -5981,10 +5978,7 @@ title:
 String(title).trim(),
 
 address:
-String(address).replace(/\s+/g," ").trim(),
-
-mapAddress:
-String(mapAddress).replace(/\s+/g," ").trim(),
+String(address).replace(/\s+/g," ").trim()," ").trim(),
 
 type:type,
 
@@ -6087,7 +6081,7 @@ try{
 
 const coords=
 await addressToCoords(
-data.mapAddress||data.address
+data.address
 );
 
 if(coords){
@@ -6193,7 +6187,7 @@ function upgradeExcelGuide(){
 
     p.innerHTML=
       '엑셀 첫 행의 열 이름을 아래 순서대로 사용하면 가장 정확합니다.<br>'+
-      '<b>제목 / 주소(소재지) / 지도주소 / 종류(매물종류) / '+
+      '<b>제목 / 주소(소재지)  / 종류(매물종류) / '+
       '보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / '+
       '해당층/총층 / 사용승인일 / 방향 / 상세주소 / 설명 / 사진URL</b>';
 
