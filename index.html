@@ -197,6 +197,12 @@ body{overflow:auto}
 .form-group.full{grid-column:auto}
 }
 </style>
+
+<style>
+/* 임대/매매 구분 보조 표시 */
+.card-price{line-height:1.45}
+</style>
+
 </head>
 
 <body>
@@ -1623,113 +1629,97 @@ p.id
 }
 
 
+function parseTransaction(p){
+
+  const val = function(keys){
+    for(const key of keys){
+      const v=p && p[key];
+      if(v!==undefined && v!==null && String(v).trim()!==""){
+        return String(v).trim();
+      }
+    }
+    return "";
+  };
+
+  let deposit=val(["deposit","보증금","보증금(만원)"]);
+  let rent=val(["rent","월세","월세(만원)"]);
+  let sale=val([
+    "salePrice","매매가","매매가격","매매금액",
+    "매물가","매물가(만원)","매매가(만원)",
+    "매매가격(만원)","매매금액(만원)","price"
+  ]);
+
+  /*
+    원본 매물장에 '매물가'가 5000/340처럼 들어온 경우:
+    이것은 매매가가 아니라 보증금/월세로 판단한다.
+  */
+  const combined = sale
+    .replace(/,/g,"")
+    .replace(/\s+/g,"")
+    .match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
+
+  if(combined){
+    if(!deposit) deposit=combined[1];
+    if(!rent) rent=combined[2];
+    sale="";
+  }
+
+  /*
+    보증금 또는 월세가 하나라도 있으면 무조건 임대.
+    따라서 상가 5,000/340은 '매매가'로 표시되지 않는다.
+  */
+  if(deposit || rent){
+    return {
+      mode:"임대",
+      deposit:deposit,
+      rent:rent,
+      sale:""
+    };
+  }
+
+  if(sale){
+    return {
+      mode:"매매",
+      deposit:"",
+      rent:"",
+      sale:sale
+    };
+  }
+
+  return {
+    mode:"문의",
+    deposit:"",
+    rent:"",
+    sale:""
+  };
+}
+
+
 function formatPrice(p){
 
-let text="";
+  const t=parseTransaction(p);
 
-function firstValue(keys){
+  if(t.mode==="임대"){
 
-for(const key of keys){
+    let text="";
 
-const value=p[key];
+    if(t.deposit){
+      text+="보증금 "+numberFormat(t.deposit)+"만원";
+    }
 
-if(
-value!==undefined &&
-value!==null &&
-String(value).trim()!==""
-){
+    if(t.rent){
+      if(text) text+=" / ";
+      text+="월세 "+numberFormat(t.rent)+"만원";
+    }
 
-return value;
+    return text || "임대 조건 문의";
+  }
 
-}
+  if(t.mode==="매매"){
+    return "매매가 "+numberFormat(t.sale)+"만원";
+  }
 
-}
-
-return "";
-
-}
-
-/*
-  아파트/매매 매물:
-  실제 엑셀 원본에서 사용하는 "매물가(만원)"을
-  최우선으로 인식합니다.
-*/
-const salePrice=
-firstValue([
-  "매물가(만원)",
-  "매물가",
-  "매매가(만원)",
-  "매매가격(만원)",
-  "매매금액(만원)",
-  "매매가",
-  "매매가격",
-  "매매금액",
-  "거래가",
-  "거래가격",
-  "가격",
-  "price",
-  "salePrice"
-]);
-
-if(
-String(salePrice).trim()!==""
-){
-
-text=
-"매매가 "+
-numberFormat(salePrice)+
-"만원";
-
-}
-
-/* 임대 */
-const deposit=
-firstValue([
-  "보증금(만원)",
-  "보증금",
-  "deposit"
-]);
-
-const rent=
-firstValue([
-  "월세(만원)",
-  "월세",
-  "rent"
-]);
-
-if(
-!text &&
-String(deposit).trim()!==""
-){
-
-text=
-"보증금 "+
-numberFormat(deposit)+
-"만원";
-
-}
-
-if(
-String(rent).trim()!==""
-){
-
-if(text)text+=" / ";
-
-text+=
-"월세 "+
-numberFormat(rent)+
-"만원";
-
-}
-
-if(!text){
-
-text="가격 문의";
-
-}
-
-return text;
-
+  return "가격 문의";
 }
 
 
@@ -3565,14 +3555,34 @@ errors.push((i+2)+"행: 제목 또는 주소 없음");
 continue;
 }
 
+let excelDeposit=getExcelValue(row,["보증금(만원)","보증금","deposit"]);
+let excelRent=getExcelValue(row,["월세(만원)","월세","rent"]);
+let excelSale=getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"]);
+
+/* 기존 매물장처럼 매물가 칸에 5000/340이 들어온 경우 임대로 변환 */
+const excelCombined=String(excelSale||"")
+  .replace(/,/g,"")
+  .replace(/\s+/g,"")
+  .match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
+
+if(excelCombined){
+  if(!excelDeposit) excelDeposit=excelCombined[1];
+  if(!excelRent) excelRent=excelCombined[2];
+  excelSale="";
+}
+
+/* 보증금/월세가 있으면 매매가는 비워 임대 매물로 저장 */
+if(excelDeposit || excelRent){
+  excelSale="";
+}
+
 const data={
 title:title,
 address:address,
 type:type,
-deposit:getExcelValue(row,["보증금","보증금(만원)","deposit"]),
-rent:getExcelValue(row,["월세","월세(만원)","rent"]),
-salePrice:getExcelValue(row,["매물가(만원)","매물가","매매가","매매가격","매매금액","매매가(만원)","매매가격(만원)","매매금액(만원)","거래가","거래가격","가격","price","salePrice"]),
-/* 원본 네이버 매물장처럼 매물가가 숫자/5000 형태로 들어온 경우 */
+deposit:excelDeposit,
+rent:excelRent,
+salePrice:excelSale,
 
 premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음",
 area:getExcelValue(row,["면적","area"]),
