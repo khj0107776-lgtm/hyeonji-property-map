@@ -6718,6 +6718,186 @@ document.addEventListener("click",function(e){
 }
 </style>
 
+
+<script>
+/* =========================================================
+   현지공인중개사 매물지도 - 최종 안정화 레이어
+   목적:
+   1) 관리자 목록의 "수정" 버튼 안정화
+   2) 상세페이지의 "수정" 버튼 안정화
+   3) 등록/수정 모달의 display/visibility/opacity/pointer-events 충돌 방지
+   4) 기존 지도/검색/엑셀/동별개수/저장 로직은 그대로 유지
+========================================================= */
+(function () {
+  "use strict";
+
+  function getEl(id) {
+    return document.getElementById(id);
+  }
+
+  function setValue(id, value) {
+    const el = getEl(id);
+    if (el) el.value = value == null ? "" : String(value);
+  }
+
+  function showPropertyModal() {
+    const modal = getEl("propertyFormModal");
+    if (!modal) {
+      alert("매물 등록/수정 창을 찾을 수 없습니다.");
+      return false;
+    }
+
+    modal.classList.add("show");
+    modal.style.setProperty("display", "flex", "important");
+    modal.style.setProperty("visibility", "visible", "important");
+    modal.style.setProperty("opacity", "1", "important");
+    modal.style.setProperty("pointer-events", "auto", "important");
+    modal.style.setProperty("z-index", "30000", "important");
+    document.body.style.overflow = "hidden";
+    return true;
+  }
+
+  function hidePropertyModal() {
+    const modal = getEl("propertyFormModal");
+    if (!modal) return;
+
+    modal.classList.remove("show");
+    modal.style.removeProperty("display");
+    modal.style.removeProperty("visibility");
+    modal.style.removeProperty("opacity");
+    modal.style.removeProperty("pointer-events");
+    modal.style.removeProperty("z-index");
+    document.body.style.overflow = "";
+  }
+
+  /* 등록창 */
+  window.openPropertyForm = function () {
+    if (!auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL) {
+      alert("관리자만 매물을 등록할 수 있습니다.");
+      return;
+    }
+
+    editingId = null;
+    currentImageData = "";
+
+    if (typeof addMapAddressField === "function") {
+      addMapAddressField();
+    }
+
+    if (typeof clearPropertyForm === "function") {
+      clearPropertyForm();
+    }
+
+    const title = getEl("formTitle");
+    if (title) title.textContent = "매물 등록";
+
+    showPropertyModal();
+  };
+
+  window.closePropertyForm = function () {
+    hidePropertyModal();
+  };
+
+  /* 수정창 - 매물 객체를 직접 받을 수도 있게 구성 */
+  window.editCurrentProperty = function (property) {
+    try {
+      const target = property || currentProperty;
+
+      if (!target) {
+        alert("수정할 매물을 찾을 수 없습니다.");
+        return;
+      }
+
+      if (!auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL) {
+        alert("관리자만 수정할 수 있습니다.");
+        return;
+      }
+
+      /* closeDetailPage()가 currentProperty를 비우더라도
+         수정 대상은 target에 별도로 보관하므로 영향을 받지 않는다. */
+      editingId = target.id;
+
+      if (typeof addMapAddressField === "function") {
+        addMapAddressField();
+      }
+
+      const formTitle = getEl("formTitle");
+      if (formTitle) formTitle.textContent = "매물 수정";
+
+      setValue("fTitle", target.title || "");
+      setValue("fAddress", target.address || "");
+      setValue("fMapAddress", target.mapAddress || target.address || "");
+      setValue("fType", target.type || "상가");
+      setValue("fDeposit", target.deposit || "");
+      setValue("fRent", target.rent || "");
+      setValue(
+        "fSalePrice",
+        target.salePrice ||
+        target.price ||
+        target["매매가"] ||
+        target["매매가격"] ||
+        ""
+      );
+      setValue("fPremium", target.premium || "");
+      setValue("fArea", target.area || "");
+      setValue("fFloor", target.floor || "");
+      setValue("fApprovalDate", target.approvalDate || "");
+      setValue("fDirection", target.direction || "");
+      setValue("fDetailUrl", target.detailUrl || "");
+      setValue("fDescription", target.description || "");
+
+      currentImageData = target.image || "";
+
+      const preview = getEl("imagePreview");
+      if (preview) {
+        if (currentImageData) {
+          preview.src = currentImageData;
+          preview.style.display = "block";
+        } else {
+          preview.style.display = "none";
+          preview.removeAttribute("src");
+        }
+      }
+
+      /* 상세페이지가 열려 있을 때만 닫는다.
+         수정 대상 객체는 target에 이미 보관되어 있어 안전하다. */
+      const detailPage = getEl("detailPage");
+      if (detailPage && detailPage.classList.contains("show")) {
+        detailPage.classList.remove("show");
+        detailPage.classList.remove("detail-split");
+      }
+
+      showPropertyModal();
+
+    } catch (error) {
+      console.error("매물 수정창 오류:", error);
+      alert("수정창을 여는 중 오류가 발생했습니다.\n\n" + error.message);
+    }
+  };
+
+  /* 관리자 목록 수정 */
+  window.adminEdit = function (id) {
+    const target = Array.isArray(properties)
+      ? properties.find(function (p) { return p.id === id; })
+      : null;
+
+    if (!target) {
+      alert("수정할 매물을 찾을 수 없습니다.");
+      return;
+    }
+
+    currentProperty = target;
+
+    if (typeof closeAdminPanel === "function") {
+      closeAdminPanel();
+    }
+
+    window.editCurrentProperty(target);
+  };
+
+})();
+</script>
+
 </body>
 </html>
 <style>
