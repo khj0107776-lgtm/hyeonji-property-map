@@ -345,6 +345,16 @@ Google 로그인
 </div>
 
 <div class="detail-row">
+<div class="detail-label">사용승인일</div>
+<div class="detail-value" id="detailApprovalDate"></div>
+</div>
+
+<div class="detail-row">
+<div class="detail-label">방향</div>
+<div class="detail-value" id="detailDirection"></div>
+</div>
+
+<div class="detail-row">
 <div class="detail-label">설명</div>
 <div class="detail-value detail-description" id="detailDescription"></div>
 </div>
@@ -2090,6 +2100,16 @@ document
 .getElementById("detailFloor")
 .textContent=
 property.floor||"-";
+
+document
+.getElementById("detailApprovalDate")
+.textContent=
+property.approvalDate||"-";
+
+document
+.getElementById("detailDirection")
+.textContent=
+property.direction||"-";
 
 
 document
