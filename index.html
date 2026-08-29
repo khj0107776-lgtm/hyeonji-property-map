@@ -262,6 +262,37 @@ body{overflow:auto}
   display:none !important;
 }
 </style>
+
+<style>
+.dong-count-overlay{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 11px;
+  border-radius:18px;
+  background:#fff;
+  border:2px solid #5869df;
+  box-shadow:0 3px 10px rgba(0,0,0,.18);
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:700;
+  color:#333;
+}
+.dong-count-overlay strong{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:24px;
+  height:24px;
+  border-radius:50%;
+  background:#5869df;
+  color:#fff;
+  font-size:13px;
+}
+.dong-count-overlay span{
+  font-weight:800;
+}
+</style>
 </head>
 
 <body>
@@ -5088,47 +5119,13 @@ window.initMap=function(){
 };
 
 window.createMarker=function(p){
-
-  if(!map)return;
-
-  const type=typeClass(p.type);
-
-  /* 개별 매물번호는 표시하지 않고 종류별 색상 점만 표시 */
-  const content=
-    '<div class="map-pin '+type+'" title="'+
-    escapeAttr(p.title||"매물")+
-    '">'+
-    '<span class="property-dot"></span>'+
-    '</div>';
-
-  const overlay=new kakao.maps.CustomOverlay({
-    map:map,
-    position:new kakao.maps.LatLng(
-      Number(p.lat),
-      Number(p.lng)
-    ),
-    content:content,
-    yAnchor:1,
-    zIndex:20
-  });
-
-  setTimeout(function(){
-
-    const nodes=document.querySelectorAll(".map-pin");
-    const node=nodes[nodes.length-1];
-
-    if(node){
-      node.onclick=function(e){
-        e.stopPropagation();
-        openProperty(p);
-      };
-    }
-
-  },0);
-
-  markers.push(overlay);
-
-};;
+  /*
+    개별 매물 원형 마커는 사용하지 않는다.
+    지도에는 동/읍/면별 개수 오버레이만 표시한다.
+    매물 상세는 목록/관리 화면에서 선택할 때 열도록 유지한다.
+  */
+  return null;
+};;;
 
 window.clearMarkers=function(){
   markers.forEach(m=>{
@@ -5157,7 +5154,6 @@ window.geocodeProperty=function(p){
         p.lng=Number(result[0].x);
         p.dong=neighborhood(p.address||addr);
 
-        createMarker(p);
         refreshDongCount();
         return;
 
@@ -5178,7 +5174,6 @@ window.geocodeProperty=function(p){
             p.lng=Number(result[0].x);
             p.dong=neighborhood(p.address||addr);
 
-            createMarker(p);
             refreshDongCount();
 
           }
@@ -5204,46 +5199,91 @@ window.refreshDongCount=function(){
 
   list.forEach(p=>{
 
-    if(p.lat==null||p.lng==null)return;
+    const address=String(
+      p.address||""
+    ).replace(/\s+/g," ").trim();
 
-    const dong=p.dong||neighborhood(p.address||p.mapAddress);
+    const detail=String(
+      p.detailAddress||""
+    ).replace(/\s+/g," ").trim();
+
+    /*
+      주소에서 동/읍/면을 매번 다시 계산한다.
+      Firebase의 dong 값이나 좌표가 없어도 개수에는 포함한다.
+    */
+    const dong=
+      neighborhood(address) ||
+      neighborhood(
+        String(p.mapAddress||"")
+      ) ||
+      String(p.dong||"").trim();
+
     if(!dong)return;
 
     if(!groups[dong]){
-      groups[dong]={count:0,lat:0,lng:0};
+      groups[dong]={
+        count:0,
+        lat:0,
+        lng:0,
+        coordCount:0
+      };
     }
 
     groups[dong].count++;
-    groups[dong].lat+=Number(p.lat);
-    groups[dong].lng+=Number(p.lng);
 
+    const lat=Number(p.lat);
+    const lng=Number(p.lng);
+
+    if(
+      Number.isFinite(lat) &&
+      Number.isFinite(lng)
+    ){
+      groups[dong].lat+=lat;
+      groups[dong].lng+=lng;
+      groups[dong].coordCount++;
+    }
+
+    p.dong=dong;
   });
 
   Object.keys(groups).forEach(dong=>{
 
     const g=groups[dong];
+    if(!g.count)return;
+
+    let lat,lng;
+
+    if(g.coordCount){
+      lat=g.lat/g.coordCount;
+      lng=g.lng/g.coordCount;
+    }else{
+      /*
+        일괄등록 직후 좌표 검색이 아직 안 끝났더라도
+        천안/아산 중심 좌표에 임시 표시한다.
+        이후 좌표가 들어오면 다시 실제 위치로 이동한다.
+      */
+      lat=36.8151;
+      lng=127.1139;
+    }
 
     const overlay=new kakao.maps.CustomOverlay({
       map:map,
-      position:new kakao.maps.LatLng(
-        g.lat/g.count,
-        g.lng/g.count
-      ),
+      position:new kakao.maps.LatLng(lat,lng),
       content:
-        '<div class="count-overlay"><strong>'+
-        g.count+
-        '</strong> '+
-        escapeHtml(dong)+
+        '<div class="dong-count-overlay" '+
+        'data-dong="'+escapeAttr(dong)+'">'+
+        '<strong>'+g.count+'</strong>'+
+        '<span>'+escapeHtml(dong)+'</span>'+
         '</div>',
-      yAnchor:1.7,
-      zIndex:10
+      yAnchor:1.2,
+      zIndex:100
     });
 
     dongOverlays.push(overlay);
 
   });
 
-};
+};;
 
 window.drawMarkers=function(){
 
@@ -5251,22 +5291,43 @@ window.drawMarkers=function(){
 
   clearMarkers();
 
-  getFilteredProperties().forEach(p=>{
+  const list=getFilteredProperties();
 
+  list.forEach(p=>{
+
+    const address=String(
+      p.address||""
+    ).replace(/\s+/g," ").trim();
+
+    const dong=
+      neighborhood(address) ||
+      String(p.dong||"").trim();
+
+    if(dong)p.dong=dong;
+
+    /*
+      개별 원형 마커는 만들지 않는다.
+      좌표가 없으면 주소 검색만 실행하여
+      동별 개수 오버레이 위치를 보정한다.
+    */
     if(
-      p.lat!=null &&
-      p.lng!=null
+      p.lat==null ||
+      p.lng==null ||
+      !Number.isFinite(Number(p.lat)) ||
+      !Number.isFinite(Number(p.lng))
     ){
-      createMarker(p);
-    }else{
       geocodeProperty(p);
     }
 
   });
 
-  setTimeout(refreshDongCount,700);
+  refreshDongCount();
 
-};
+  setTimeout(refreshDongCount,800);
+  setTimeout(refreshDongCount,2000);
+  setTimeout(refreshDongCount,4000);
+
+};;
 
 /* ---------- 상세페이지 + 상세지도 ---------- */
 
@@ -6288,6 +6349,17 @@ await excelSleep(80);
 }
 
 await loadProperties();
+
+/* 엑셀 일괄등록 완료 직후 동/읍/면을 주소에서 다시 계산 */
+properties.forEach(function(p){
+  const a=String(p.address||"").replace(/\s+/g," ").trim();
+  const d=neighborhood(a);
+  if(d)p.dong=d;
+});
+
+drawMarkers();
+refreshDongCount();
+
 
 closeExcelImport();
 
