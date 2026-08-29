@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=175758acb1d968a612c27e344b435346&libraries=services,clusterer&autoload=false"></script>
 
 <style>
 *{box-sizing:border-box}
@@ -959,84 +959,153 @@ window.addEventListener(
 "load",
 function(){
 
+/*
+  1단계 안정화:
+  지도 / 인증 / 매물목록을 서로 독립적으로 시작한다.
+  한 기능의 오류가 다른 기능의 버튼까지 막지 않도록 한다.
+*/
+
+try{
+
+if(
+window.kakao &&
+kakao.maps &&
+typeof kakao.maps.load==="function"
+){
+
+kakao.maps.load(
+function(){
+
+try{
+
 initMap();
 
+}catch(error){
+
+console.error(
+"지도 초기화 오류:",
+error
+);
+
+}
+
+}
+);
+
+}else{
+
+console.error(
+"Kakao Maps SDK가 로드되지 않았습니다."
+);
+
+}
+
+}catch(error){
+
+console.error(
+"Kakao SDK 실행 오류:",
+error
+);
+
+}
+
+try{
 
 auth.onAuthStateChanged(
 async function(user){
 
+try{
+
+const emailEl=
+document.getElementById("userEmail");
+
+const loginBtn=
+document.getElementById("loginBtn");
+
+const logoutBtn=
+document.getElementById("logoutBtn");
+
+const adminBtn=
+document.getElementById("adminManageBtn");
+
 if(user){
 
-document
-.getElementById("userEmail")
-.textContent=
-user.email||"";
+if(emailEl)
+emailEl.textContent=user.email||"";
 
+if(loginBtn)
+loginBtn.style.display="none";
 
-document
-.getElementById("loginBtn")
-.style.display=
-"none";
-
-
-document
-.getElementById("logoutBtn")
-.style.display=
-"block";
-
+if(logoutBtn)
+logoutBtn.style.display="block";
 
 if(
-user.email===
-ADMIN_EMAIL
+adminBtn &&
+user.email===ADMIN_EMAIL
 ){
 
-document
-.getElementById("adminManageBtn")
-.style.display=
-"block";
+adminBtn.style.display="block";
 
-}else{
+}else if(adminBtn){
 
-document
-.getElementById("adminManageBtn")
-.style.display=
-"none";
+adminBtn.style.display="none";
 
 }
 
 }else{
 
-document
-.getElementById("userEmail")
-.textContent=
-"";
+if(emailEl)
+emailEl.textContent="";
 
+if(loginBtn)
+loginBtn.style.display="block";
 
-document
-.getElementById("loginBtn")
-.style.display=
-"block";
+if(logoutBtn)
+logoutBtn.style.display="none";
 
-
-document
-.getElementById("logoutBtn")
-.style.display=
-"none";
-
-
-document
-.getElementById("adminManageBtn")
-.style.display=
-"none";
+if(adminBtn)
+adminBtn.style.display="none";
 
 }
 
+}catch(error){
+
+console.error(
+"인증 UI 오류:",
+error
+);
+
+}
+
+try{
 
 await loadProperties();
 
-});
+}catch(error){
 
-});
+console.error(
+"매물 불러오기 오류:",
+error
+);
+
+}
+
+}
+);
+
+}catch(error){
+
+console.error(
+"Firebase 인증 초기화 오류:",
+error
+);
+
+}
+
+bindActionButtons();
+
+}
+););
 
 
 async function googleLogin(){
@@ -1084,6 +1153,24 @@ function initMap(){
 const container=
 document.getElementById("map");
 
+if(!container){
+
+throw new Error(
+"지도 컨테이너(#map)를 찾을 수 없습니다."
+);
+
+}
+
+if(
+!window.kakao ||
+!kakao.maps
+){
+
+throw new Error(
+"Kakao Maps가 준비되지 않았습니다."
+);
+
+}
 
 const options={
 
@@ -1097,26 +1184,41 @@ level:7
 
 };
 
-
 map=
 new kakao.maps.Map(
 container,
 options
 );
 
+if(
+kakao.maps.services &&
+kakao.maps.services.Geocoder
+){
 
 geocoder=
 new kakao.maps.services.Geocoder();
 
+}
 
-kakao.maps.event.addListener(
-map,
-"idle",
+setTimeout(
 function(){
 
-refreshDongCount();
+try{
+
+if(map)
+map.relayout();
+
+}catch(error){
+
+console.error(
+"지도 relayout 오류:",
+error
+);
 
 }
+
+},
+100
 );
 
 }
@@ -3206,24 +3308,101 @@ btn.textContent="엑셀 매물 등록하기";
    기존 Firestore의 inquiries 컬렉션 사용
 ===================================================== */
 
+function bindActionButtons(){
+
+const receptionBtn=
+document.querySelector(".reception-btn");
+
+if(
+receptionBtn &&
+!receptionBtn.dataset.bound
+){
+
+receptionBtn.dataset.bound="1";
+
+receptionBtn.type="button";
+
+receptionBtn.addEventListener(
+"click",
+function(event){
+
+event.preventDefault();
+event.stopPropagation();
+
+openReception();
+
+},
+true
+);
+
+}
+
+const adminBtn=
+document.getElementById("adminManageBtn");
+
+if(
+adminBtn &&
+!adminBtn.dataset.bound
+){
+
+adminBtn.dataset.bound="1";
+
+adminBtn.type="button";
+
+adminBtn.addEventListener(
+"click",
+function(event){
+
+event.preventDefault();
+event.stopPropagation();
+
+openAdminPanel();
+
+},
+true
+);
+
+}
+
+}
+
 function openReception(){
 
-const receptionModal=document.getElementById("receptionModal");
-receptionModal.style.zIndex="12000";
-receptionModal.classList.add("show");
+const modal=
+document.getElementById("receptionModal");
+
+if(!modal){
+
+alert("매물접수 창을 찾을 수 없습니다.");
+
+return;
+
+}
+
+modal.classList.add("show");
+modal.style.display="flex";
+modal.style.visibility="visible";
+modal.style.opacity="1";
+modal.style.pointerEvents="auto";
+modal.style.zIndex="12000";
 
 }
 
 
 function closeReception(){
 
-document
-.getElementById(
-"receptionModal"
-)
-.classList.remove(
-"show"
-);
+const modal=
+document.getElementById("receptionModal");
+
+if(modal){
+
+modal.classList.remove("show");
+modal.style.display="none";
+modal.style.visibility="hidden";
+modal.style.opacity="0";
+modal.style.pointerEvents="none";
+
+}
 
 }
 
@@ -3386,42 +3565,72 @@ function openAdminPanel(){
 
 if(
 !auth.currentUser ||
-auth.currentUser.email!==
-ADMIN_EMAIL
+auth.currentUser.email!==ADMIN_EMAIL
 ){
 
-alert(
-"관리자만 이용할 수 있습니다."
-);
+alert("관리자만 이용할 수 있습니다.");
 
 return;
 
 }
 
+const modal=
+document.getElementById("adminModal");
+
+if(!modal){
+
+alert("관리자 매물관리 창을 찾을 수 없습니다.");
+
+return;
+
+}
+
+try{
 
 renderAdminList();
 
+modal.classList.add("show");
+modal.style.display="flex";
+modal.style.visibility="visible";
+modal.style.opacity="1";
+modal.style.pointerEvents="auto";
+modal.style.zIndex="20000";
 
-document
-.getElementById(
-"adminModal"
-)
-.classList.add(
-"show"
+document.body.style.overflow="hidden";
+
+}catch(error){
+
+console.error(
+"관리자 매물관리 오류:",
+error
 );
+
+alert(
+"관리자 매물관리를 여는 중 오류가 발생했습니다.\n\n"+
+error.message
+);
+
+}
 
 }
 
 
 function closeAdminPanel(){
 
-document
-.getElementById(
-"adminModal"
-)
-.classList.remove(
-"show"
-);
+const modal=
+document.getElementById("adminModal");
+
+if(modal){
+
+modal.classList.remove("show");
+modal.style.display="none";
+modal.style.visibility="hidden";
+modal.style.opacity="0";
+modal.style.pointerEvents="none";
+
+}
+
+document.body.style.overflow="";
 
 }
 
@@ -3973,6 +4182,73 @@ refreshDongCount,
 }
 );
 
+</script>
+
+
+<script>
+/* 1단계: 상단 버튼은 외부 서비스 초기화와 독립 */
+(function(){
+
+function earlyBind(){
+
+if(window.bindActionButtons)
+window.bindActionButtons();
+
+}
+
+if(document.readyState==="loading"){
+
+document.addEventListener(
+"DOMContentLoaded",
+earlyBind
+);
+
+}else{
+
+earlyBind();
+
+}
+
+})();
+</script>
+
+
+<script>
+document.addEventListener(
+"keydown",
+function(event){
+
+if(event.key==="Escape"){
+
+if(window.closeReception)
+closeReception();
+
+if(window.closeAdminPanel)
+closeAdminPanel();
+
+}
+
+}
+);
+
+document.addEventListener(
+"click",
+function(event){
+
+const reception=
+document.getElementById("receptionModal");
+
+const admin=
+document.getElementById("adminModal");
+
+if(reception && event.target===reception)
+closeReception();
+
+if(admin && event.target===admin)
+closeAdminPanel();
+
+}
+);
 </script>
 
 </body>
