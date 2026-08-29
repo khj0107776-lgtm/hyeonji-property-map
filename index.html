@@ -5163,5 +5163,62 @@ refreshDongCount,
 
 </script>
 
+
+<script>
+(function(){
+  function forceBind(){
+    var reception=document.getElementById('receptionOpenBtn');
+    var admin=document.getElementById('adminManageBtn');
+
+    if(reception && !reception.__forceBound){
+      reception.__forceBound=true;
+      reception.onclick=function(e){
+        if(e){e.preventDefault();e.stopPropagation();}
+        var m=document.getElementById('receptionModal');
+        if(!m){alert('매물접수 창을 찾을 수 없습니다.');return false;}
+        m.classList.add('show');
+        m.style.display='flex';
+        m.style.visibility='visible';
+        m.style.opacity='1';
+        m.style.pointerEvents='auto';
+        m.style.zIndex='99999';
+        return false;
+      };
+    }
+
+    if(admin && !admin.__forceBound){
+      admin.__forceBound=true;
+      admin.onclick=function(e){
+        if(e){e.preventDefault();e.stopPropagation();}
+        var m=document.getElementById('adminModal');
+        if(!m){alert('관리자 매물관리 창을 찾을 수 없습니다.');return false;}
+        if(typeof auth==='undefined' || !auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
+          alert('관리자만 이용할 수 있습니다.');
+          return false;
+        }
+        m.classList.add('show');
+        m.style.display='flex';
+        m.style.visibility='visible';
+        m.style.opacity='1';
+        m.style.pointerEvents='auto';
+        m.style.zIndex='99999';
+        if(typeof renderAdminList==='function') renderAdminList();
+        document.body.style.overflow='hidden';
+        return false;
+      };
+    }
+  }
+
+  // Run immediately, after DOM is parsed, and again at DOM ready/load.
+  forceBind();
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',forceBind,{once:false});
+  }
+  window.addEventListener('load',forceBind);
+  setTimeout(forceBind,100);
+  setTimeout(forceBind,500);
+})();
+</script>
+
 </body>
 </html>
