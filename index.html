@@ -3751,7 +3751,17 @@ async function importExcelProperties(){
       새 엑셀 서식은 지도주소/상세주소 열이 없다.
       주소(소재지) 한 칸에 지번 등 상세주소까지 들어온다.
     */
-    let nextNo=nextPropertyNumber(properties);
+    let nextNo=(function(list){
+      const arr=Array.isArray(list)?list:[];
+      let max=0;
+      arr.forEach(function(p){
+        const n=parseInt(String(
+          p && (p.propertyNumber ?? p.no ?? p.number ?? "")
+        ).replace(/[^0-9]/g,""),10);
+        if(Number.isFinite(n) && n>max)max=n;
+      });
+      return max+1;
+    })(properties);
 
     for(let i=0;i<excelRows.length;i++){
 
@@ -3873,7 +3883,7 @@ async function importExcelProperties(){
         /*
           지도주소는 별도 필드로 입력하지 않는다.
           기존 지도 코드와의 호환을 위해 같은 주소를
-          내부 mapAddress 값으로만 복사한다.
+          내부 address 값으로만 복사한다.
         */
         address:address,
 
@@ -3969,7 +3979,7 @@ async function importExcelProperties(){
 
       /*
         지도 좌표도 주소 하나만 이용한다.
-        여기서 mapAddress라는 별도 엑셀 변수를 참조하지 않는다.
+        여기서 address라는 별도 엑셀 변수를 참조하지 않는다.
       */
       try{
 
