@@ -5258,9 +5258,7 @@ window.openDetailPage=function(id){
     normalizedType(p.type)||"";
   document.getElementById("detailTitle").innerHTML=
     (p.propertyNumber?
-      '<span class="property-number">#'+
-      escapeHtml(p.propertyNumber)+
-      '</span> ':"")+
+      ' ':"")+
     escapeHtml(p.title||"매물");
   document.getElementById("detailAddress").textContent=
     p.address||"-";
@@ -5442,9 +5440,7 @@ window.renderProperties=function(){
       '</span>'+
       '<div class="card-title">'+
       (p.propertyNumber?
-        '<span class="property-number">#'+
-        escapeHtml(p.propertyNumber)+
-        '</span>':"")+
+        '':"")+
       escapeHtml(p.title||"매물")+
       '</div>'+
       '<div class="card-address">'+
@@ -5705,9 +5701,7 @@ window.renderAdminList=function(){
 
   box.innerHTML=properties.map(p=>
     '<div class="admin-property">'+
-    '<div class="admin-property-number">#'+
-    escapeHtml(p.propertyNumber||"-")+
-    '</div>'+
+    ''+
     '<div class="admin-property-title">'+
     escapeHtml(p.title||"매물")+
     '</div>'+
