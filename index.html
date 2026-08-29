@@ -232,6 +232,30 @@ body{overflow:auto}
 }
 </style>
 
+
+<style>
+.detail-map-error{
+  width:100%;
+  height:100%;
+  min-height:300px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:20px;
+  box-sizing:border-box;
+  color:#777;
+  font-weight:800;
+}
+.detail-map-error small{
+  display:block;
+  margin-top:8px;
+  font-size:12px;
+  font-weight:500;
+  line-height:1.5;
+}
+</style>
 </head>
 
 <body>
@@ -5285,81 +5309,124 @@ function showDetailSplitMap(p){
 
 function moveDetailMapToProperty(p){
 
-const address=
-buildExactMapAddress(
-p.address||"",
-p.mapAddress||"",
-p.detailAddress||p.detailUrl||""
-);
+  const container=document.getElementById("detailSplitMap");
+
+  if(!container){
+    console.warn("상세 지도 영역이 없습니다.");
+    return;
+  }
 
   /*
-    상세 매물에서는 기존 좌표를 먼저 사용하지 않는다.
-    엑셀/기존 데이터의 잘못된 좌표가 남아 있어도
-    현재 매물의 주소를 기준으로 다시 위치를 찾는다.
+    지도 검색은 반드시
+    지도주소 → 주소 → 상세주소 결합
+    순서로 정확한 주소를 만든 뒤 실행한다.
   */
-  if(address){
+  const exactAddress=buildExactMapAddress(
+    p.address||"",
+    p.mapAddress||"",
+    p.detailAddress||p.detailUrl||""
+  );
 
-    addressToCoords(address)
-      .then(function(coords){
+  const showStored=function(){
 
-        p.lat=Number(coords.lat);
-        p.lng=Number(coords.lng);
+    const lat=Number(p.lat);
+    const lng=Number(p.lng);
 
-        if(!p.dong){
-          p.dong=extractDong(p.address||address);
-        }
+    if(
+      isFinite(lat)&&
+      isFinite(lng)
+    ){
 
-        showDetailSplitMap(p);
+      showDetailSplitMap(p);
+      return true;
 
-      })
-      .catch(function(error){
+    }
 
-        console.warn(
-          "상세 매물 주소 검색 실패:",
-          error
-        );
+    container.innerHTML=
+      '<div class="detail-map-error">'+
+      '📍 이 매물의 위치를 찾지 못했습니다.'+
+      '<br><small>'+
+      escapeHtml(exactAddress||p.address||"주소 없음")+
+      '</small></div>';
 
-        /* 주소 검색 실패시에만 저장된 좌표를 보조적으로 사용 */
-        if(
-          p.lat!=null &&
-          p.lng!=null
-        ){
+    return false;
 
-          showDetailSplitMap(p);
+  };
 
-        }else{
+  if(!exactAddress){
 
-          const container=
-            document.getElementById("detailSplitMap");
-
-          if(container){
-
-            container.innerHTML=
-              '<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:#777;font-weight:700">'+
-              '📍 이 매물의 주소 위치를 찾지 못했습니다.<br>'+
-              '<span style="font-size:12px;font-weight:500;margin-top:6px">'+
-              escapeHtml(address)+
-              '</span>'+
-              '</div>';
-
-          }
-
-        }
-
-      });
-
+    showStored();
     return;
 
   }
 
-  if(
-    p.lat!=null &&
-    p.lng!=null
-  ){
+  /*
+    상세페이지가 열린 뒤 주소를 다시 검색한다.
+    기존 Firestore 좌표가 잘못되어 있어도 현재 주소를 우선한다.
+  */
+  addressToCoords(exactAddress)
+    .then(function(coords){
 
-    showDetailSplitMap(p);
+      const lat=Number(coords.lat);
+      const lng=Number(coords.lng);
 
-  }
+      if(
+        !isFinite(lat)||
+        !isFinite(lng)
+      ){
+
+        throw new Error("유효하지 않은 좌표");
+
+      }
+
+      p.lat=lat;
+      p.lng=lng;
+      p.mapAddress=exactAddress;
+
+      if(!p.dong){
+        p.dong=extractDong(
+          p.address||exactAddress
+        );
+      }
+
+      /*
+        display:none 상태에서 지도를 만들면 크기가 0이 되는
+        문제를 피하기 위해 상세페이지가 실제 표시된 뒤
+        지도 생성/이동을 실행한다.
+      */
+      requestAnimationFrame(function(){
+
+        setTimeout(function(){
+
+          showDetailSplitMap(p);
+
+          if(detailSplitMapInstance){
+
+            detailSplitMapInstance.relayout();
+            detailSplitMapInstance.setCenter(
+              new kakao.maps.LatLng(lat,lng)
+            );
+            detailSplitMapInstance.setLevel(4);
+
+          }
+
+        },50);
+
+      });
+
+    })
+    .catch(function(error){
+
+      console.warn(
+        "상세페이지 지도주소 검색 실패:",
+        exactAddress,
+        error
+      );
+
+      /* 주소 검색 실패 시에만 저장된 좌표를 사용 */
+      showStored();
+
+    });
 
 }
 
@@ -5454,38 +5521,35 @@ window.openDetailPage=function(id){
     admin.classList.remove("show");
   }
 
-  document.getElementById("detailPage").classList.add("show");
-  document.getElementById("detailPage").classList.add("detail-split");
+  const detailPage=document.getElementById("detailPage");
 
-  /* 기존 전체화면 상세페이지 대신 왼쪽 50%에 해당 매물 지도를 표시 */
-  setTimeout(function(){
-    moveDetailMapToProperty(p);
-  },80);
+  detailPage.classList.add("show");
+  detailPage.classList.add("detail-split");
+
+  /*
+    상세페이지를 먼저 화면에 표시한 다음
+    정확한 주소를 검색하여 왼쪽 지도 위치를 이동한다.
+    지도는 사라지지 않고 상세내용과 50:50으로 유지한다.
+  */
+  requestAnimationFrame(function(){
+
+    setTimeout(function(){
+
+      moveDetailMapToProperty(p);
+
+      if(detailSplitMapInstance){
+
+        detailSplitMapInstance.relayout();
+
+      }
+
+    },80);
+
+  });
 
   ensureDetailMap();
 
-  setTimeout(()=>{
-
-    const container=document.getElementById("detailMap");
-    if(!container)return;
-
-    if(!window.kakao||!kakao.maps)return;
-
-    if(p.lat==null||p.lng==null){
-
-      addressToCoords(p.mapAddress||p.address)
-        .then(coords=>{
-          p.lat=coords.lat;
-          p.lng=coords.lng;
-          showDetailMap(p);
-        })
-        .catch(()=>{});
-
-    }else{
-      showDetailMap(p);
-    }
-
-  },100);
+  /* 기존 보조 상세지도는 사용하지 않고 detailSplitMap만 사용 */
 
 };
 
