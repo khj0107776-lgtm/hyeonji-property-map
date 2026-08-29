@@ -1946,7 +1946,6 @@ return;
 
 }
 
-
 clearDongOverlays();
 
 
@@ -1975,7 +1974,8 @@ return;
 const dong=
 p.dong||
 extractDong(
-p.address
+p.address||
+""
 );
 
 
@@ -1986,6 +1986,13 @@ return;
 }
 
 
+const type=
+String(
+p.type||
+""
+).trim();
+
+
 if(!groups[dong]){
 
 groups[dong]={
@@ -1994,7 +2001,9 @@ count:0,
 
 lat:0,
 
-lng:0
+lng:0,
+
+types:{}
 
 };
 
@@ -2009,18 +2018,53 @@ Number(p.lat);
 groups[dong].lng+=
 Number(p.lng);
 
+
+if(!groups[dong].types[type]){
+
+groups[dong].types[type]=0;
+
+}
+
+groups[dong].types[type]++;
+
 }
 );
 
 
-Object.keys(
-groups
-)
+const typeColors={
+
+"상가":"#5968dd",
+
+"공장":"#e53935",
+
+"아파트":"#f2c94c",
+
+"원·투룸":"#8e5bd9",
+
+"원룸":"#8e5bd9",
+
+"투룸":"#8e5bd9",
+
+"주택":"#35a853",
+
+"토지":"#f2994a"
+
+};
+
+
+Object.keys(groups)
 .forEach(
 function(dong){
 
 const group=
 groups[dong];
+
+
+if(!group.count){
+
+return;
+
+}
 
 
 const position=
@@ -2035,12 +2079,146 @@ group.count
 );
 
 
+/*
+  동네별 전체 개수 + 종류별 개수를 표시합니다.
+*/
+let typeHtml="";
+
+
+const typeOrder=[
+"상가",
+"공장",
+"아파트",
+"원·투룸",
+"원룸",
+"투룸",
+"주택",
+"토지"
+];
+
+
+const shownTypes={};
+
+
+typeOrder.forEach(
+function(type){
+
+if(
+shownTypes[type]
+){
+
+return;
+
+}
+
+
+let count=
+group.types[type]||0;
+
+
+if(type==="원룸" || type==="투룸"){
+
+count=
+(group.types["원·투룸"]||0)+
+(group.types["원룸"]||0)+
+(group.types["투룸"]||0);
+
+type="원·투룸";
+
+}
+
+
+if(
+count<=0 ||
+shownTypes[type]
+){
+
+return;
+
+}
+
+
+shownTypes[type]=true;
+
+
+const color=
+typeColors[type]||
+"#777";
+
+
+typeHtml+=
+'<div style="' +
+'display:flex;' +
+'align-items:center;' +
+'justify-content:space-between;' +
+'gap:7px;' +
+'margin-top:2px;' +
+'font-size:10px;' +
+'font-weight:800;' +
+'">' +
+
+'<span style="display:flex;align-items:center;gap:3px;">' +
+
+'<span style="' +
+'display:inline-block;' +
+'width:7px;' +
+'height:7px;' +
+'border-radius:50%;' +
+'background:'+color+';' +
+'"></span>' +
+
+escapeHtml(type)+
+
+'</span>' +
+
+'<span>'+count+'개</span>' +
+
+'</div>';
+
+}
+);
+
+
 const content=
-'<div class="count-overlay">'+
-'<strong>'+
+'<div class="count-overlay" style="' +
+'min-width:90px;' +
+'padding:7px 10px;' +
+'background:#fff;' +
+'border-radius:14px;' +
+'box-shadow:0 5px 15px rgba(0,0,0,.18);' +
+'text-align:center;' +
+'font-weight:900;' +
+'white-space:nowrap;' +
+'">' +
+
+'<div style="' +
+'font-size:12px;' +
+'margin-bottom:4px;' +
+'">' +
+
+'<strong style="' +
+'display:inline-flex;' +
+'align-items:center;' +
+'justify-content:center;' +
+'width:28px;' +
+'height:28px;' +
+'border-radius:50%;' +
+'background:#5968dd;' +
+'color:#fff;' +
+'font-size:12px;' +
+'margin-right:4px;' +
+'">' +
+
 group.count+
+
 '</strong>'+
+
 escapeHtml(dong)+
+
+'</div>' +
+
+typeHtml+
+
 '</div>';
 
 
@@ -2051,16 +2229,14 @@ position:position,
 
 content:content,
 
-yAnchor:1.7,
+yAnchor:1.5,
 
-zIndex:10
+zIndex:20
 
 });
 
 
-overlay.setMap(
-map
-);
+overlay.setMap(map);
 
 
 dongOverlays.push(
