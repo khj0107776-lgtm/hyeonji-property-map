@@ -771,7 +771,7 @@ onclick="closeExcelImport()">
 
 <p style="color:#6f7480;font-size:13px;line-height:1.6;margin-top:-8px">
 엑셀의 첫 번째 행은 제목으로 사용됩니다. 아래 열 이름을 그대로 사용하면 가장 정확합니다.<br>
-제목 / 주소 / 종류 / 보증금 / 월세 / 권리금 / 면적 / 층 / 상세주소 / 설명 / 사진URL
+제목 / 주소(소재지) / 종류(매물종류) / 보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / 해당층/총층 / 사용승인일 / 방향 / 설명 / 사진URL
 </p>
 
 <div class="file-box">
@@ -3782,7 +3782,7 @@ salePrice:excelSale,
 premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음",
 area:getExcelValue(row,["면적","area"]),
 floor:getExcelValue(row,["층","층수","floor"]),
-detailUrl:getExcelValue(row,["상세주소","상세페이지주소","상세정보","detailUrl","url"]),
+detailUrl:getExcelValue(row,["상세페이지주소","상세정보","detailUrl","url"]),
 description:getExcelValue(row,["설명","매물설명","description"]),
 image:getExcelValue(row,["사진URL","사진주소","image","imageUrl"]),
 dong:extractDong(address),
@@ -6424,7 +6424,7 @@ function upgradeExcelGuide(){
       '엑셀 첫 행의 열 이름을 아래 순서대로 사용하면 가장 정확합니다.<br>'+
       '<b>제목 / 주소(소재지) / 종류(매물종류) / '+
       '보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / '+
-      '해당층/총층 / 사용승인일 / 방향 / 상세주소 / 설명 / 사진URL</b>';
+      '해당층/총층 / 사용승인일 / 방향 / 설명 / 사진URL</b>';
 
   }
 
