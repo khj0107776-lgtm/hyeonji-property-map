@@ -1995,135 +1995,106 @@ dongOverlays=[];
 
 function refreshDongCount(){
 
-if(!map){
-
-return;
-
-}
-
+if(!map)return;
 
 clearDongOverlays();
 
-
-const list=
-getFilteredProperties();
-
-
+const list=getFilteredProperties();
 const groups={};
+const needGeocode=[];
 
+list.forEach(function(p){
 
-list.forEach(
-function(p){
+  const dong=String(
+    p.dong||extractDong(p.address)||""
+  ).trim();
 
-if(
-p.lat===undefined ||
-p.lng===undefined ||
-p.lat===null ||
-p.lng===null
-){
+  if(!dong)return;
 
-return;
+  if(!groups[dong]){
+    groups[dong]={
+      count:0,
+      lat:0,
+      lng:0,
+      coordCount:0
+    };
+  }
 
-}
+  groups[dong].count++;
 
-
-const dong=
-p.dong||
-extractDong(
-p.address
-);
-
-
-if(!dong){
-
-return;
-
-}
-
-
-if(!groups[dong]){
-
-groups[dong]={
-
-count:0,
-
-lat:0,
-
-lng:0
-
-};
-
-}
-
-
-groups[dong].count++;
-
-groups[dong].lat+=
-Number(p.lat);
-
-groups[dong].lng+=
-Number(p.lng);
-
-}
-);
-
-
-Object.keys(
-groups
-)
-.forEach(
-function(dong){
-
-const group=
-groups[dong];
-
-
-const position=
-new kakao.maps.LatLng(
-
-group.lat/
-group.count,
-
-group.lng/
-group.count
-
-);
-
-
-const content=
-'<div class="count-overlay">'+
-'<strong>'+
-group.count+
-'</strong>'+
-escapeHtml(dong)+
-'</div>';
-
-
-const overlay=
-new kakao.maps.CustomOverlay({
-
-position:position,
-
-content:content,
-
-yAnchor:1.7,
-
-zIndex:10
+  if(
+    p.lat!==undefined && p.lat!==null &&
+    p.lng!==undefined && p.lng!==null &&
+    isFinite(Number(p.lat)) && isFinite(Number(p.lng))
+  ){
+    groups[dong].lat+=Number(p.lat);
+    groups[dong].lng+=Number(p.lng);
+    groups[dong].coordCount++;
+  }else if(p.address){
+    needGeocode.push(p);
+  }
 
 });
 
+Object.keys(groups).forEach(function(dong){
 
-overlay.setMap(
-map
-);
+  const group=groups[dong];
 
+  // 해당 동에 좌표가 하나라도 있으면 평균 위치에 개수 표시
+  if(group.coordCount>0){
 
-dongOverlays.push(
-overlay
-);
+    const position=new kakao.maps.LatLng(
+      group.lat/group.coordCount,
+      group.lng/group.coordCount
+    );
+
+    const content=
+      '<div class="count-overlay">'+
+      '<span class="count">'+group.count+'</span>'+
+      '<span class="dong">'+escapeHtml(dong)+'</span>'+
+      '</div>';
+
+    const overlay=new kakao.maps.CustomOverlay({
+      position:position,
+      content:content,
+      yAnchor:1.25,
+      zIndex:10
+    });
+
+    overlay.setMap(map);
+    dongOverlays.push(overlay);
+  }
+
+});
+
+// 좌표가 없는 일괄등록 매물도 지도 검색 후 동별 개수에 포함
+if(needGeocode.length && geocoder){
+
+  needGeocode.forEach(function(p){
+
+    geocoder.addressSearch(
+      String(p.address||""),
+      function(result,status){
+
+        if(
+          status===kakao.maps.services.Status.OK &&
+          result && result.length
+        ){
+
+          p.lat=Number(result[0].y);
+          p.lng=Number(result[0].x);
+          p.dong=p.dong||extractDong(p.address);
+
+          // Firebase 저장 실패여부와 관계없이 현재 화면에서는 즉시 반영
+          refreshDongCount();
+        }
+
+      }
+    );
+
+  });
 
 }
-);
 
 }
 
@@ -3604,6 +3575,7 @@ await excelSleep(180);
 }
 
 await loadProperties();
+refreshDongCount();
 closeExcelImport();
 renderAdminList();
 
