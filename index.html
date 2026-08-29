@@ -1511,7 +1511,37 @@ function formatPrice(p){
 let text="";
 
 
+/*
+  매매 매물은 salePrice / price / 매물가 값을
+  우선 표시합니다.
+*/
+const salePrice=
+p.salePrice||
+p.price||
+p.매물가||
+p.매매가||
+"";
+
+
 if(
+salePrice!==""
+){
+
+text=
+"매매가 "+
+numberFormat(
+salePrice
+)+
+"만원";
+
+}
+
+
+/*
+  임대 매물은 기존 보증금 / 월세 표시를 그대로 유지합니다.
+*/
+if(
+!text &&
 p.deposit!==undefined &&
 p.deposit!==""
 ){
@@ -3649,8 +3679,9 @@ firebase.firestore
 
 /*
   원본 네이버 매물장 형식의
-  매물가(만원)도 보증금/월세가 비어 있으면
-  보조값으로 사용합니다.
+  매물가(만원)를 매매가로 저장합니다.
+  5000/250 형식은 보증금/월세로 분리하고,
+  단일 금액은 매매가로 저장합니다.
 */
 if(
 !data.deposit &&
@@ -3664,8 +3695,10 @@ row,
 "매물가(만원)",
 "매물가",
 "가격",
-"거래가"
-]
+"거래가",
+"매매가"
+],
+13
 );
 
 const text=
@@ -3682,6 +3715,10 @@ if(match){
 
 data.deposit=match[1];
 data.rent=match[2];
+
+}else if(text){
+
+data.salePrice=text;
 
 }
 
