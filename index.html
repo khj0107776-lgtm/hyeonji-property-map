@@ -6170,12 +6170,6 @@ row,
 ["상세주소","상세"]
 );
 
-const mapAddress=
-buildExactMapAddress(
-  address,
-  detailAddress
-);
-
 let type=
 getExcelValue(
 row,
@@ -6201,8 +6195,7 @@ String(title).trim(),
 address:
 String(address).replace(/\s+/g," ").trim(),
 
-mapAddress:
-String(mapAddress||address).replace(/\s+/g," ").trim(),
+mapAddress: String(address||"").replace(/\s+/g," ").trim()," ").trim(),
 
 type:type,
 
