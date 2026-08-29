@@ -328,6 +328,11 @@ Google 로그인
 <div class="detail-info">
 
 <div class="detail-row">
+<div class="detail-label">매물번호</div>
+<div class="detail-value" id="detailPropertyNumber"></div>
+</div>
+
+<div class="detail-row">
 <div class="detail-label">주소</div>
 <div class="detail-value" id="detailAddress"></div>
 </div>
@@ -1733,6 +1738,27 @@ return text;
 }
 
 
+
+function getNextPropertyNumber(){
+  let maxNo=0;
+
+  (properties||[]).forEach(function(p){
+    const raw=
+      p.propertyNumber ??
+      p.listingNumber ??
+      p.매물번호 ??
+      "";
+
+    const n=parseInt(String(raw).replace(/[^\d]/g,""),10);
+
+    if(!isNaN(n) && n>maxNo){
+      maxNo=n;
+    }
+  });
+
+  return maxNo+1;
+}
+
 function numberFormat(value){
 
 const value2=
@@ -2704,6 +2730,8 @@ return;
 
 const data={
 
+propertyNumber:String(getNextPropertyNumber()),
+
 title:title,
 
 address:address,
@@ -3553,6 +3581,8 @@ let failed=0;
 const errors=[];
 
 try{
+const excelNextNumber=getNextPropertyNumber();
+
 for(let i=0;i<excelRows.length;i++){
 const row=excelRows[i];
 const title=getExcelValue(row,["제목","매물명","title"]);
@@ -3566,6 +3596,7 @@ continue;
 }
 
 const data={
+propertyNumber:String(excelNextNumber+i),
 title:title,
 address:address,
 type:type,
@@ -6284,3 +6315,11 @@ document.addEventListener("click",function(e){
 
 })();
 </script>
+
+<style>
+/* 상세정보에서만 등록 순서 매물번호 표시 */
+#detailPropertyNumber{
+  display:block !important;
+  font-weight:900;
+}
+</style>
