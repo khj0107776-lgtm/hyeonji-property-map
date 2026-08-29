@@ -1516,6 +1516,50 @@ p.id
 }
 
 
+function normalizeAreaDisplay(value){
+
+let text=
+String(value||"").trim();
+
+if(!text){
+
+return "";
+
+}
+
+
+/*
+  기존에 저장된 값에 (m²), ㎡, 평이 있어도
+  숫자 부분만 안전하게 추출해서 다시 표시합니다.
+*/
+const match=
+text.replace(/,/g,"").match(
+/(\d+(?:\.\d+)?)/
+);
+
+if(!match){
+
+return text;
+
+}
+
+const m2=
+Number(match[1]);
+
+if(!Number.isFinite(m2)){
+
+return text;
+
+}
+
+const pyeong=
+(m2/3.3058).toFixed(1);
+
+return m2+" (m², 약 "+pyeong+"평)";
+
+}
+
+
 function formatPrice(p){
 
 let text="";
@@ -2093,7 +2137,11 @@ property.premium+"만원"
 document
 .getElementById("detailArea")
 .textContent=
-property.area||"-";
+property.area
+?
+normalizeAreaDisplay(property.area)
+:
+"-";
 
 
 document
@@ -2613,61 +2661,7 @@ return;
 }
 
 
-let nextPropertyNumber=null;
-
-if(!currentProperty){
-
-try{
-
-const snap=
-await db
-.collection("properties")
-.orderBy("propertyNumber","desc")
-.limit(1)
-.get();
-
-if(!snap.empty){
-
-const latest=
-Number(
-snap.docs[0].data().propertyNumber
-);
-
-nextPropertyNumber=
-Number.isFinite(latest)
-?
-latest+1
-:
-1;
-
-}else{
-
-nextPropertyNumber=1;
-
-}
-
-}catch(e){
-
-console.warn(
-"매물번호 조회 실패:",
-e
-);
-
-nextPropertyNumber=
-Date.now();
-
-}
-
-}
-
 const data={
-
-propertyNumber:
-currentProperty
-?
-(currentProperty.propertyNumber||"")
-:
-nextPropertyNumber,
 
 title:title,
 
@@ -2698,10 +2692,12 @@ document
 "없음",
 
 area:
+normalizeAreaDisplay(
 document
 .getElementById("fArea")
 .value
-.trim(),
+.trim()
+),
 
 floor:
 document
@@ -3531,41 +3527,6 @@ const errors=[];
 
 try{
 
-let excelNextNumber=1;
-
-try{
-
-const numberSnap=
-await db
-.collection("properties")
-.orderBy("propertyNumber","desc")
-.limit(1)
-.get();
-
-if(!numberSnap.empty){
-
-const latest=
-Number(
-numberSnap.docs[0].data().propertyNumber
-);
-
-if(Number.isFinite(latest)){
-
-excelNextNumber=latest+1;
-
-}
-
-}
-
-}catch(e){
-
-console.warn(
-"기존 매물번호 조회 실패:",
-e
-);
-
-}
-
 for(
 let i=0;
 i<excelRows.length;
@@ -3635,9 +3596,6 @@ continue;
 
 const data={
 
-propertyNumber:
-excelNextNumber+i,
-
 title:title,
 
 address:address,
@@ -3680,6 +3638,7 @@ row,
 ) || "없음",
 
 area:
+normalizeAreaDisplay(
 getExcelValue(
 row,
 [
@@ -3690,6 +3649,7 @@ row,
 "area"
 ],
 6
+)
 ),
 
 floor:
