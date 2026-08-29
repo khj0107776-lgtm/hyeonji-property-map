@@ -530,6 +530,42 @@ placeholder="1층">
 </div>
 
 
+<div class="form-group">
+
+<label>
+사용승인일
+</label>
+
+<input
+id="fApprovalDate"
+type="date">
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+방향
+</label>
+
+<select id="fDirection">
+
+<option value="">선택</option>
+<option value="동향">동향</option>
+<option value="서향">서향</option>
+<option value="남향">남향</option>
+<option value="북향">북향</option>
+<option value="남동향">남동향</option>
+<option value="남서향">남서향</option>
+<option value="북동향">북동향</option>
+<option value="북서향">북서향</option>
+
+</select>
+
+</div>
+
+
 <div class="form-group full">
 
 <label>
@@ -2247,6 +2283,16 @@ document
 
 
 document
+.getElementById("fApprovalDate")
+.value="";
+
+
+document
+.getElementById("fDirection")
+.value="";
+
+
+document
 .getElementById("fDetailUrl")
 .value="";
 
@@ -2523,6 +2569,18 @@ document
 floor:
 document
 .getElementById("fFloor")
+.value
+.trim(),
+
+approvalDate:
+document
+.getElementById("fApprovalDate")
+.value
+.trim(),
+
+direction:
+document
+.getElementById("fDirection")
 .value
 .trim(),
 
@@ -2841,6 +2899,18 @@ document
 .getElementById("fFloor")
 .value=
 currentProperty.floor||"";
+
+
+document
+.getElementById("fApprovalDate")
+.value=
+currentProperty.approvalDate||"";
+
+
+document
+.getElementById("fDirection")
+.value=
+currentProperty.direction||"";
 
 
 document
