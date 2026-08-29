@@ -249,13 +249,6 @@ padding:15px;
 }
 
 
-#receptionOpenBtn,
-#adminManageBtn{
-position:relative;
-z-index:100;
-pointer-events:auto !important;
-cursor:pointer !important;
-}
 </style>
 </head>
 
@@ -319,11 +312,20 @@ Google 로그인
 
 </div>
 
-<button class="reception-btn" id="receptionOpenBtn" type="button">
+<button
+class="reception-btn"
+id="receptionOpenBtn"
+type="button"
+onclick="document.getElementById('receptionModal').style.display='flex';document.getElementById('receptionModal').style.visibility='visible';document.getElementById('receptionModal').style.opacity='1';document.getElementById('receptionModal').style.pointerEvents='auto';">
 📝 매물접수
 </button>
 
-<button class="admin-btn" id="adminManageBtn" type="button" style="display:none">
+<button
+class="admin-btn"
+id="adminManageBtn"
+type="button"
+style="display:none"
+onclick="if(window.auth && auth.currentUser && auth.currentUser.email===ADMIN_EMAIL){var m=document.getElementById('adminModal');m.style.display='flex';m.style.visibility='visible';m.style.opacity='1';m.style.pointerEvents='auto';m.style.zIndex='20000';renderAdminList();document.body.style.overflow='hidden';}else{alert('관리자만 이용할 수 있습니다.');}">
 🔐 관리자 매물관리
 </button>
 
@@ -784,7 +786,8 @@ id="receptionModal">
 
 <button
 class="modal-x"
-onclick="closeReception()">
+type="button"
+onclick="document.getElementById('receptionModal').style.display='none';document.getElementById('receptionModal').style.visibility='hidden';document.getElementById('receptionModal').style.opacity='0';document.getElementById('receptionModal').style.pointerEvents='none';">
 ×
 </button>
 
@@ -901,7 +904,8 @@ id="adminModal">
 
 <button
 class="modal-x"
-onclick="closeAdminPanel()">
+type="button"
+onclick="document.getElementById('adminModal').style.display='none';document.getElementById('adminModal').style.visibility='hidden';document.getElementById('adminModal').style.opacity='0';document.getElementById('adminModal').style.pointerEvents='none';document.body.style.overflow='';">
 ×
 </button>
 
@@ -4586,53 +4590,6 @@ error.message
 
 }
 
-
-/* receptionOpenBtnClickFix */
-function bindMainActionButtons(){
-
-const receptionBtn=
-document.getElementById("receptionOpenBtn");
-
-if(receptionBtn && !receptionBtn.dataset.bound){
-
-receptionBtn.dataset.bound="1";
-
-receptionBtn.addEventListener(
-"click",
-function(event){
-
-event.preventDefault();
-event.stopPropagation();
-
-openReception();
-
-}
-);
-
-}
-
-const adminBtn=
-document.getElementById("adminManageBtn");
-
-if(adminBtn && !adminBtn.dataset.bound){
-
-adminBtn.dataset.bound="1";
-
-adminBtn.addEventListener(
-"click",
-function(event){
-
-event.preventDefault();
-event.stopPropagation();
-
-openAdminPanel();
-
-}
-);
-
-}
-
-}
 
 function closeAdminPanel(){
 
