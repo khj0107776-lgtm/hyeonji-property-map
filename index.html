@@ -1610,21 +1610,79 @@ p.id
 
 function formatPrice(p){
 
-let text="";
+  const type=String(p.type||"").trim();
+  let text="";
 
+  const val=(...keys)=>{
+    for(const k of keys){
+      if(p[k]!==undefined && p[k]!==null && String(p[k]).trim()!==""){
+        return String(p[k]).trim();
+      }
+    }
+    return "";
+  };
 
-if(
-p.deposit!==undefined &&
-p.deposit!==""
-){
+  /* 아파트 등 매매 매물의 가격 필드 호환 */
+  const sale=val(
+    "매매가","매매가격","매매금액","매매",
+    "매매가(만원)","가격","price","salePrice"
+  );
 
-text+=
-"보증금 "+
-numberFormat(
-p.deposit
-)+
-"만원";
+  const deposit=val(
+    "deposit","보증금","보증금(만원)"
+  );
 
+  const rent=val(
+    "rent","월세","월세(만원)"
+  );
+
+  if(sale){
+
+    text="매매 "+
+      numberFormat(sale)+
+      "만원";
+
+  }
+
+  if(deposit){
+
+    if(text) text+=" / ";
+
+    text+="보증금 "+
+      numberFormat(deposit)+
+      "만원";
+
+  }
+
+  if(rent){
+
+    if(text) text+=" / ";
+
+    text+="월세 "+
+      numberFormat(rent)+
+      "만원";
+
+  }
+
+  if(!text){
+
+    /* 가격이 price 필드 하나로 들어온 경우 */
+    const generic=val("금액","거래금액","거래가격");
+
+    if(generic){
+
+      text=
+        (type==="아파트" || type==="토지" || type==="공장")
+        ? "매매 "+numberFormat(generic)+"만원"
+        : numberFormat(generic)+"만원";
+
+    }
+
+  }
+
+  if(!text) text="가격 문의";
+
+  return text;
 }
 
 
@@ -2655,6 +2713,12 @@ document
 .value
 .trim(),
 
+salePrice:
+document
+.getElementById("fSalePrice")
+?.value
+?.trim()||"",
+
 premium:
 document
 .getElementById("fPremium")
@@ -3256,10 +3320,14 @@ const data={
 title:title,
 address:address,
 type:type,
-deposit:getExcelValue(row,["보증금","deposit"]),
-rent:getExcelValue(row,["월세","rent"]),
-premium:getExcelValue(row,["권리금","premium"])||"없음",
-area:getExcelValue(row,["면적","area"]),
+deposit:getExcelValue(row,["보증금","보증금(만원)","deposit"]),
+rent:getExcelValue(row,["월세","월세(만원)","rent"]),
+salePrice:getExcelValue(row,[
+  "매매가","매매가격","매매금액","매매",
+  "매매가(만원)","가격","price","salePrice"
+]),
+premium:getExcelValue(row,["권리금","권리금(만원)","premium"])||"없음",
+area:getExcelValue(row,["면적","면적(m²)","면적㎡","area"]),
 floor:getExcelValue(row,["층","층수","floor"]),
 detailUrl:getExcelValue(row,["상세주소","상세페이지주소","상세정보","detailUrl","url"]),
 description:getExcelValue(row,["설명","매물설명","description"]),
