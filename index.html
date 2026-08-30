@@ -157,6 +157,9 @@ z-index:11001;
 .registered-list-modal{width:min(1500px,96vw);max-width:96vw}
 .registered-list-panel{padding:25px}
 .registered-list-panel h2{margin:0 0 15px}
+.registered-list-tools{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.registered-list-search{flex:1;min-width:0;height:42px;border:1px solid #dfe2e8;border-radius:9px;padding:0 12px;font-size:13px;outline:0;background:#fff}
+.registered-list-download{height:42px;border:0;border-radius:9px;padding:0 16px;background:#2f7d32;color:#fff;font-size:13px;font-weight:900;white-space:nowrap;cursor:pointer}
 .registered-list-wrap{width:100%;overflow:auto;border:1px solid #dfe2e8;border-radius:12px;background:#fff}
 .registered-list-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
 .registered-list-table th,.registered-list-table td{border-right:1px solid #e7e9ef;border-bottom:1px solid #e7e9ef;padding:8px 9px;text-align:left;vertical-align:middle}
@@ -210,6 +213,9 @@ body{overflow:auto}
 .form{padding:18px}
 .form-grid{grid-template-columns:1fr}
 .form-group.full{grid-column:auto}
+.registered-list-tools{align-items:stretch}
+.registered-list-search{height:40px}
+.registered-list-download{height:40px;padding:0 12px}
 }
 </style>
 </head>
@@ -643,6 +649,19 @@ type="date">
 <div class="form-group">
 
 <label>
+입주가능일
+</label>
+
+<input
+id="fMoveInDate"
+placeholder="즉시입주 / 협의 / 2026-09-15">
+
+</div>
+
+
+<div class="form-group">
+
+<label>
 방향
 </label>
 
@@ -970,6 +989,10 @@ id="adminPropertyList">
     <button class="modal-x" onclick="closeRegisteredProperties()">×</button>
     <div class="registered-list-panel">
       <h2>📊 등록매물 확인</h2>
+      <div class="registered-list-tools">
+        <input id="registeredPropertySearch" class="registered-list-search" type="text" placeholder="매물번호·제목·주소·종류 검색" oninput="renderRegisteredProperties()">
+        <button class="registered-list-download" type="button" onclick="downloadRegisteredPropertiesExcel()">📥 엑셀 다운로드</button>
+      </div>
       <div class="registered-list-wrap">
         <table class="registered-list-table">
           <thead>
@@ -1676,6 +1699,11 @@ document
 
 document
 .getElementById("fApprovalDate")
+.value="";
+
+
+document
+.getElementById("fMoveInDate")
 .value="";
 
 
@@ -3851,8 +3879,29 @@ window.openDetailPage=function(id){
       ?p.premium+"만원":"없음";
   document.getElementById("detailArea").textContent=
     areaWithPyeong(p.area)||"-";
-  document.getElementById("detailFloor").textContent=
-    p.floor||"-";
+  {
+    const rawFloor=String(p.floor||"").trim();
+    const totalFloor=String(p.buildingRegister?.groundFloors||"").trim();
+    let currentFloor=rawFloor;
+    let resolvedTotalFloor=totalFloor;
+
+    if(rawFloor.includes("/")){
+      const parts=rawFloor.split("/").map(v=>v.trim()).filter(Boolean);
+      if(parts[0])currentFloor=parts[0];
+      if(!resolvedTotalFloor&&parts[1])resolvedTotalFloor=parts[1];
+    }
+
+    const normalizeFloorText=(value)=>{
+      const v=String(value||"").trim();
+      if(!v)return "";
+      return /층$/.test(v)?v:(/^-?\d+(?:\.\d+)?$/.test(v)?v+"층":v);
+    };
+
+    const currentText=normalizeFloorText(currentFloor);
+    const totalText=normalizeFloorText(resolvedTotalFloor);
+    document.getElementById("detailFloor").textContent=
+      currentText ? (totalText ? currentText+" / 총 "+totalText : currentText) : (totalText ? "총 "+totalText : "-");
+  }
   document.getElementById("detailDescription").textContent=
     p.description||"-";
 
@@ -3893,6 +3942,11 @@ window.openDetailPage=function(id){
       '<div class="detail-label">사용승인일</div>'+
       '<div class="detail-value">'+
       escapeHtml(p.approvalDate||"-")+
+      '</div></div>'+
+      '<div class="detail-row">'+
+      '<div class="detail-label">입주가능일</div>'+
+      '<div class="detail-value">'+
+      escapeHtml(p.moveInDate||"-")+
       '</div></div>'+
       '<div class="detail-row">'+
       '<div class="detail-label">방향</div>'+
@@ -4231,6 +4285,8 @@ window.saveProperty=async function(){
       document.getElementById("fBathroom").value.trim(),
     approvalDate:
       document.getElementById("fApprovalDate").value.trim(),
+    moveInDate:
+      document.getElementById("fMoveInDate").value.trim(),
     direction:
       document.getElementById("fDirection").value.trim(),
     detailUrl:
@@ -4389,41 +4445,129 @@ window.renderAdminList=function(){
 };
 
 /* ---------- 등록매물 확인: DB를 사진 없이 표로 표시 ---------- */
+window.getRegisteredPropertyResults=function(){
+  const input=document.getElementById("registeredPropertySearch");
+  const keyword=(input?input.value:"").trim().toLowerCase();
+
+  if(!keyword)return properties.slice();
+
+  return properties.filter(function(p){
+    const propertyNumber=p.propertyNumber?String(p.propertyNumber).replace(/^#/,""):"";
+    const searchable=[
+      propertyNumber,
+      p.title||"",
+      p.address||"",
+      p.mapAddress||"",
+      normalizedType(p.type)||""
+    ].join(" ").toLowerCase();
+
+    return searchable.includes(keyword);
+  });
+};
+
 window.renderRegisteredProperties=function(){
   const body=document.getElementById("registeredPropertiesBody");
   if(!body)return;
 
-  if(!properties.length){
-    body.innerHTML='<tr><td colspan="17" style="text-align:center;padding:35px;color:#888">등록된 매물이 없습니다.</td></tr>';
+  const list=getRegisteredPropertyResults();
+
+  if(!list.length){
+    const input=document.getElementById("registeredPropertySearch");
+    const hasKeyword=!!(input&&input.value.trim());
+    body.innerHTML='<tr><td colspan="17" style="text-align:center;padding:35px;color:#888">'+
+      (hasKeyword?'검색 결과가 없습니다.':'등록된 매물이 없습니다.')+
+      '</td></tr>';
     return;
   }
 
-  body.innerHTML=properties.map(function(p){
+  body.innerHTML=list.map(function(p){
     const mainUse=p.mainUse||(p.buildingRegister&&p.buildingRegister.mainUse)||"-";
     const totalParking=p.totalParking||(p.buildingRegister&&p.buildingRegister.parkingCount)||"-";
-    return '<tr>'+
-      '<td>'+escapeHtml(p.propertyNumber?String(p.propertyNumber).replace(/^#/,""):"-")+'</td>'+
-      '<td>'+escapeHtml(p.title||"-")+'</td>'+
-      '<td>'+escapeHtml(p.address||"-")+'</td>'+
-      '<td>'+escapeHtml(normalizedType(p.type)||"-")+'</td>'+
-      '<td>'+escapeHtml(p.deposit?numberFormat(p.deposit)+"만원":"-")+'</td>'+
-      '<td>'+escapeHtml(p.rent?numberFormat(p.rent)+"만원":"-")+'</td>'+
-      '<td>'+escapeHtml(p.salePrice?numberFormat(p.salePrice)+"만원":"-")+'</td>'+
-      '<td>'+escapeHtml(p.premium&&p.premium!=="없음"?numberFormat(p.premium)+"만원":(p.premium||"-"))+'</td>'+
-      '<td>'+escapeHtml(areaWithPyeong(p.area)||"-")+'</td>'+
-      '<td>'+escapeHtml(p.floor||"-")+'</td>'+
-      '<td>'+escapeHtml(mainUse)+'</td>'+
-      '<td>'+escapeHtml((function(v){if(!v)return "-";const t=String(v);return /^\s*[\d,.]+\s*$/.test(t)?numberFormat(t)+"만원":t;})(p.managementFee))+'</td>'+
-      '<td>'+escapeHtml(totalParking)+'</td>'+
-      '<td>'+escapeHtml(p.bathroom||"-")+'</td>'+
-      '<td>'+escapeHtml(p.approvalDate||"-")+'</td>'+
-      '<td>'+escapeHtml(p.direction||"-")+'</td>'+
+    return '<tr>'+ 
+      '<td>'+escapeHtml(p.propertyNumber?String(p.propertyNumber).replace(/^#/,""):"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.title||"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.address||"-")+'</td>'+ 
+      '<td>'+escapeHtml(normalizedType(p.type)||"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.deposit?numberFormat(p.deposit)+"만원":"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.rent?numberFormat(p.rent)+"만원":"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.salePrice?numberFormat(p.salePrice)+"만원":"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.premium&&p.premium!=="없음"?numberFormat(p.premium)+"만원":(p.premium||"-"))+'</td>'+ 
+      '<td>'+escapeHtml(areaWithPyeong(p.area)||"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.floor||"-")+'</td>'+ 
+      '<td>'+escapeHtml(mainUse)+'</td>'+ 
+      '<td>'+escapeHtml((function(v){if(!v)return "-";const t=String(v);return /^\s*[\d,.]+\s*$/.test(t)?numberFormat(t)+"만원":t;})(p.managementFee))+'</td>'+ 
+      '<td>'+escapeHtml(totalParking)+'</td>'+ 
+      '<td>'+escapeHtml(p.bathroom||"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.approvalDate||"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.direction||"-")+'</td>'+ 
       '<td><div class="registered-list-actions">'+
         '<button class="registered-list-edit" onclick="editRegisteredProperty(\''+escapeAttr(p.id)+'\')">수정</button>'+
-        '<button class="registered-list-delete" onclick="deleteRegisteredProperty(\''+escapeAttr(p.id)+'\')">삭제</button>'+
-      '</div></td>'+
+        '<button class="registered-list-delete" onclick="deleteRegisteredProperty(\''+escapeAttr(p.id)+'\')">삭제</button>'+ 
+      '</div></td>'+ 
     '</tr>';
   }).join("");
+};
+
+window.downloadRegisteredPropertiesExcel=function(){
+  if(!auth.currentUser||auth.currentUser.email!==ADMIN_EMAIL){
+    alert("관리자만 이용할 수 있습니다.");
+    return;
+  }
+
+  if(typeof XLSX==="undefined"){
+    alert("엑셀 기능을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+    return;
+  }
+
+  const list=getRegisteredPropertyResults();
+  if(!list.length){
+    alert("다운로드할 매물이 없습니다.");
+    return;
+  }
+
+  const rows=list.map(function(p){
+    const mainUse=p.mainUse||(p.buildingRegister&&p.buildingRegister.mainUse)||"";
+    const totalParking=p.totalParking||(p.buildingRegister&&p.buildingRegister.parkingCount)||"";
+    const managementFee=(function(v){
+      if(!v)return "";
+      const t=String(v);
+      return /^\s*[\d,.]+\s*$/.test(t)?numberFormat(t)+"만원":t;
+    })(p.managementFee);
+
+    return {
+      "매물번호":p.propertyNumber?String(p.propertyNumber).replace(/^#/,""):"",
+      "제목":p.title||"",
+      "주소":p.address||"",
+      "종류":normalizedType(p.type)||"",
+      "보증금":p.deposit?numberFormat(p.deposit)+"만원":"",
+      "월세":p.rent?numberFormat(p.rent)+"만원":"",
+      "매매가":p.salePrice?numberFormat(p.salePrice)+"만원":"",
+      "권리금":p.premium&&p.premium!=="없음"?numberFormat(p.premium)+"만원":(p.premium||""),
+      "면적":areaWithPyeong(p.area)||"",
+      "층":p.floor||"",
+      "주용도":mainUse,
+      "관리비":managementFee,
+      "총주차대수":totalParking,
+      "욕실":p.bathroom||"",
+      "사용승인일":p.approvalDate||"",
+      "방향":p.direction||""
+    };
+  });
+
+  const worksheet=XLSX.utils.json_to_sheet(rows);
+  worksheet["!cols"]=[
+    {wch:10},{wch:28},{wch:35},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},
+    {wch:20},{wch:10},{wch:24},{wch:14},{wch:14},{wch:10},{wch:14},{wch:10}
+  ];
+
+  const workbook=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook,worksheet,"등록매물");
+
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=String(now.getMonth()+1).padStart(2,"0");
+  const d=String(now.getDate()).padStart(2,"0");
+  XLSX.writeFile(workbook,"등록매물_"+y+m+d+".xlsx");
 };
 
 window.openRegisteredProperties=function(){
@@ -5491,6 +5635,7 @@ document.addEventListener("click",function(e){
       setValue("fTotalParking", target.totalParking || target.buildingRegister?.parkingCount || "");
       setValue("fBathroom", target.bathroom || "");
       setValue("fApprovalDate", target.approvalDate || "");
+      setValue("fMoveInDate", target.moveInDate || "");
       setValue("fDirection", target.direction || "");
       setValue("fDetailUrl", target.detailUrl || "");
       setValue("fDescription", target.description || "");
