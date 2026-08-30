@@ -3824,6 +3824,26 @@ window.openDetailPage=function(id){
 
     extra.innerHTML=
       '<div class="detail-row">'+
+      '<div class="detail-label">주용도</div>'+
+      '<div class="detail-value">'+
+      escapeHtml(p.mainUse||p.buildingRegister?.mainUse||"-")+
+      '</div></div>'+
+      '<div class="detail-row">'+
+      '<div class="detail-label">관리비</div>'+
+      '<div class="detail-value">'+
+      escapeHtml(p.managementFee ? String(p.managementFee)+(String(p.managementFee).includes("만원")?"":"만원") : "-")+
+      '</div></div>'+
+      '<div class="detail-row">'+
+      '<div class="detail-label">총주차대수</div>'+
+      '<div class="detail-value">'+
+      escapeHtml(p.totalParking||p.buildingRegister?.parkingCount||"-")+
+      '</div></div>'+
+      '<div class="detail-row">'+
+      '<div class="detail-label">욕실</div>'+
+      '<div class="detail-value">'+
+      escapeHtml(p.bathroom||"-")+
+      '</div></div>'+
+      '<div class="detail-row">'+
       '<div class="detail-label">사용승인일</div>'+
       '<div class="detail-value">'+
       escapeHtml(p.approvalDate||"-")+
