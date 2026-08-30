@@ -4092,6 +4092,10 @@ window.saveProperty=async function(){
       document.getElementById("fDetailUrl").value.trim(),
     description:
       document.getElementById("fDescription").value.trim(),
+    buildingRegister:
+      (typeof window.getBuildingRegisterForSave==="function"
+        ? window.getBuildingRegisterForSave()
+        : {}),
     updatedAt:
       firebase.firestore.FieldValue.serverTimestamp()
   };
@@ -5138,6 +5142,10 @@ document.addEventListener("click",function(e){
     const title = getEl("formTitle");
     if (title) title.textContent = "매물 등록";
 
+    if (typeof window.resetBuildingRegisterPanel === "function") {
+      window.resetBuildingRegisterPanel();
+    }
+
     showPropertyModal();
   };
 
@@ -5212,6 +5220,10 @@ document.addEventListener("click",function(e){
       if (detailPage && detailPage.classList.contains("show")) {
         detailPage.classList.remove("show");
         detailPage.classList.remove("detail-split");
+      }
+
+      if (typeof window.loadSavedBuildingRegister === "function") {
+        window.loadSavedBuildingRegister(target.buildingRegister);
       }
 
       showPropertyModal();
@@ -5543,6 +5555,444 @@ window.addEventListener("popstate",function(){
   }
 }
 </style>
+
+
+
+<style>
+/* =========================================================
+   건축물대장 자동조회 패널
+   기존 매물 등록폼의 필드/동작은 그대로 유지
+========================================================= */
+.building-register-box{
+  grid-column:1/-1;
+  border:1px solid #dfe3ff;
+  background:#f7f8ff;
+  border-radius:14px;
+  padding:14px;
+  margin:1px 0 4px;
+}
+.building-register-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+}
+.building-register-title{
+  font-size:14px;
+  font-weight:900;
+  color:#2b337b;
+}
+.building-register-head .spacer{flex:1}
+.building-register-key-btn{
+  border:1px solid #ccd2ff;
+  background:#fff;
+  color:#5968dd;
+  border-radius:9px;
+  padding:7px 9px;
+  font-size:11px;
+  font-weight:900;
+}
+.building-register-search-btn{
+  width:100%;
+  height:46px;
+  border:0;
+  border-radius:10px;
+  background:#5968dd;
+  color:#fff;
+  font-size:14px;
+  font-weight:900;
+}
+.building-register-status{
+  margin-top:9px;
+  font-size:12px;
+  line-height:1.5;
+  color:#687084;
+}
+.building-register-select-wrap{display:none;margin-top:10px}
+.building-register-select-wrap.show{display:block}
+.building-register-select-wrap label{display:block;font-size:12px;font-weight:900;margin-bottom:5px}
+.building-register-select{
+  width:100%;border:1px solid #d8dced;border-radius:9px;padding:10px;background:#fff;font-size:13px
+}
+.building-register-result{display:none;margin-top:11px}
+.building-register-result.show{display:block}
+.building-register-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+.building-register-item{
+  background:#fff;
+  border:1px solid #e5e7f1;
+  border-radius:9px;
+  padding:9px 10px;
+  min-width:0;
+}
+.building-register-item.full{grid-column:1/-1}
+.building-register-label{font-size:10px;color:#7b8090;font-weight:800;margin-bottom:3px}
+.building-register-value{font-size:12px;color:#242733;font-weight:900;word-break:break-word}
+.building-register-note{
+  margin-top:9px;
+  font-size:10px;
+  line-height:1.5;
+  color:#8a8f9d;
+}
+@media(max-width:900px){
+  .building-register-box{padding:12px}
+  .building-register-grid{grid-template-columns:1fr}
+  .building-register-item.full{grid-column:auto}
+}
+</style>
+
+<script>
+/* =========================================================
+   건축물대장 자동조회
+   - 주소/지도주소 -> Kakao 주소정보로 법정동코드/번지 추출
+   - 국토교통부 건축HUB 건축물대장정보 API 조회
+   - 조회결과는 기존 매물 필드를 덮어쓰지 않고 별도 저장
+   - 사용승인일만 비어 있을 때 자동입력
+========================================================= */
+(function(){
+  const API_BASE="https://apis.data.go.kr/1613000/BldRgstHubService";
+  const KEY_STORAGE="hyeonji_buildinghub_service_key";
+  let buildingRegisterItems=[];
+  let selectedBuildingRegister=null;
+
+  function el(id){return document.getElementById(id)}
+  function text(v){return v===undefined||v===null?"":String(v).trim()}
+  function pad4(v){return text(v).replace(/\D/g,"").padStart(4,"0")||"0000"}
+  function fmtDate(v){
+    const d=text(v).replace(/\D/g,"");
+    return d.length===8 ? d.slice(0,4)+"-"+d.slice(4,6)+"-"+d.slice(6,8) : text(v);
+  }
+  function num(v){
+    const n=Number(String(v??"").replace(/,/g,""));
+    return Number.isFinite(n)?n:0;
+  }
+  function safeKey(raw){
+    const k=text(raw);
+    if(!k)return "";
+    try{return decodeURIComponent(k)}catch(e){return k}
+  }
+
+  function ensurePanel(){
+    if(el("buildingRegisterBox"))return;
+    const addr=el("fAddress");
+    if(!addr)return;
+    const anchor=(el("fMapAddress")||addr).closest(".form-group");
+    const box=document.createElement("div");
+    box.id="buildingRegisterBox";
+    box.className="building-register-box";
+    box.innerHTML=`
+      <div class="building-register-head">
+        <div class="building-register-title">🏢 건축물대장 자동조회</div>
+        <div class="spacer"></div>
+        <button type="button" class="building-register-key-btn" onclick="setBuildingApiKey()">API키 설정</button>
+      </div>
+      <button type="button" class="building-register-search-btn" id="buildingRegisterSearchBtn" onclick="lookupBuildingRegister()">주소로 건축물대장 조회</button>
+      <div class="building-register-status" id="buildingRegisterStatus">주소를 입력하고 조회 버튼을 누르세요.</div>
+      <div class="building-register-select-wrap" id="buildingRegisterSelectWrap">
+        <label>건축물 선택</label>
+        <select id="buildingRegisterSelect" class="building-register-select" onchange="selectBuildingRegisterItem(this.value)"></select>
+      </div>
+      <div class="building-register-result" id="buildingRegisterResult">
+        <div class="building-register-grid">
+          <div class="building-register-item full"><div class="building-register-label">건축물 / 동</div><div class="building-register-value" id="brName">-</div></div>
+          <div class="building-register-item full"><div class="building-register-label">건축물대장 주소</div><div class="building-register-value" id="brAddress">-</div></div>
+          <div class="building-register-item"><div class="building-register-label">주용도</div><div class="building-register-value" id="brUse">-</div></div>
+          <div class="building-register-item"><div class="building-register-label">구조</div><div class="building-register-value" id="brStructure">-</div></div>
+          <div class="building-register-item"><div class="building-register-label">연면적</div><div class="building-register-value" id="brTotalArea">-</div></div>
+          <div class="building-register-item"><div class="building-register-label">건축면적</div><div class="building-register-value" id="brArchArea">-</div></div>
+          <div class="building-register-item"><div class="building-register-label">층수</div><div class="building-register-value" id="brFloors">-</div></div>
+          <div class="building-register-item"><div class="building-register-label">사용승인일</div><div class="building-register-value" id="brApproval">-</div></div>
+          <div class="building-register-item"><div class="building-register-label">주차대수</div><div class="building-register-value" id="brParking">-</div></div>
+          <div class="building-register-item"><div class="building-register-label">승강기</div><div class="building-register-value" id="brElevator">-</div></div>
+        </div>
+        <div class="building-register-note">※ 건축물대장 조회값은 참고정보로 별도 저장됩니다. 매물의 실제 전용면적·해당층은 기존 입력칸에 직접 입력하세요.</div>
+      </div>`;
+    anchor.insertAdjacentElement("afterend",box);
+  }
+
+  function setStatus(msg,isError){
+    const s=el("buildingRegisterStatus");
+    if(!s)return;
+    s.textContent=msg;
+    s.style.color=isError?"#c33":"#687084";
+  }
+
+  window.setBuildingApiKey=function(){
+    const old=localStorage.getItem(KEY_STORAGE)||"";
+    const value=prompt("공공데이터포털 건축HUB 서비스키를 입력하세요.\n이 브라우저에만 저장됩니다.",old);
+    if(value===null)return;
+    const v=text(value);
+    if(!v){
+      localStorage.removeItem(KEY_STORAGE);
+      alert("저장된 API키를 삭제했습니다.");
+      return;
+    }
+    localStorage.setItem(KEY_STORAGE,v);
+    alert("API키를 저장했습니다.");
+  };
+
+  function getKey(){
+    let key=localStorage.getItem(KEY_STORAGE)||"";
+    if(!text(key)){
+      window.setBuildingApiKey();
+      key=localStorage.getItem(KEY_STORAGE)||"";
+    }
+    return safeKey(key);
+  }
+
+  function resolveLotAddress(address){
+    return new Promise(function(resolve,reject){
+      if(!window.kakao||!kakao.maps||!kakao.maps.services){
+        reject(new Error("Kakao 주소검색 서비스가 준비되지 않았습니다."));
+        return;
+      }
+      const geocoder=new kakao.maps.services.Geocoder();
+      geocoder.addressSearch(address,function(result,status){
+        if(status!==kakao.maps.services.Status.OK||!result||!result.length){
+          reject(new Error("주소를 찾을 수 없습니다. 번지까지 정확히 입력해주세요."));
+          return;
+        }
+        const r=result[0]||{};
+        const a=r.address||{};
+        const bcode=text(a.b_code);
+        if(bcode.length<10){
+          reject(new Error("법정동코드를 확인할 수 없는 주소입니다."));
+          return;
+        }
+        resolve({
+          sigunguCd:bcode.slice(0,5),
+          bjdongCd:bcode.slice(5,10),
+          platGbCd:text(a.mountain_yn).toUpperCase()==="Y"?"1":"0",
+          bun:pad4(a.main_address_no),
+          ji:pad4(a.sub_address_no||"0"),
+          jibunAddress:text(a.address_name||r.address_name),
+          roadAddress:text((r.road_address||{}).address_name)
+        });
+      });
+    });
+  }
+
+  async function apiGet(path,params,key){
+    const q=new URLSearchParams({
+      serviceKey:key,
+      sigunguCd:params.sigunguCd,
+      bjdongCd:params.bjdongCd,
+      platGbCd:params.platGbCd,
+      bun:params.bun,
+      ji:params.ji,
+      numOfRows:"100",
+      pageNo:"1",
+      _type:"json"
+    });
+    const response=await fetch(API_BASE+"/"+path+"?"+q.toString());
+    if(!response.ok)throw new Error("건축물대장 서버 응답 오류 ("+response.status+")");
+    const data=await response.json();
+    const root=data&&data.response?data.response:{};
+    const header=root.header||{};
+    const code=text(header.resultCode);
+    if(code&&code!=="00"&&code!=="000"){
+      throw new Error(text(header.resultMsg)||("API 오류 "+code));
+    }
+    const raw=root.body&&root.body.items?root.body.items.item:null;
+    if(!raw)return [];
+    return Array.isArray(raw)?raw:[raw];
+  }
+
+  function normalizeItem(item,kind){
+    const ground=text(item.grndFlrCnt);
+    const underground=text(item.ugrndFlrCnt);
+    const elevator=num(item.rideUseElvtCnt)+num(item.emgenUseElvtCnt);
+    const parking=num(item.totPkngCnt);
+    return {
+      kind:kind||"title",
+      buildingName:text(item.bldNm),
+      dongName:text(item.dongNm),
+      registerAddress:text(item.newPlatPlc)||text(item.platPlc),
+      lotAddress:text(item.platPlc),
+      roadAddress:text(item.newPlatPlc),
+      mainUse:text(item.mainPurpsCdNm)||text(item.etcPurps),
+      structure:text(item.strctCdNm)||text(item.etcStrct),
+      totalArea:text(item.totArea),
+      archArea:text(item.archArea),
+      groundFloors:ground,
+      undergroundFloors:underground,
+      approvalDate:fmtDate(item.useAprDay),
+      parkingCount:parking?String(parking):text(item.totPkngCnt),
+      elevatorCount:elevator?String(elevator):"0",
+      rawManagementNo:text(item.mgmBldrgstPk),
+      raw:item
+    };
+  }
+
+  function displayName(it,index){
+    const name=[it.buildingName,it.dongName].filter(Boolean).join(" / ");
+    const desc=[it.mainUse, it.groundFloors?"지상 "+it.groundFloors+"층":""].filter(Boolean).join(" · ");
+    return (name||("건축물 "+(index+1)))+(desc?" — "+desc:"");
+  }
+
+  window.selectBuildingRegisterItem=function(value){
+    const index=Number(value)||0;
+    selectedBuildingRegister=buildingRegisterItems[index]||null;
+    renderSelected();
+  };
+
+  function renderSelected(){
+    const it=selectedBuildingRegister;
+    const result=el("buildingRegisterResult");
+    if(!it){if(result)result.classList.remove("show");return}
+    if(result)result.classList.add("show");
+    const name=[it.buildingName,it.dongName].filter(Boolean).join(" / ")||"명칭 없음";
+    el("brName").textContent=name;
+    el("brAddress").textContent=it.registerAddress||it.lotAddress||"-";
+    el("brUse").textContent=it.mainUse||"-";
+    el("brStructure").textContent=it.structure||"-";
+    el("brTotalArea").textContent=it.totalArea?(it.totalArea+"㎡"):"-";
+    el("brArchArea").textContent=it.archArea?(it.archArea+"㎡"):"-";
+    el("brFloors").textContent="지상 "+(it.groundFloors||"0")+"층 / 지하 "+(it.undergroundFloors||"0")+"층";
+    el("brApproval").textContent=it.approvalDate||"-";
+    el("brParking").textContent=(it.parkingCount||"0")+"대";
+    el("brElevator").textContent=(it.elevatorCount||"0")+"대";
+
+    const approval=el("fApprovalDate");
+    if(approval&&!approval.value&&/^\d{4}-\d{2}-\d{2}$/.test(it.approvalDate||"")){
+      approval.value=it.approvalDate;
+    }
+  }
+
+  window.lookupBuildingRegister=async function(){
+    ensurePanel();
+    const button=el("buildingRegisterSearchBtn");
+    const address=text(el("fMapAddress")?.value)||text(el("fAddress")?.value);
+    if(!address){alert("먼저 주소를 입력해주세요.");return}
+    const key=getKey();
+    if(!key){alert("건축HUB API키가 필요합니다.");return}
+
+    buildingRegisterItems=[];
+    selectedBuildingRegister=null;
+    el("buildingRegisterResult")?.classList.remove("show");
+    el("buildingRegisterSelectWrap")?.classList.remove("show");
+    if(button){button.disabled=true;button.textContent="건축물대장 조회 중..."}
+    setStatus("주소에서 법정동코드와 번지를 확인하고 있습니다.",false);
+
+    try{
+      const params=await resolveLotAddress(address);
+      setStatus("건축HUB에서 건축물대장을 불러오고 있습니다.",false);
+
+      let rows=await apiGet("getBrTitleInfo",params,key);
+      let kind="표제부";
+      if(!rows.length){
+        rows=await apiGet("getBrRecapTitleInfo",params,key);
+        kind="총괄표제부";
+      }
+      if(!rows.length)throw new Error("이 주소에서 조회되는 건축물대장이 없습니다.");
+
+      buildingRegisterItems=rows.map(r=>normalizeItem(r,kind));
+      selectedBuildingRegister=buildingRegisterItems[0];
+
+      const select=el("buildingRegisterSelect");
+      if(select){
+        select.innerHTML=buildingRegisterItems.map((it,i)=>
+          '<option value="'+i+'">'+escapeHtml(displayName(it,i))+'</option>'
+        ).join("");
+      }
+      if(buildingRegisterItems.length>1){
+        el("buildingRegisterSelectWrap")?.classList.add("show");
+        setStatus("건축물이 "+buildingRegisterItems.length+"건 조회되었습니다. 사용할 건축물을 선택하세요.",false);
+      }else{
+        setStatus("건축물대장 조회가 완료되었습니다.",false);
+      }
+      renderSelected();
+    }catch(error){
+      console.error("건축물대장 조회 오류:",error);
+      let msg=error&&error.message?error.message:"건축물대장을 조회하지 못했습니다.";
+      if(/Failed to fetch/i.test(msg)){
+        msg="브라우저에서 건축HUB 서버에 직접 연결하지 못했습니다. API키 또는 브라우저 보안(CORS) 설정을 확인해주세요.";
+      }
+      setStatus(msg,true);
+      alert("건축물대장 조회 실패\n\n"+msg);
+    }finally{
+      if(button){button.disabled=false;button.textContent="주소로 건축물대장 조회"}
+    }
+  };
+
+  function clearPanel(){
+    buildingRegisterItems=[];
+    selectedBuildingRegister=null;
+    el("buildingRegisterResult")?.classList.remove("show");
+    el("buildingRegisterSelectWrap")?.classList.remove("show");
+    setStatus("주소를 입력하고 조회 버튼을 누르세요.",false);
+  }
+
+  function loadSavedRegister(saved){
+    clearPanel();
+    if(!saved||typeof saved!=="object"||!Object.keys(saved).length)return;
+    selectedBuildingRegister={
+      kind:text(saved.kind),
+      buildingName:text(saved.buildingName),
+      dongName:text(saved.dongName),
+      registerAddress:text(saved.registerAddress),
+      lotAddress:text(saved.lotAddress),
+      roadAddress:text(saved.roadAddress),
+      mainUse:text(saved.mainUse),
+      structure:text(saved.structure),
+      totalArea:text(saved.totalArea),
+      archArea:text(saved.archArea),
+      groundFloors:text(saved.groundFloors),
+      undergroundFloors:text(saved.undergroundFloors),
+      approvalDate:text(saved.approvalDate),
+      parkingCount:text(saved.parkingCount),
+      elevatorCount:text(saved.elevatorCount),
+      rawManagementNo:text(saved.rawManagementNo)
+    };
+    buildingRegisterItems=[selectedBuildingRegister];
+    setStatus("저장된 건축물대장 정보를 표시하고 있습니다. 주소가 바뀌었다면 다시 조회하세요.",false);
+    renderSelected();
+  }
+
+  window.getBuildingRegisterForSave=function(){
+    const it=selectedBuildingRegister;
+    if(!it)return {};
+    return {
+      kind:text(it.kind),
+      buildingName:text(it.buildingName),
+      dongName:text(it.dongName),
+      registerAddress:text(it.registerAddress),
+      lotAddress:text(it.lotAddress),
+      roadAddress:text(it.roadAddress),
+      mainUse:text(it.mainUse),
+      structure:text(it.structure),
+      totalArea:text(it.totalArea),
+      archArea:text(it.archArea),
+      groundFloors:text(it.groundFloors),
+      undergroundFloors:text(it.undergroundFloors),
+      approvalDate:text(it.approvalDate),
+      parkingCount:text(it.parkingCount),
+      elevatorCount:text(it.elevatorCount),
+      rawManagementNo:text(it.rawManagementNo)
+    };
+  };
+
+  /* 등록/수정 함수 재정의 없이 건축물대장 기능만 연결 */
+  window.resetBuildingRegisterPanel=function(){
+    ensurePanel();
+    clearPanel();
+  };
+
+  window.loadSavedBuildingRegister=function(saved){
+    ensurePanel();
+    loadSavedRegister(saved);
+  };
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",function(){ensurePanel()});
+  }else{
+    ensurePanel();
+  }
+})();
+</script>
 
 </body>
 </html>
