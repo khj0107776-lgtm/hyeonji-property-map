@@ -564,6 +564,19 @@ placeholder="1층">
 <div class="form-group">
 
 <label>
+주용도
+</label>
+
+<input
+id="fMainUse"
+placeholder="예: 제2종근린생활시설">
+
+</div>
+
+
+<div class="form-group">
+
+<label>
 사용승인일
 </label>
 
@@ -689,7 +702,7 @@ onclick="closeExcelImport()">
 
 <p style="color:#6f7480;font-size:13px;line-height:1.6;margin-top:-8px">
 엑셀의 첫 번째 행은 제목으로 사용됩니다. 아래 열 이름을 그대로 사용하면 가장 정확합니다.<br>
-제목 / 주소 / 종류 / 보증금 / 월세 / 권리금 / 면적 / 층 / 상세주소 / 설명 / 사진URL
+제목 / 주소 / 종류 / 보증금 / 월세 / 권리금 / 면적 / 층 / 주용도 / 사용승인일 / 상세주소 / 설명 / 사진URL
 </p>
 
 <div class="file-box">
@@ -1554,6 +1567,11 @@ document
 
 document
 .getElementById("fFloor")
+.value="";
+
+
+document
+.getElementById("fMainUse")
 .value="";
 
 
@@ -4084,6 +4102,8 @@ window.saveProperty=async function(){
       document.getElementById("fPremium").value.trim()||"없음",
     area:area,
     floor:document.getElementById("fFloor").value.trim(),
+    mainUse:
+      document.getElementById("fMainUse").value.trim(),
     approvalDate:
       document.getElementById("fApprovalDate").value.trim(),
     direction:
@@ -4412,6 +4432,12 @@ floor:
 getExcelValue(
 row,
 ["해당층/총층","해당층","층","층수","floor"]
+),
+
+mainUse:
+getExcelValue(
+row,
+["주용도","주 용도","건축물주용도","건축물용도","mainUse","mainPurpsCdNm"]
 ),
 
 approvalDate:
@@ -5196,6 +5222,7 @@ document.addEventListener("click",function(e){
       setValue("fPremium", target.premium || "");
       setValue("fArea", target.area || "");
       setValue("fFloor", target.floor || "");
+      setValue("fMainUse", target.mainUse || target.buildingRegister?.mainUse || "");
       setValue("fApprovalDate", target.approvalDate || "");
       setValue("fDirection", target.direction || "");
       setValue("fDetailUrl", target.detailUrl || "");
@@ -5934,6 +5961,11 @@ window.addEventListener("popstate",function(){
     el("brApproval").textContent=it.approvalDate||"-";
     el("brParking").textContent=(it.parkingCount||"0")+"대";
     el("brElevator").textContent=(it.elevatorCount||"0")+"대";
+
+    const mainUseInput=el("fMainUse");
+    if(mainUseInput&&!mainUseInput.value&&it.mainUse){
+      mainUseInput.value=it.mainUse;
+    }
 
     const approval=el("fApprovalDate");
     if(approval&&!approval.value&&/^\d{4}-\d{2}-\d{2}$/.test(it.approvalDate||"")){
