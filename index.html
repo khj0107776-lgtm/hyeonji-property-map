@@ -389,11 +389,6 @@ Google 로그인
 <div class="detail-value" id="detailFloor"></div>
 </div>
 
-<div class="detail-row">
-<div class="detail-label">설명</div>
-<div class="detail-value detail-description" id="detailDescription"></div>
-</div>
-
 </div>
 
 
@@ -413,6 +408,15 @@ rel="noopener noreferrer"
 style="display:none">
 🔗 상세정보 보기
 </a>
+
+<button
+class="detail-link"
+id="detailRoadviewOpenBtn"
+type="button"
+onclick="openDetailRoadviewFromButton()"
+style="display:block;width:100%;border:0;cursor:pointer">
+🛣 로드뷰 보기
+</button>
 
 
 <div
@@ -540,6 +544,11 @@ placeholder="250">
 <div class="form-group">
 <label>매매가 (만원)</label>
 <input id="fSalePrice" type="number" placeholder="아파트 매매가">
+</div>
+
+<div class="form-group">
+<label>전세가 (만원)</label>
+<input id="fJeonsePrice" type="number" placeholder="전세 가격">
 </div>
 
 
@@ -708,6 +717,22 @@ placeholder="매물 특징과 시설 등을 입력하세요"></textarea>
 
 </div>
 
+<div class="form-group full">
+
+<label>
+🔒 관리자 비밀메모
+</label>
+
+<textarea
+id="fAdminMemo"
+placeholder="관리자만 확인할 내부 메모를 입력하세요"></textarea>
+
+<div style="font-size:11px;color:#777;margin-top:5px">
+일반 방문자에게는 표시되지 않습니다.
+</div>
+
+</div>
+
 
 <div class="form-group full">
 
@@ -774,7 +799,7 @@ onclick="closeExcelImport()">
 
 <p style="color:#6f7480;font-size:13px;line-height:1.6;margin-top:-8px">
 엑셀의 첫 번째 행은 제목으로 사용됩니다. 아래 열 이름을 그대로 사용하면 가장 정확합니다.<br>
-제목 / 주소 / 종류 / 보증금 / 월세 / 권리금 / 면적 / 층 / 주용도 / 관리비 / 총주차대수 / 욕실 / 사용승인일 / 상세주소 / 설명 / 사진URL
+제목 / 주소 / 종류 / 보증금 / 월세 / 전세가 / 권리금 / 면적 / 층 / 주용도 / 관리비 / 총주차대수 / 욕실 / 사용승인일 / 상세주소 / 설명 / 사진URL
 </p>
 
 <div class="file-box">
@@ -998,9 +1023,9 @@ id="adminPropertyList">
           <thead>
             <tr>
               <th>매물번호</th><th>제목</th><th>주소</th><th>종류</th>
-              <th>보증금</th><th>월세</th><th>매매가</th><th>권리금</th>
+              <th>보증금</th><th>월세</th><th>전세가</th><th>매매가</th><th>권리금</th>
               <th>면적</th><th>층</th><th>주용도</th><th>관리비</th>
-              <th>총주차대수</th><th>욕실</th><th>사용승인일</th><th>방향</th><th>관리</th>
+              <th>총주차대수</th><th>욕실</th><th>사용승인일</th><th>방향</th><th>건축물대장</th><th>관리</th>
             </tr>
           </thead>
           <tbody id="registeredPropertiesBody"></tbody>
@@ -1437,6 +1462,28 @@ numberFormat(salePrice)+
 
 }
 
+/* 전세 */
+const jeonsePrice=
+firstValue([
+  "전세가(만원)",
+  "전세금(만원)",
+  "전세가",
+  "전세금",
+  "jeonsePrice"
+]);
+
+if(
+!text &&
+String(jeonsePrice).trim()!==""
+){
+
+text=
+"전세 "+
+numberFormat(jeonsePrice)+
+"만원";
+
+}
+
 /* 임대 */
 const deposit=
 firstValue([
@@ -1663,6 +1710,11 @@ document
 
 
 document
+.getElementById("fJeonsePrice")
+.value="";
+
+
+document
 .getElementById("fPremium")
 .value="";
 
@@ -1720,6 +1772,12 @@ document
 document
 .getElementById("fDescription")
 .value="";
+
+
+const adminMemoInput=document.getElementById("fAdminMemo");
+if(adminMemoInput){
+  adminMemoInput.value="";
+}
 
 
 document
@@ -3689,6 +3747,10 @@ function showCurrentDetailRoadview(){
   );
 }
 
+window.openDetailRoadviewFromButton=function(){
+  setDetailViewMode("roadview");
+};
+
 function bindDetailViewToggle(){
 
   const mapBtn=document.getElementById("detailMapBtn");
@@ -3902,9 +3964,6 @@ window.openDetailPage=function(id){
     document.getElementById("detailFloor").textContent=
       currentText ? (totalText ? currentText+" / 총 "+totalText : currentText) : (totalText ? "총 "+totalText : "-");
   }
-  document.getElementById("detailDescription").textContent=
-    p.description||"-";
-
   /* 승인일/방향 행을 기존 상세정보에 추가 */
   const info=document.querySelector("#detailPage .detail-info");
   if(info){
@@ -3918,6 +3977,11 @@ window.openDetailPage=function(id){
     }
 
     extra.innerHTML=
+      '<div class="detail-row">'+
+      '<div class="detail-label">전세가</div>'+
+      '<div class="detail-value">'+
+      escapeHtml(p.jeonsePrice ? numberFormat(p.jeonsePrice)+"만원" : "-")+
+      '</div></div>'+
       '<div class="detail-row">'+
       '<div class="detail-label">주용도</div>'+
       '<div class="detail-value">'+
@@ -3952,7 +4016,19 @@ window.openDetailPage=function(id){
       '<div class="detail-label">방향</div>'+
       '<div class="detail-value">'+
       escapeHtml(p.direction||"-")+
-      '</div></div>';
+      '</div></div>'+
+      '<div class="detail-row">'+
+      '<div class="detail-label">매물설명</div>'+
+      '<div class="detail-value detail-description" id="detailDescription">'+
+      escapeHtml(p.description||"-")+
+      '</div></div>'+
+      ((auth.currentUser && auth.currentUser.email===ADMIN_EMAIL)
+        ? '<div class="detail-row" id="detailAdminMemoRow">'+
+          '<div class="detail-label">🔒 관리자 비밀메모</div>'+
+          '<div class="detail-value detail-description">'+
+          escapeHtml(p.adminMemo||"-")+
+          '</div></div>'
+        : '');
 
   }
 
@@ -4239,6 +4315,24 @@ function addMapAddressField(){
 }
 
 
+/* ---------- 주소 중복 확인 ---------- */
+function normalizeDuplicateAddress(value){
+  return String(value||"")
+    .replace(/\s+/g," ")
+    .trim()
+    .toLowerCase();
+}
+
+function findDuplicateAddressProperties(address,mapAddress,excludeId){
+  const targets=[normalizeDuplicateAddress(address),normalizeDuplicateAddress(mapAddress)].filter(Boolean);
+  if(!targets.length)return [];
+  return (properties||[]).filter(function(p){
+    if(excludeId && p.id===excludeId)return false;
+    const existing=[normalizeDuplicateAddress(p.address),normalizeDuplicateAddress(p.mapAddress)].filter(Boolean);
+    return targets.some(function(t){return existing.includes(t);});
+  });
+}
+
 /* ---------- 저장: 번호/승인일/방향/지도주소 ---------- */
 
 window.saveProperty=async function(){
@@ -4271,6 +4365,7 @@ window.saveProperty=async function(){
     deposit:document.getElementById("fDeposit").value.trim(),
     rent:document.getElementById("fRent").value.trim(),
     salePrice:document.getElementById("fSalePrice").value.trim(),
+    jeonsePrice:document.getElementById("fJeonsePrice").value.trim(),
     premium:
       document.getElementById("fPremium").value.trim()||"없음",
     area:area,
@@ -4293,10 +4388,16 @@ window.saveProperty=async function(){
       document.getElementById("fDetailUrl").value.trim(),
     description:
       document.getElementById("fDescription").value.trim(),
+    adminMemo:
+      document.getElementById("fAdminMemo")?.value.trim()||"",
     buildingRegister:
       (typeof window.getBuildingRegisterForSave==="function"
         ? window.getBuildingRegisterForSave()
         : {}),
+    buildingRegisterStatus:
+      (typeof window.getBuildingRegisterStatusForSave==="function"
+        ? window.getBuildingRegisterStatusForSave()
+        : "미조회"),
     updatedAt:
       firebase.firestore.FieldValue.serverTimestamp()
   };
@@ -4315,6 +4416,24 @@ window.saveProperty=async function(){
         : data.address;
 
     data.mapAddress=mapAddr;
+
+    const editingOriginal=editingId?(properties||[]).find(function(item){return item.id===editingId;}):null;
+    const addressUnchanged=!!(editingOriginal &&
+      normalizeDuplicateAddress(editingOriginal.address)===normalizeDuplicateAddress(data.address) &&
+      normalizeDuplicateAddress(editingOriginal.mapAddress||editingOriginal.address)===normalizeDuplicateAddress(data.mapAddress||data.address));
+    const duplicateMatches=addressUnchanged?[]:findDuplicateAddressProperties(data.address,data.mapAddress,editingId);
+    if(duplicateMatches.length){
+      const sample=duplicateMatches.slice(0,3).map(function(item){
+        return "#"+(item.propertyNumber||"-")+" "+(item.title||"매물");
+      }).join("\n");
+      const proceed=confirm(
+        "같은 주소의 기존 매물이 "+duplicateMatches.length+"건 있습니다.\n\n"+
+        sample+
+        (duplicateMatches.length>3?"\n외 "+(duplicateMatches.length-3)+"건":"")+
+        "\n\n중복 주소여도 계속 저장하시겠습니까?"
+      );
+      if(!proceed)return;
+    }
 
     try{
       const coords=await addressToCoords(mapAddr);
@@ -4474,7 +4593,7 @@ window.renderRegisteredProperties=function(){
   if(!list.length){
     const input=document.getElementById("registeredPropertySearch");
     const hasKeyword=!!(input&&input.value.trim());
-    body.innerHTML='<tr><td colspan="17" style="text-align:center;padding:35px;color:#888">'+
+    body.innerHTML='<tr><td colspan="19" style="text-align:center;padding:35px;color:#888">'+
       (hasKeyword?'검색 결과가 없습니다.':'등록된 매물이 없습니다.')+
       '</td></tr>';
     return;
@@ -4490,6 +4609,7 @@ window.renderRegisteredProperties=function(){
       '<td>'+escapeHtml(normalizedType(p.type)||"-")+'</td>'+ 
       '<td>'+escapeHtml(p.deposit?numberFormat(p.deposit)+"만원":"-")+'</td>'+ 
       '<td>'+escapeHtml(p.rent?numberFormat(p.rent)+"만원":"-")+'</td>'+ 
+      '<td>'+escapeHtml(p.jeonsePrice?numberFormat(p.jeonsePrice)+"만원":"-")+'</td>'+ 
       '<td>'+escapeHtml(p.salePrice?numberFormat(p.salePrice)+"만원":"-")+'</td>'+ 
       '<td>'+escapeHtml(p.premium&&p.premium!=="없음"?numberFormat(p.premium)+"만원":(p.premium||"-"))+'</td>'+ 
       '<td>'+escapeHtml(areaWithPyeong(p.area)||"-")+'</td>'+ 
@@ -4500,8 +4620,13 @@ window.renderRegisteredProperties=function(){
       '<td>'+escapeHtml(p.bathroom||"-")+'</td>'+ 
       '<td>'+escapeHtml(p.approvalDate||"-")+'</td>'+ 
       '<td>'+escapeHtml(p.direction||"-")+'</td>'+ 
+      '<td>'+escapeHtml((function(){
+        if(p.buildingRegisterStatus)return p.buildingRegisterStatus;
+        return p.buildingRegister&&Object.keys(p.buildingRegister).length?"조회완료":"미조회";
+      })())+'</td>'+
       '<td><div class="registered-list-actions">'+
         '<button class="registered-list-edit" onclick="editRegisteredProperty(\''+escapeAttr(p.id)+'\')">수정</button>'+
+        '<button class="registered-list-edit" onclick="copyRegisteredProperty(\''+escapeAttr(p.id)+'\')">복사</button>'+
         '<button class="registered-list-delete" onclick="deleteRegisteredProperty(\''+escapeAttr(p.id)+'\')">삭제</button>'+ 
       '</div></td>'+ 
     '</tr>';
@@ -4541,6 +4666,7 @@ window.downloadRegisteredPropertiesExcel=function(){
       "종류":normalizedType(p.type)||"",
       "보증금":p.deposit?numberFormat(p.deposit)+"만원":"",
       "월세":p.rent?numberFormat(p.rent)+"만원":"",
+      "전세가":p.jeonsePrice?numberFormat(p.jeonsePrice)+"만원":"",
       "매매가":p.salePrice?numberFormat(p.salePrice)+"만원":"",
       "권리금":p.premium&&p.premium!=="없음"?numberFormat(p.premium)+"만원":(p.premium||""),
       "면적":areaWithPyeong(p.area)||"",
@@ -4550,14 +4676,15 @@ window.downloadRegisteredPropertiesExcel=function(){
       "총주차대수":totalParking,
       "욕실":p.bathroom||"",
       "사용승인일":p.approvalDate||"",
-      "방향":p.direction||""
+      "방향":p.direction||"",
+      "건축물대장":p.buildingRegisterStatus||(p.buildingRegister&&Object.keys(p.buildingRegister).length?"조회완료":"미조회")
     };
   });
 
   const worksheet=XLSX.utils.json_to_sheet(rows);
   worksheet["!cols"]=[
     {wch:10},{wch:28},{wch:35},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},
-    {wch:20},{wch:10},{wch:24},{wch:14},{wch:14},{wch:10},{wch:14},{wch:10}
+    {wch:14},{wch:20},{wch:10},{wch:24},{wch:14},{wch:14},{wch:10},{wch:14},{wch:10},{wch:12}
   ];
 
   const workbook=XLSX.utils.book_new();
@@ -4599,6 +4726,23 @@ window.closeRegisteredProperties=function(){
 window.editRegisteredProperty=function(id){
   closeRegisteredProperties();
   adminEdit(id);
+};
+
+window.copyRegisteredProperty=function(id){
+  if(!auth.currentUser||auth.currentUser.email!==ADMIN_EMAIL){
+    alert("관리자만 이용할 수 있습니다.");
+    return;
+  }
+  const source=(properties||[]).find(function(p){return p.id===id;});
+  if(!source){
+    alert("복사할 매물을 찾을 수 없습니다.");
+    return;
+  }
+  const copy=Object.assign({},source,{id:null});
+  closeRegisteredProperties();
+  window.editCurrentProperty(copy);
+  const titleEl=document.getElementById("formTitle");
+  if(titleEl)titleEl.textContent="매물 복사 등록";
 };
 
 window.deleteRegisteredProperty=async function(id){
@@ -4767,6 +4911,12 @@ row,
 ["월세(만원)","월세","rent"]
 ),
 
+jeonsePrice:
+getExcelValue(
+row,
+["전세가(만원)","전세금(만원)","전세가","전세금","jeonsePrice"]
+),
+
 salePrice:
 getExcelValue(
 row,
@@ -4867,7 +5017,10 @@ createdAt:
 firebase.firestore.FieldValue.serverTimestamp(),
 
 updatedAt:
-firebase.firestore.FieldValue.serverTimestamp()
+firebase.firestore.FieldValue.serverTimestamp(),
+
+buildingRegisterStatus:
+"미조회"
 
 };
 
@@ -4877,6 +5030,7 @@ try{
     btn.textContent="건축물대장 조회 중... "+(i+1)+" / "+excelRows.length;
     const br=await window.lookupBuildingRegisterData(data.mapAddress||data.address,batchBuildingApiKey);
     if(br){
+      data.buildingRegisterStatus="조회완료";
       data.buildingRegister={
         kind:br.kind||"", buildingName:br.buildingName||"", dongName:br.dongName||"",
         registerAddress:br.registerAddress||"", lotAddress:br.lotAddress||"", roadAddress:br.roadAddress||"",
@@ -4891,6 +5045,7 @@ try{
     }
   }
 }catch(buildingError){
+  data.buildingRegisterStatus="조회실패";
   console.warn("일괄등록 건축물대장 조회 실패:",buildingError);
   /* 건축물대장 조회 실패는 매물 등록 실패로 처리하지 않는다. */
 }
@@ -5619,6 +5774,7 @@ document.addEventListener("click",function(e){
       setValue("fType", target.type || "상가");
       setValue("fDeposit", target.deposit || "");
       setValue("fRent", target.rent || "");
+      setValue("fJeonsePrice", target.jeonsePrice || target["전세가"] || target["전세금"] || "");
       setValue(
         "fSalePrice",
         target.salePrice ||
@@ -5639,6 +5795,7 @@ document.addEventListener("click",function(e){
       setValue("fDirection", target.direction || "");
       setValue("fDetailUrl", target.detailUrl || "");
       setValue("fDescription", target.description || "");
+      setValue("fAdminMemo", target.adminMemo || "");
 
       currentImageData = target.image || "";
 
@@ -5663,6 +5820,9 @@ document.addEventListener("click",function(e){
 
       if (typeof window.loadSavedBuildingRegister === "function") {
         window.loadSavedBuildingRegister(target.buildingRegister);
+      }
+      if (typeof window.setBuildingRegisterStatusForEdit === "function") {
+        window.setBuildingRegisterStatusForEdit(target.buildingRegisterStatus || (target.buildingRegister&&Object.keys(target.buildingRegister).length?"조회완료":"미조회"));
       }
 
       showPropertyModal();
@@ -6096,6 +6256,7 @@ window.addEventListener("popstate",function(){
   const KEY_STORAGE="hyeonji_buildinghub_service_key";
   let buildingRegisterItems=[];
   let selectedBuildingRegister=null;
+  let buildingRegisterLookupState="미조회";
 
   function el(id){return document.getElementById(id)}
   function text(v){return v===undefined||v===null?"":String(v).trim()}
@@ -6400,6 +6561,7 @@ window.addEventListener("popstate",function(){
 
     buildingRegisterItems=[];
     selectedBuildingRegister=null;
+    buildingRegisterLookupState="미조회";
     el("buildingRegisterResult")?.classList.remove("show");
     el("buildingRegisterSelectWrap")?.classList.remove("show");
     if(button){button.disabled=true;button.textContent="건축물대장 조회 중..."}
@@ -6419,6 +6581,7 @@ window.addEventListener("popstate",function(){
 
       buildingRegisterItems=rows.map(r=>normalizeItem(r,kind));
       selectedBuildingRegister=buildingRegisterItems[0];
+      buildingRegisterLookupState="조회완료";
 
       const select=el("buildingRegisterSelect");
       if(select){
@@ -6434,6 +6597,7 @@ window.addEventListener("popstate",function(){
       }
       renderSelected();
     }catch(error){
+      buildingRegisterLookupState="조회실패";
       console.error("건축물대장 조회 오류:",error);
       let msg=error&&error.message?error.message:"건축물대장을 조회하지 못했습니다.";
       if(/서버 응답 오류 \(503\)/i.test(msg)){
@@ -6480,6 +6644,7 @@ window.addEventListener("popstate",function(){
   function clearPanel(){
     buildingRegisterItems=[];
     selectedBuildingRegister=null;
+    buildingRegisterLookupState="미조회";
     el("buildingRegisterResult")?.classList.remove("show");
     el("buildingRegisterSelectWrap")?.classList.remove("show");
     setStatus("주소를 입력하고 조회 버튼을 누르세요.",false);
@@ -6488,6 +6653,7 @@ window.addEventListener("popstate",function(){
   function loadSavedRegister(saved){
     clearPanel();
     if(!saved||typeof saved!=="object"||!Object.keys(saved).length)return;
+    buildingRegisterLookupState="조회완료";
     selectedBuildingRegister={
       kind:text(saved.kind),
       buildingName:text(saved.buildingName),
@@ -6532,6 +6698,14 @@ window.addEventListener("popstate",function(){
       elevatorCount:text(it.elevatorCount),
       rawManagementNo:text(it.rawManagementNo)
     };
+  };
+
+  window.getBuildingRegisterStatusForSave=function(){
+    return buildingRegisterLookupState||"미조회";
+  };
+
+  window.setBuildingRegisterStatusForEdit=function(status){
+    if(status==="조회완료"||status==="조회실패"||status==="미조회")buildingRegisterLookupState=status;
   };
 
   /* 등록/수정 함수 재정의 없이 건축물대장 기능만 연결 */
