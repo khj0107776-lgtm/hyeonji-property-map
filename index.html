@@ -418,6 +418,15 @@ style="display:block;width:100%;border:0;cursor:pointer">
 🛣 로드뷰 보기
 </button>
 
+<button
+class="detail-link"
+id="detailShareLinkBtn"
+type="button"
+onclick="copyCurrentPropertyLink()"
+style="display:block;width:100%;border:0;cursor:pointer">
+🔗 매물 링크 복사
+</button>
+
 
 <div
 class="detail-admin"
@@ -3904,6 +3913,71 @@ p.detailAddress||p.detailUrl||""
 
 }
 
+/* ---------- 매물 고유링크 / 공개 읽기전용 ---------- */
+function getPropertyShareUrl(propertyId){
+  const url=new URL(window.location.href);
+  url.searchParams.set("propertyId",String(propertyId||""));
+  url.hash="";
+  return url.toString();
+}
+
+window.copyCurrentPropertyLink=async function(){
+  if(!currentProperty||!currentProperty.id){
+    alert("매물 정보를 찾을 수 없습니다.");
+    return;
+  }
+
+  const shareUrl=getPropertyShareUrl(currentProperty.id);
+
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(shareUrl);
+    }else{
+      const temp=document.createElement("textarea");
+      temp.value=shareUrl;
+      temp.setAttribute("readonly","");
+      temp.style.position="fixed";
+      temp.style.opacity="0";
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      temp.remove();
+    }
+    alert("매물 링크를 복사했습니다.");
+  }catch(error){
+    console.error("매물 링크 복사 오류:",error);
+    prompt("아래 링크를 복사해주세요.",shareUrl);
+  }
+};
+
+function openSharedPropertyFromUrl(){
+  if(window.__hyeonjiSharedPropertyHandled)return;
+
+  let propertyId="";
+  try{
+    propertyId=new URL(window.location.href).searchParams.get("propertyId")||"";
+  }catch(error){
+    return;
+  }
+
+  if(!propertyId)return;
+
+  const exists=properties.some(item=>item&&item.id===propertyId);
+  if(!exists){
+    window.__hyeonjiSharedPropertyHandled=true;
+    alert("삭제되었거나 확인할 수 없는 매물입니다.");
+    return;
+  }
+
+  window.__hyeonjiSharedPropertyHandled=true;
+  window.__hyeonjiOpeningSharedProperty=true;
+  try{
+    window.openDetailPage(propertyId);
+  }finally{
+    window.__hyeonjiOpeningSharedProperty=false;
+  }
+}
+
 window.openDetailPage=function(id){
   const detailPageHistoryEl=document.getElementById("detailPage");
   const detailWasAlreadyOpen=
@@ -4069,7 +4143,7 @@ window.openDetailPage=function(id){
   bindDetailViewToggle();
   setDetailViewMode("map");
 
-  if(!detailWasAlreadyOpen){
+  if(!detailWasAlreadyOpen && !window.__hyeonjiOpeningSharedProperty){
     try{
       history.pushState(
         {hyeonjiPropertyDetail:true,propertyId:id},
@@ -4275,6 +4349,8 @@ window.loadProperties=async function(){
     renderProperties();
 
     if(map)drawMarkers();
+
+    openSharedPropertyFromUrl();
 
   }catch(error){
 
@@ -6484,7 +6560,22 @@ window.addEventListener("popstate",function(){
     const ground=text(item.grndFlrCnt);
     const underground=text(item.ugrndFlrCnt);
     const elevator=num(item.rideUseElvtCnt)+num(item.emgenUseElvtCnt);
-    const parking=num(item.totPkngCnt);
+    // 건축HUB 응답은 대장 종류에 따라 총주차수 필드가 비어 있고
+    // 옥내/옥외 자주식·기계식 주차대수만 내려오는 경우가 있어 모두 대응한다.
+    const parkingTotalCandidates=[
+      item.totPkngCnt, item.totalPkngCnt, item.pkngCnt, item.totParkingCnt
+    ];
+    let parking=0;
+    for(const candidate of parkingTotalCandidates){
+      const n=num(candidate);
+      if(n>0){ parking=n; break; }
+    }
+    if(!parking){
+      parking=
+        num(item.indrAutoUtcnt)+num(item.oudrAutoUtcnt)+
+        num(item.indrMechUtcnt)+num(item.oudrMechUtcnt)+
+        num(item.neigAutoUtcnt)+num(item.neigMechUtcnt);
+    }
     return {
       kind:kind||"title",
       buildingName:text(item.bldNm),
