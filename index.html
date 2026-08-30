@@ -3758,6 +3758,21 @@ function showCurrentDetailRoadview(){
 
 window.openDetailRoadviewFromButton=function(){
   setDetailViewMode("roadview");
+
+  /* 모바일 상세화면에서는 로드뷰 버튼을 누르면 위쪽 지도/로드뷰 영역으로 이동 */
+  if(window.matchMedia && window.matchMedia("(max-width: 900px)").matches){
+    setTimeout(function(){
+      const mapSection=document.querySelector("#detailPage .detail-split-map");
+      if(mapSection){
+        try{
+          mapSection.scrollIntoView({behavior:"smooth",block:"start"});
+        }catch(e){
+          const detailPage=document.getElementById("detailPage");
+          if(detailPage)detailPage.scrollTop=0;
+        }
+      }
+    },80);
+  }
 };
 
 function bindDetailViewToggle(){
@@ -3970,6 +3985,27 @@ function openSharedPropertyFromUrl(){
   }
 
   window.__hyeonjiSharedPropertyHandled=true;
+
+  /* 공유링크로 바로 들어온 경우: 첫 뒤로가기에서 사이트 밖이 아니라 매물지도 첫 화면으로 이동 */
+  try{
+    const sharedUrl=new URL(window.location.href);
+    const mainUrl=new URL(window.location.href);
+    mainUrl.searchParams.delete("propertyId");
+    mainUrl.hash="";
+
+    history.replaceState(
+      {hyeonjiSharedEntryBase:true},
+      "",
+      mainUrl.toString()
+    );
+    history.pushState(
+      {hyeonjiPropertyDetail:true,propertyId:propertyId,hyeonjiSharedEntry:true},
+      "",
+      sharedUrl.toString()
+    );
+    window.__hyeonjiDetailHistoryActive=true;
+  }catch(error){}
+
   window.__hyeonjiOpeningSharedProperty=true;
   try{
     window.openDetailPage(propertyId);
