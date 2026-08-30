@@ -153,6 +153,21 @@ z-index:11001;
 .admin-edit{background:#5968dd;color:#fff}
 .admin-delete{background:#fff0f0;color:#d33}
 
+/* 등록매물 확인: 사진 없이 엑셀처럼 보는 관리자 전용 표 */
+.registered-list-modal{width:min(1500px,96vw);max-width:96vw}
+.registered-list-panel{padding:25px}
+.registered-list-panel h2{margin:0 0 15px}
+.registered-list-wrap{width:100%;overflow:auto;border:1px solid #dfe2e8;border-radius:12px;background:#fff}
+.registered-list-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+.registered-list-table th,.registered-list-table td{border-right:1px solid #e7e9ef;border-bottom:1px solid #e7e9ef;padding:8px 9px;text-align:left;vertical-align:middle}
+.registered-list-table th{position:sticky;top:0;z-index:2;background:#f4f5f9;font-weight:900;color:#343844}
+.registered-list-table tr:last-child td{border-bottom:0}
+.registered-list-table th:last-child,.registered-list-table td:last-child{border-right:0}
+.registered-list-actions{display:flex;gap:5px}
+.registered-list-actions button{border:0;border-radius:7px;padding:6px 9px;font-size:11px;font-weight:900}
+.registered-list-edit{background:#5968dd;color:#fff}
+.registered-list-delete{background:#fff0f0;color:#d33}
+
 .inquiry-item{border:1px solid #e0e3e9;border-radius:12px;padding:13px;margin-top:9px;line-height:1.55}
 .inquiry-item b{display:block;margin-bottom:4px}
 .inquiry-delete{width:100%;height:40px;margin-top:8px;border:0;border-radius:9px;background:#fff0f0;color:#d33;font-weight:800}
@@ -922,6 +937,13 @@ onclick="openExcelImport()">
 📥 엑셀 일괄등록
 </button>
 
+<button
+class="submit-btn"
+style="background:#4b7f3d;margin-top:8px"
+onclick="openRegisteredProperties()">
+📊 등록매물 확인
+</button>
+
 
 <button
 class="submit-btn"
@@ -939,6 +961,30 @@ id="adminPropertyList">
 
 </div>
 
+</div>
+
+
+<!-- 등록매물 확인 -->
+<div class="modal-bg" id="registeredPropertiesModal">
+  <div class="modal registered-list-modal">
+    <button class="modal-x" onclick="closeRegisteredProperties()">×</button>
+    <div class="registered-list-panel">
+      <h2>📊 등록매물 확인</h2>
+      <div class="registered-list-wrap">
+        <table class="registered-list-table">
+          <thead>
+            <tr>
+              <th>매물번호</th><th>제목</th><th>주소</th><th>종류</th>
+              <th>보증금</th><th>월세</th><th>매매가</th><th>권리금</th>
+              <th>면적</th><th>층</th><th>주용도</th><th>관리비</th>
+              <th>총주차대수</th><th>욕실</th><th>사용승인일</th><th>방향</th><th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="registeredPropertiesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 
@@ -4281,6 +4327,12 @@ window.saveProperty=async function(){
       renderAdminList();
     }
 
+    if(
+      document.getElementById("registeredPropertiesModal")?.classList.contains("show")
+    ){
+      renderRegisteredProperties();
+    }
+
   }catch(error){
 
     console.error(error);
@@ -4336,6 +4388,91 @@ window.renderAdminList=function(){
 
 };
 
+/* ---------- 등록매물 확인: DB를 사진 없이 표로 표시 ---------- */
+window.renderRegisteredProperties=function(){
+  const body=document.getElementById("registeredPropertiesBody");
+  if(!body)return;
+
+  if(!properties.length){
+    body.innerHTML='<tr><td colspan="17" style="text-align:center;padding:35px;color:#888">등록된 매물이 없습니다.</td></tr>';
+    return;
+  }
+
+  body.innerHTML=properties.map(function(p){
+    const mainUse=p.mainUse||(p.buildingRegister&&p.buildingRegister.mainUse)||"-";
+    const totalParking=p.totalParking||(p.buildingRegister&&p.buildingRegister.parkingCount)||"-";
+    return '<tr>'+
+      '<td>'+escapeHtml(p.propertyNumber?String(p.propertyNumber).replace(/^#/,""):"-")+'</td>'+
+      '<td>'+escapeHtml(p.title||"-")+'</td>'+
+      '<td>'+escapeHtml(p.address||"-")+'</td>'+
+      '<td>'+escapeHtml(normalizedType(p.type)||"-")+'</td>'+
+      '<td>'+escapeHtml(p.deposit?numberFormat(p.deposit)+"만원":"-")+'</td>'+
+      '<td>'+escapeHtml(p.rent?numberFormat(p.rent)+"만원":"-")+'</td>'+
+      '<td>'+escapeHtml(p.salePrice?numberFormat(p.salePrice)+"만원":"-")+'</td>'+
+      '<td>'+escapeHtml(p.premium&&p.premium!=="없음"?numberFormat(p.premium)+"만원":(p.premium||"-"))+'</td>'+
+      '<td>'+escapeHtml(areaWithPyeong(p.area)||"-")+'</td>'+
+      '<td>'+escapeHtml(p.floor||"-")+'</td>'+
+      '<td>'+escapeHtml(mainUse)+'</td>'+
+      '<td>'+escapeHtml((function(v){if(!v)return "-";const t=String(v);return /^\s*[\d,.]+\s*$/.test(t)?numberFormat(t)+"만원":t;})(p.managementFee))+'</td>'+
+      '<td>'+escapeHtml(totalParking)+'</td>'+
+      '<td>'+escapeHtml(p.bathroom||"-")+'</td>'+
+      '<td>'+escapeHtml(p.approvalDate||"-")+'</td>'+
+      '<td>'+escapeHtml(p.direction||"-")+'</td>'+
+      '<td><div class="registered-list-actions">'+
+        '<button class="registered-list-edit" onclick="editRegisteredProperty(\''+escapeAttr(p.id)+'\')">수정</button>'+
+        '<button class="registered-list-delete" onclick="deleteRegisteredProperty(\''+escapeAttr(p.id)+'\')">삭제</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join("");
+};
+
+window.openRegisteredProperties=function(){
+  if(!auth.currentUser||auth.currentUser.email!==ADMIN_EMAIL){
+    alert("관리자만 이용할 수 있습니다.");
+    return;
+  }
+  renderRegisteredProperties();
+  const modal=document.getElementById("registeredPropertiesModal");
+  if(!modal)return;
+  modal.classList.add("show");
+  modal.style.display="flex";
+  modal.style.visibility="visible";
+  modal.style.opacity="1";
+  modal.style.pointerEvents="auto";
+  modal.style.zIndex="22000";
+};
+
+window.closeRegisteredProperties=function(){
+  const modal=document.getElementById("registeredPropertiesModal");
+  if(!modal)return;
+  modal.classList.remove("show");
+  modal.style.display="none";
+  modal.style.visibility="hidden";
+  modal.style.opacity="0";
+  modal.style.pointerEvents="none";
+};
+
+window.editRegisteredProperty=function(id){
+  closeRegisteredProperties();
+  adminEdit(id);
+};
+
+window.deleteRegisteredProperty=async function(id){
+  if(!auth.currentUser||auth.currentUser.email!==ADMIN_EMAIL){
+    alert("관리자만 삭제할 수 있습니다.");
+    return;
+  }
+  if(!confirm("이 매물을 정말 삭제하시겠습니까?"))return;
+  try{
+    await db.collection("properties").doc(id).delete();
+    await loadProperties();
+    renderRegisteredProperties();
+    renderAdminList();
+  }catch(error){
+    alert("삭제 중 오류가 발생했습니다.\n\n"+error.message);
+  }
+};
+
 /* ---------- 엑셀: 최종 14열 모두 지원 ---------- */
 
 window.importExcelProperties=async function(){
@@ -4365,6 +4502,12 @@ let success=0;
 let failed=0;
 
 const errors=[];
+
+/* 일괄등록 시작 시 API키를 한 번만 확인한다. */
+let batchBuildingApiKey="";
+if(typeof window.getBuildingRegisterApiKeyForBatch==="function"){
+  batchBuildingApiKey=window.getBuildingRegisterApiKeyForBatch()||"";
+}
 
 try{
 
@@ -4583,6 +4726,30 @@ updatedAt:
 firebase.firestore.FieldValue.serverTimestamp()
 
 };
+
+/* 주소별 건축물대장 자동조회: 엑셀값이 비어 있는 항목만 채운다. */
+try{
+  if(batchBuildingApiKey && typeof window.lookupBuildingRegisterData==="function"){
+    btn.textContent="건축물대장 조회 중... "+(i+1)+" / "+excelRows.length;
+    const br=await window.lookupBuildingRegisterData(data.mapAddress||data.address,batchBuildingApiKey);
+    if(br){
+      data.buildingRegister={
+        kind:br.kind||"", buildingName:br.buildingName||"", dongName:br.dongName||"",
+        registerAddress:br.registerAddress||"", lotAddress:br.lotAddress||"", roadAddress:br.roadAddress||"",
+        mainUse:br.mainUse||"", structure:br.structure||"", totalArea:br.totalArea||"", archArea:br.archArea||"",
+        groundFloors:br.groundFloors||"", undergroundFloors:br.undergroundFloors||"",
+        approvalDate:br.approvalDate||"", parkingCount:br.parkingCount||"", elevatorCount:br.elevatorCount||"",
+        rawManagementNo:br.rawManagementNo||""
+      };
+      if(!data.mainUse&&br.mainUse)data.mainUse=br.mainUse;
+      if(!data.totalParking&&br.parkingCount)data.totalParking=br.parkingCount;
+      if(!data.approvalDate&&br.approvalDate)data.approvalDate=br.approvalDate;
+    }
+  }
+}catch(buildingError){
+  console.warn("일괄등록 건축물대장 조회 실패:",buildingError);
+  /* 건축물대장 조회 실패는 매물 등록 실패로 처리하지 않는다. */
+}
 
 try{
 
@@ -6138,6 +6305,31 @@ window.addEventListener("popstate",function(){
     }finally{
       if(button){button.disabled=false;button.textContent="주소로 건축물대장 조회"}
     }
+  };
+
+  /* 일괄등록에서도 같은 건축물대장 조회 로직을 재사용한다. */
+  window.getBuildingRegisterApiKeyForBatch=function(){
+    return getKey();
+  };
+
+  window.lookupBuildingRegisterData=async function(address,providedKey){
+    const addr=text(address);
+    if(!addr)throw new Error("주소가 없습니다.");
+    const key=safeKey(providedKey)||getKey();
+    if(!key){
+      const e=new Error("건축HUB API키가 필요합니다.");
+      e.code="NO_BUILDING_API_KEY";
+      throw e;
+    }
+    const params=await resolveLotAddress(addr);
+    let rows=await apiGet("getBrTitleInfo",params,key);
+    let kind="표제부";
+    if(!rows.length){
+      rows=await apiGet("getBrRecapTitleInfo",params,key);
+      kind="총괄표제부";
+    }
+    if(!rows.length)throw new Error("이 주소에서 조회되는 건축물대장이 없습니다.");
+    return normalizeItem(rows[0],kind);
   };
 
   function clearPanel(){
