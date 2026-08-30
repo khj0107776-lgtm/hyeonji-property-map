@@ -573,6 +573,44 @@ placeholder="예: 제2종근린생활시설">
 
 </div>
 
+<div class="form-group">
+
+<label>
+관리비 (만원)
+</label>
+
+<input
+id="fManagementFee"
+placeholder="없음 / 확인 필요 / 10">
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+총주차대수
+</label>
+
+<input
+id="fTotalParking"
+placeholder="예: 5대">
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+욕실
+</label>
+
+<input
+id="fBathroom"
+placeholder="예: 1개">
+
+</div>
+
 
 <div class="form-group">
 
@@ -702,7 +740,7 @@ onclick="closeExcelImport()">
 
 <p style="color:#6f7480;font-size:13px;line-height:1.6;margin-top:-8px">
 엑셀의 첫 번째 행은 제목으로 사용됩니다. 아래 열 이름을 그대로 사용하면 가장 정확합니다.<br>
-제목 / 주소 / 종류 / 보증금 / 월세 / 권리금 / 면적 / 층 / 주용도 / 사용승인일 / 상세주소 / 설명 / 사진URL
+제목 / 주소 / 종류 / 보증금 / 월세 / 권리금 / 면적 / 층 / 주용도 / 관리비 / 총주차대수 / 욕실 / 사용승인일 / 상세주소 / 설명 / 사진URL
 </p>
 
 <div class="file-box">
@@ -1572,6 +1610,21 @@ document
 
 document
 .getElementById("fMainUse")
+.value="";
+
+
+document
+.getElementById("fManagementFee")
+.value="";
+
+
+document
+.getElementById("fTotalParking")
+.value="";
+
+
+document
+.getElementById("fBathroom")
 .value="";
 
 
@@ -4104,6 +4157,12 @@ window.saveProperty=async function(){
     floor:document.getElementById("fFloor").value.trim(),
     mainUse:
       document.getElementById("fMainUse").value.trim(),
+    managementFee:
+      document.getElementById("fManagementFee").value.trim(),
+    totalParking:
+      document.getElementById("fTotalParking").value.trim(),
+    bathroom:
+      document.getElementById("fBathroom").value.trim(),
     approvalDate:
       document.getElementById("fApprovalDate").value.trim(),
     direction:
@@ -4440,6 +4499,24 @@ row,
 ["주용도","주 용도","건축물주용도","건축물용도","mainUse","mainPurpsCdNm"]
 ),
 
+managementFee:
+getExcelValue(
+row,
+["관리비(만원)","관리비","managementFee"]
+),
+
+totalParking:
+getExcelValue(
+row,
+["총주차대수","총 주차대수","주차대수","주차","totalParking","parkingCount"]
+),
+
+bathroom:
+getExcelValue(
+row,
+["욕실","욕실수","욕실개수","욕실 개수","bathroom","bathroomCount"]
+),
+
 approvalDate:
 getExcelValue(
 row,
@@ -4600,7 +4677,7 @@ function upgradeExcelGuide(){
       '엑셀 첫 행의 열 이름을 아래 순서대로 사용하면 가장 정확합니다.<br>'+
       '<b>제목 / 주소(소재지) / 지도주소 / 종류(매물종류) / '+
       '보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / '+
-      '해당층/총층 / 사용승인일 / 방향 / 상세주소 / 설명 / 사진URL</b>';
+      '해당층/총층 / 주용도 / 관리비(만원) / 총주차대수 / 욕실 / 사용승인일 / 방향 / 상세주소 / 설명 / 사진URL</b>';
 
   }
 
@@ -5223,6 +5300,9 @@ document.addEventListener("click",function(e){
       setValue("fArea", target.area || "");
       setValue("fFloor", target.floor || "");
       setValue("fMainUse", target.mainUse || target.buildingRegister?.mainUse || "");
+      setValue("fManagementFee", target.managementFee || "");
+      setValue("fTotalParking", target.totalParking || target.buildingRegister?.parkingCount || "");
+      setValue("fBathroom", target.bathroom || "");
       setValue("fApprovalDate", target.approvalDate || "");
       setValue("fDirection", target.direction || "");
       setValue("fDetailUrl", target.detailUrl || "");
@@ -5965,6 +6045,11 @@ window.addEventListener("popstate",function(){
     const mainUseInput=el("fMainUse");
     if(mainUseInput&&!mainUseInput.value&&it.mainUse){
       mainUseInput.value=it.mainUse;
+    }
+
+    const totalParkingInput=el("fTotalParking");
+    if(totalParkingInput&&!totalParkingInput.value&&it.parkingCount){
+      totalParkingInput.value=it.parkingCount;
     }
 
     const approval=el("fApprovalDate");
