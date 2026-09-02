@@ -4514,6 +4514,10 @@ window.saveProperty=async function(){
       firebase.firestore.FieldValue.serverTimestamp()
   };
 
+  if(data.buildingRegister&&data.buildingRegister.floorMainUse){
+    data.mainUse=data.buildingRegister.floorMainUse;
+  }
+
   if(currentImageData)data.image=currentImageData;
 
   try{
@@ -5140,7 +5144,7 @@ buildingRegisterStatus:
 try{
   if(batchBuildingApiKey && typeof window.lookupBuildingRegisterData==="function"){
     btn.textContent="건축물대장 조회 중... "+(i+1)+" / "+excelRows.length;
-    const br=await window.lookupBuildingRegisterData(data.mapAddress||data.address,batchBuildingApiKey);
+    const br=await window.lookupBuildingRegisterData(data.mapAddress||data.address,batchBuildingApiKey,data.floor);
     if(br){
       data.buildingRegisterStatus="조회완료";
       data.buildingRegister={
@@ -5149,9 +5153,11 @@ try{
         mainUse:br.mainUse||"", structure:br.structure||"", totalArea:br.totalArea||"", archArea:br.archArea||"",
         groundFloors:br.groundFloors||"", undergroundFloors:br.undergroundFloors||"",
         approvalDate:br.approvalDate||"", parkingCount:br.parkingCount||"", elevatorCount:br.elevatorCount||"",
-        rawManagementNo:br.rawManagementNo||""
+        rawManagementNo:br.rawManagementNo||"",
+        floorMainUse:br.floorMainUse||"",
+        floorUses:Array.isArray(br.floorUses)?br.floorUses:[]
       };
-      if(!data.mainUse&&br.mainUse)data.mainUse=br.mainUse;
+      if(!data.mainUse&&(br.floorMainUse||br.mainUse))data.mainUse=br.floorMainUse||br.mainUse;
       if(!data.totalParking&&br.parkingCount)data.totalParking=br.parkingCount;
       if(!data.approvalDate&&br.approvalDate)data.approvalDate=br.approvalDate;
     }
@@ -6348,6 +6354,11 @@ window.addEventListener("popstate",function(){
   line-height:1.5;
   color:#8a8f9d;
 }
+
+.building-floor-box{margin-top:10px;padding:10px;background:#fff;border:1px solid #dfe3ff;border-radius:10px}
+.building-floor-title{font-size:12px;font-weight:900;color:#2b337b;margin-bottom:6px}
+.building-floor-select{width:100%;border:1px solid #d8dced;border-radius:9px;padding:10px;background:#fff;font-size:13px}
+.building-floor-help{margin-top:6px;font-size:10px;line-height:1.45;color:#7b8090}
 @media(max-width:900px){
   .building-register-box{padding:12px}
   .building-register-grid{grid-template-columns:1fr}
@@ -6368,6 +6379,10 @@ window.addEventListener("popstate",function(){
   const KEY_STORAGE="hyeonji_buildinghub_service_key";
   let buildingRegisterItems=[];
   let selectedBuildingRegister=null;
+  let buildingFloorItems=[];
+  let selectedBuildingFloor=null;
+  let lastBuildingLookupParams=null;
+  let lastBuildingApiKey="";
   let buildingRegisterLookupState="미조회";
 
   function el(id){return document.getElementById(id)}
@@ -6420,7 +6435,12 @@ window.addEventListener("popstate",function(){
           <div class="building-register-item"><div class="building-register-label">주차대수</div><div class="building-register-value" id="brParking">-</div></div>
           <div class="building-register-item"><div class="building-register-label">승강기</div><div class="building-register-value" id="brElevator">-</div></div>
         </div>
-        <div class="building-register-note">※ 건축물대장 조회값은 참고정보로 별도 저장됩니다. 매물의 실제 전용면적·해당층은 기존 입력칸에 직접 입력하세요.</div>
+        <div class="building-floor-box" id="buildingFloorBox" style="display:none">
+          <div class="building-floor-title">🏬 해당층 주용도</div>
+          <select id="buildingFloorUseSelect" class="building-floor-select" onchange="selectBuildingFloorUse(this.value)"></select>
+          <div class="building-floor-help" id="buildingFloorHelp">매물의 해당층과 건축물대장의 층별개요를 맞춰 표시합니다.</div>
+        </div>
+        <div class="building-register-note">※ 건물 전체 주용도와 해당층 주용도는 다를 수 있습니다. 해당층이 입력되어 있으면 층별개요의 용도를 우선 적용합니다.</div>
       </div>`;
     anchor.insertAdjacentElement("afterend",box);
   }
@@ -6633,6 +6653,110 @@ window.addEventListener("popstate",function(){
     };
   }
 
+  function parseRequestedFloors(value){
+    const raw=text(value).replace(/총\s*\d+\s*층/gi,"").split("/")[0].trim();
+    if(!raw)return [];
+    const out=[];
+    const range=raw.match(/(지하\s*)?(\d+)\s*층?\s*[~\-]\s*(지하\s*)?(\d+)\s*층?/);
+    if(range){
+      const a=Number(range[2]), b=Number(range[4]);
+      const underground=!!range[1]||!!range[3];
+      for(let n=Math.min(a,b);n<=Math.max(a,b);n++)out.push({underground,no:n});
+      return out;
+    }
+    const re=/(지하\s*|B\s*)?(\d+)\s*층?/gi;
+    let m;
+    while((m=re.exec(raw))){out.push({underground:!!m[1],no:Number(m[2])});}
+    return out;
+  }
+
+  function normalizeFloorItem(item){
+    return {
+      managementNo:text(item.mgmBldrgstPk),
+      floorGroup:text(item.flrGbCdNm),
+      floorNo:num(item.flrNo),
+      floorName:text(item.flrNoNm)||((text(item.flrGbCdNm).includes("지하")?"지하 ":"")+text(item.flrNo)+"층"),
+      mainUse:text(item.mainPurpsCdNm)||text(item.etcPurps),
+      etcUse:text(item.etcPurps),
+      area:text(item.area),
+      raw:item
+    };
+  }
+
+  function floorMatchesRequested(it,requested){
+    if(!requested.length)return false;
+    const underground=text(it.floorGroup).includes("지하")||/^B/i.test(text(it.floorName))||text(it.floorName).includes("지하");
+    return requested.some(r=>r.no===Number(it.floorNo)&&r.underground===underground);
+  }
+
+  function applyFloorItems(rows){
+    const requested=parseRequestedFloors(el("fFloor")?.value||"");
+    const mgm=text(selectedBuildingRegister?.rawManagementNo);
+    let items=(rows||[]).map(normalizeFloorItem);
+    if(mgm){
+      const same=items.filter(x=>x.managementNo===mgm);
+      if(same.length)items=same;
+    }
+    buildingFloorItems=items.filter(x=>floorMatchesRequested(x,requested));
+    const box=el("buildingFloorBox"), select=el("buildingFloorUseSelect"), help=el("buildingFloorHelp");
+    if(!box||!select)return;
+    if(!requested.length){
+      box.style.display="none";
+      if(help)help.textContent="해당층을 먼저 입력하면 층별 주용도를 자동으로 찾습니다.";
+      return;
+    }
+    if(!buildingFloorItems.length){
+      box.style.display="block";
+      select.innerHTML='<option value="">해당층의 층별개요를 찾지 못함</option>';
+      if(help)help.textContent="입력한 해당층과 일치하는 층별개요가 없습니다. 층 표기를 확인해주세요.";
+      return;
+    }
+    const unique=[];
+    buildingFloorItems.forEach(x=>{
+      const key=x.floorName+"|"+x.mainUse+"|"+x.etcUse;
+      if(!unique.some(y=>y._key===key))unique.push({...x,_key:key});
+    });
+    buildingFloorItems=unique;
+    box.style.display="block";
+    if(requested.length>1){
+      const combined=[...new Set(unique.map(x=>[x.floorName,x.mainUse].filter(Boolean).join(" ")).filter(Boolean))].join(" / ");
+      selectedBuildingFloor={mainUse:combined};
+      select.innerHTML='<option value="0">'+escapeHtml(combined||"층별 용도 확인")+'</option>';
+      if(help)help.textContent="여러 층을 사용하는 매물이라 각 층의 주용도를 함께 표시합니다.";
+    }else{
+      select.innerHTML=unique.map((x,i)=>'<option value="'+i+'">'+escapeHtml([x.floorName,x.mainUse,x.etcUse&&x.etcUse!==x.mainUse?x.etcUse:""].filter(Boolean).join(" · "))+'</option>').join("");
+      selectedBuildingFloor=unique[0]||null;
+      if(help)help.textContent=unique.length>1?"같은 층에 용도가 여러 개 있습니다. 실제 임대 부분에 해당하는 용도를 선택하세요.":"해당층의 층별개요 용도를 찾았습니다.";
+    }
+    if(selectedBuildingFloor?.mainUse){
+      const input=el("fMainUse");
+      if(input)input.value=selectedBuildingFloor.mainUse;
+    }
+  }
+
+  window.selectBuildingFloorUse=function(value){
+    const index=Number(value)||0;
+    selectedBuildingFloor=buildingFloorItems[index]||null;
+    if(selectedBuildingFloor?.mainUse){
+      const input=el("fMainUse");
+      if(input)input.value=selectedBuildingFloor.mainUse;
+    }
+  };
+
+  async function loadFloorUses(params,key){
+    if(!params||!key)return;
+    try{
+      const rows=await apiGet("getBrFlrOulnInfo",params,key);
+      applyFloorItems(rows);
+    }catch(error){
+      console.warn("층별개요 조회 실패:",error);
+      buildingFloorItems=[]; selectedBuildingFloor=null;
+      const box=el("buildingFloorBox"), help=el("buildingFloorHelp");
+      if(box)box.style.display="block";
+      if(help)help.textContent="층별개요 조회에 실패했습니다. 건물 전체 주용도는 정상 저장됩니다.";
+    }
+  }
+
   function displayName(it,index){
     const name=[it.buildingName,it.dongName].filter(Boolean).join(" / ");
     const desc=[it.mainUse, it.groundFloors?"지상 "+it.groundFloors+"층":""].filter(Boolean).join(" · ");
@@ -6643,6 +6767,7 @@ window.addEventListener("popstate",function(){
     const index=Number(value)||0;
     selectedBuildingRegister=buildingRegisterItems[index]||null;
     renderSelected();
+    if(lastBuildingLookupParams&&lastBuildingApiKey)loadFloorUses(lastBuildingLookupParams,lastBuildingApiKey);
   };
 
   function renderSelected(){
@@ -6663,7 +6788,8 @@ window.addEventListener("popstate",function(){
     el("brElevator").textContent=(it.elevatorCount||"0")+"대";
 
     const mainUseInput=el("fMainUse");
-    if(mainUseInput&&!mainUseInput.value&&it.mainUse){
+    const hasRequestedFloor=parseRequestedFloors(el("fFloor")?.value||"").length>0;
+    if(mainUseInput&&!mainUseInput.value&&it.mainUse&&!hasRequestedFloor){
       mainUseInput.value=it.mainUse;
     }
 
@@ -6688,6 +6814,10 @@ window.addEventListener("popstate",function(){
 
     buildingRegisterItems=[];
     selectedBuildingRegister=null;
+    buildingFloorItems=[];
+    selectedBuildingFloor=null;
+    lastBuildingLookupParams=null;
+    lastBuildingApiKey="";
     buildingRegisterLookupState="미조회";
     el("buildingRegisterResult")?.classList.remove("show");
     el("buildingRegisterSelectWrap")?.classList.remove("show");
@@ -6696,6 +6826,8 @@ window.addEventListener("popstate",function(){
 
     try{
       const params=await resolveLotAddress(address);
+      lastBuildingLookupParams=params;
+      lastBuildingApiKey=key;
       setStatus("건축HUB에서 건축물대장을 불러오고 있습니다.",false);
 
       let rows=await apiGet("getBrTitleInfo",params,key);
@@ -6723,6 +6855,7 @@ window.addEventListener("popstate",function(){
         setStatus("건축물대장 조회가 완료되었습니다.",false);
       }
       renderSelected();
+      await loadFloorUses(params,key);
     }catch(error){
       buildingRegisterLookupState="조회실패";
       console.error("건축물대장 조회 오류:",error);
@@ -6748,7 +6881,7 @@ window.addEventListener("popstate",function(){
     return getKey();
   };
 
-  window.lookupBuildingRegisterData=async function(address,providedKey){
+  window.lookupBuildingRegisterData=async function(address,providedKey,floorValue){
     const addr=text(address);
     if(!addr)throw new Error("주소가 없습니다.");
     const key=safeKey(providedKey)||getKey();
@@ -6765,15 +6898,39 @@ window.addEventListener("popstate",function(){
       kind="총괄표제부";
     }
     if(!rows.length)throw new Error("이 주소에서 조회되는 건축물대장이 없습니다.");
-    return normalizeItem(rows[0],kind);
+    const br=normalizeItem(rows[0],kind);
+    const requested=parseRequestedFloors(floorValue||"");
+    if(requested.length){
+      try{
+        let floorRows=await apiGet("getBrFlrOulnInfo",params,key);
+        let floorItems=floorRows.map(normalizeFloorItem);
+        if(br.rawManagementNo){
+          const same=floorItems.filter(x=>x.managementNo===br.rawManagementNo);
+          if(same.length)floorItems=same;
+        }
+        floorItems=floorItems.filter(x=>floorMatchesRequested(x,requested));
+        const uses=[...new Set(floorItems.map(x=>x.mainUse).filter(Boolean))];
+        br.floorMainUse=uses.join(" / ");
+        br.floorUses=floorItems.map(x=>({floorName:x.floorName,mainUse:x.mainUse,etcUse:x.etcUse,area:x.area}));
+      }catch(e){
+        console.warn("일괄등록 층별개요 조회 실패:",e);
+      }
+    }
+    return br;
   };
 
   function clearPanel(){
     buildingRegisterItems=[];
     selectedBuildingRegister=null;
+    buildingFloorItems=[];
+    selectedBuildingFloor=null;
+    lastBuildingLookupParams=null;
+    lastBuildingApiKey="";
     buildingRegisterLookupState="미조회";
     el("buildingRegisterResult")?.classList.remove("show");
     el("buildingRegisterSelectWrap")?.classList.remove("show");
+    const floorBox=el("buildingFloorBox");
+    if(floorBox)floorBox.style.display="none";
     setStatus("주소를 입력하고 조회 버튼을 누르세요.",false);
   }
 
@@ -6800,8 +6957,19 @@ window.addEventListener("popstate",function(){
       rawManagementNo:text(saved.rawManagementNo)
     };
     buildingRegisterItems=[selectedBuildingRegister];
+    buildingFloorItems=Array.isArray(saved.floorUses)?saved.floorUses.map(x=>({
+      managementNo:"",floorGroup:"",floorNo:0,floorName:text(x.floorName),mainUse:text(x.mainUse),etcUse:text(x.etcUse),area:text(x.area)
+    })):[];
+    selectedBuildingFloor=text(saved.floorMainUse)?{mainUse:text(saved.floorMainUse)}:(buildingFloorItems[0]||null);
     setStatus("저장된 건축물대장 정보를 표시하고 있습니다. 주소가 바뀌었다면 다시 조회하세요.",false);
     renderSelected();
+    if(selectedBuildingFloor?.mainUse){
+      const input=el("fMainUse"); if(input)input.value=selectedBuildingFloor.mainUse;
+      const floorBox=el("buildingFloorBox"), select=el("buildingFloorUseSelect"), help=el("buildingFloorHelp");
+      if(floorBox)floorBox.style.display="block";
+      if(select)select.innerHTML='<option value="0">'+escapeHtml(selectedBuildingFloor.mainUse)+'</option>';
+      if(help)help.textContent="저장된 해당층 주용도입니다. 주소나 층이 바뀌면 다시 조회하세요.";
+    }
   }
 
   window.getBuildingRegisterForSave=function(){
@@ -6823,7 +6991,9 @@ window.addEventListener("popstate",function(){
       approvalDate:text(it.approvalDate),
       parkingCount:text(it.parkingCount),
       elevatorCount:text(it.elevatorCount),
-      rawManagementNo:text(it.rawManagementNo)
+      rawManagementNo:text(it.rawManagementNo),
+      floorMainUse:text(selectedBuildingFloor?.mainUse)||text(el("fMainUse")?.value),
+      floorUses:buildingFloorItems.map(x=>({floorName:text(x.floorName),mainUse:text(x.mainUse),etcUse:text(x.etcUse),area:text(x.area)}))
     };
   };
 
