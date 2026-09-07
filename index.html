@@ -579,6 +579,18 @@ placeholder="없음 / 3000">
 <div class="form-group">
 
 <label>
+대지면적
+</label>
+
+<input
+id="fLandArea"
+placeholder="예: 1200㎡">
+
+</div>
+
+<div class="form-group">
+
+<label>
 면적
 </label>
 
@@ -1036,7 +1048,7 @@ id="adminPropertyList">
             <tr>
               <th>매물번호</th><th>제목</th><th>주소</th><th>종류</th>
               <th>보증금</th><th>월세</th><th>전세가</th><th>매매가</th><th>권리금</th>
-              <th>면적</th><th>층</th><th>주용도</th><th>관리비</th>
+              <th>대지면적</th><th>면적</th><th>층</th><th>주용도</th><th>관리비</th>
               <th>총주차대수</th><th>욕실</th><th>사용승인일</th><th>방향</th><th>건축물대장</th><th>관리</th>
             </tr>
           </thead>
@@ -1734,6 +1746,9 @@ document
 document
 .getElementById("fArea")
 .value="";
+
+const landAreaInput=document.getElementById("fLandArea");
+if(landAreaInput) landAreaInput.value="";
 
 
 document
@@ -4470,6 +4485,7 @@ window.saveProperty=async function(){
   }
 
   const area=document.getElementById("fArea").value.trim();
+  const landArea=(document.getElementById("fLandArea")?.value||"").trim();
 
   const data={
     title:title,
@@ -4484,6 +4500,7 @@ window.saveProperty=async function(){
     jeonsePrice:document.getElementById("fJeonsePrice").value.trim(),
     premium:
       document.getElementById("fPremium").value.trim()||"없음",
+    landArea:landArea,
     area:area,
     floor:document.getElementById("fFloor").value.trim(),
     mainUse:
@@ -4732,6 +4749,7 @@ window.renderRegisteredProperties=function(){
       '<td>'+escapeHtml(p.jeonsePrice?numberFormat(p.jeonsePrice)+"만원":"-")+'</td>'+ 
       '<td>'+escapeHtml(p.salePrice?numberFormat(p.salePrice)+"만원":"-")+'</td>'+ 
       '<td>'+escapeHtml(p.premium&&p.premium!=="없음"?numberFormat(p.premium)+"만원":(p.premium||"-"))+'</td>'+ 
+      '<td>'+escapeHtml(areaWithPyeong(p.landArea || p.buildingRegister?.platArea)||"-")+'</td>'+
       '<td>'+escapeHtml(areaWithPyeong(p.area)||"-")+'</td>'+ 
       '<td>'+escapeHtml(p.floor||"-")+'</td>'+ 
       '<td>'+escapeHtml(mainUse)+'</td>'+ 
@@ -4789,6 +4807,7 @@ window.downloadRegisteredPropertiesExcel=function(){
       "전세가":p.jeonsePrice?numberFormat(p.jeonsePrice)+"만원":"",
       "매매가":p.salePrice?numberFormat(p.salePrice)+"만원":"",
       "권리금":p.premium&&p.premium!=="없음"?numberFormat(p.premium)+"만원":(p.premium||""),
+      "대지면적":areaWithPyeong(p.landArea || p.buildingRegister?.platArea)||"",
       "면적":areaWithPyeong(p.area)||"",
       "층":p.floor||"",
       "주용도":mainUse,
@@ -5906,6 +5925,7 @@ document.addEventListener("click",function(e){
         ""
       );
       setValue("fPremium", target.premium || "");
+      setValue("fLandArea", target.landArea || target.buildingRegister?.platArea || "");
       setValue("fArea", target.area || "");
       setValue("fFloor", target.floor || "");
       setValue("fMainUse", target.mainUse || target.buildingRegister?.mainUse || "");
@@ -6787,6 +6807,8 @@ window.addEventListener("popstate",function(){
     el("brUse").textContent=it.mainUse||"-";
     el("brStructure").textContent=it.structure||"-";
     el("brPlatArea").textContent=it.platArea?(it.platArea+"㎡"):"-";
+    const landAreaField=el("fLandArea");
+    if(landAreaField && it.platArea) landAreaField.value=it.platArea;
     el("brTotalArea").textContent=it.totalArea?(it.totalArea+"㎡"):"-";
     el("brArchArea").textContent=it.archArea?(it.archArea+"㎡"):"-";
     el("brFloors").textContent="지상 "+(it.groundFloors||"0")+"층 / 지하 "+(it.undergroundFloors||"0")+"층";
