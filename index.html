@@ -5154,7 +5154,7 @@ try{
       data.buildingRegister={
         kind:br.kind||"", buildingName:br.buildingName||"", dongName:br.dongName||"",
         registerAddress:br.registerAddress||"", lotAddress:br.lotAddress||"", roadAddress:br.roadAddress||"",
-        mainUse:br.mainUse||"", structure:br.structure||"", totalArea:br.totalArea||"", archArea:br.archArea||"",
+        mainUse:br.mainUse||"", structure:br.structure||"", platArea:br.platArea||"", totalArea:br.totalArea||"", archArea:br.archArea||"",
         groundFloors:br.groundFloors||"", undergroundFloors:br.undergroundFloors||"",
         approvalDate:br.approvalDate||"", parkingCount:br.parkingCount||"", elevatorCount:br.elevatorCount||"",
         rawManagementNo:br.rawManagementNo||"",
@@ -6432,6 +6432,7 @@ window.addEventListener("popstate",function(){
           <div class="building-register-item full"><div class="building-register-label">건축물대장 주소</div><div class="building-register-value" id="brAddress">-</div></div>
           <div class="building-register-item"><div class="building-register-label">주용도</div><div class="building-register-value" id="brUse">-</div></div>
           <div class="building-register-item"><div class="building-register-label">구조</div><div class="building-register-value" id="brStructure">-</div></div>
+          <div class="building-register-item"><div class="building-register-label">대지면적</div><div class="building-register-value" id="brPlatArea">-</div></div>
           <div class="building-register-item"><div class="building-register-label">연면적</div><div class="building-register-value" id="brTotalArea">-</div></div>
           <div class="building-register-item"><div class="building-register-label">건축면적</div><div class="building-register-value" id="brArchArea">-</div></div>
           <div class="building-register-item"><div class="building-register-label">층수</div><div class="building-register-value" id="brFloors">-</div></div>
@@ -6645,6 +6646,7 @@ window.addEventListener("popstate",function(){
       roadAddress:text(item.newPlatPlc),
       mainUse:text(item.mainPurpsCdNm)||text(item.etcPurps),
       structure:text(item.strctCdNm)||text(item.etcStrct),
+      platArea:text(item.platArea),
       totalArea:text(item.totArea),
       archArea:text(item.archArea),
       groundFloors:ground,
@@ -6784,6 +6786,7 @@ window.addEventListener("popstate",function(){
     el("brAddress").textContent=it.registerAddress||it.lotAddress||"-";
     el("brUse").textContent=it.mainUse||"-";
     el("brStructure").textContent=it.structure||"-";
+    el("brPlatArea").textContent=it.platArea?(it.platArea+"㎡"):"-";
     el("brTotalArea").textContent=it.totalArea?(it.totalArea+"㎡"):"-";
     el("brArchArea").textContent=it.archArea?(it.archArea+"㎡"):"-";
     el("brFloors").textContent="지상 "+(it.groundFloors||"0")+"층 / 지하 "+(it.undergroundFloors||"0")+"층";
@@ -6951,6 +6954,7 @@ window.addEventListener("popstate",function(){
       roadAddress:text(saved.roadAddress),
       mainUse:text(saved.mainUse),
       structure:text(saved.structure),
+      platArea:text(saved.platArea),
       totalArea:text(saved.totalArea),
       archArea:text(saved.archArea),
       groundFloors:text(saved.groundFloors),
@@ -6988,6 +6992,7 @@ window.addEventListener("popstate",function(){
       roadAddress:text(it.roadAddress),
       mainUse:text(it.mainUse),
       structure:text(it.structure),
+      platArea:text(it.platArea),
       totalArea:text(it.totalArea),
       archArea:text(it.archArea),
       groundFloors:text(it.groundFloors),
