@@ -49,6 +49,8 @@ button{cursor:pointer}
 .card-photo img{width:100%;height:100%;object-fit:cover}
 .card-body{padding:8px 11px 9px}
 .type-badge{display:inline-block;background:#eef0ff;color:#5968dd;border-radius:7px;padding:4px 7px;font-size:11px;font-weight:900;margin-bottom:4px}
+.trade-badge{display:inline-block;background:#eaf8f0;color:#087a4b;border-radius:7px;padding:4px 7px;font-size:11px;font-weight:900;margin:0 4px 4px 0}
+
 .card-title{font-size:15px;font-weight:900;margin-bottom:3px}
 .card-address{color:#6f7480;font-size:12px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-price{font-size:14px;font-weight:900}
@@ -528,6 +530,23 @@ placeholder="주소를 입력하세요">
 <div class="form-group">
 
 <label>
+거래유형
+</label>
+
+<select id="fTradeType" onchange="updateTradeTypeFields()">
+<option value="월세">월세</option>
+<option value="전세">전세</option>
+<option value="매매">매매</option>
+<option value="단기">단기</option>
+<option value="기타">기타</option>
+</select>
+
+</div>
+
+
+<div class="form-group" id="depositGroup">
+
+<label>
 보증금 (만원)
 </label>
 
@@ -539,7 +558,7 @@ placeholder="5000">
 </div>
 
 
-<div class="form-group">
+<div class="form-group" id="rentGroup">
 
 <label>
 월세 (만원)
@@ -552,12 +571,12 @@ placeholder="250">
 
 </div>
 
-<div class="form-group">
+<div class="form-group" id="saleGroup">
 <label>매매가 (만원)</label>
 <input id="fSalePrice" type="number" placeholder="아파트 매매가">
 </div>
 
-<div class="form-group">
+<div class="form-group" id="jeonseGroup">
 <label>전세가 (만원)</label>
 <input id="fJeonsePrice" type="number" placeholder="전세 가격">
 </div>
@@ -1046,7 +1065,7 @@ id="adminPropertyList">
         <table class="registered-list-table">
           <thead>
             <tr>
-              <th>매물번호</th><th>제목</th><th>주소</th><th>종류</th>
+              <th>매물번호</th><th>제목</th><th>주소</th><th>종류</th><th>거래유형</th>
               <th>보증금</th><th>월세</th><th>전세가</th><th>매매가</th><th>권리금</th>
               <th>대지면적</th><th>면적</th><th>층</th><th>주용도</th><th>관리비</th>
               <th>총주차대수</th><th>욕실</th><th>사용승인일</th><th>방향</th><th>건축물대장</th><th>관리</th>
@@ -1427,137 +1446,128 @@ keyword
 
 
 
+
+function inferTradeType(p){
+  const explicit=String((p&&(
+    p.tradeType ||
+    p.transactionType ||
+    p["거래유형"] ||
+    p["거래형태"]
+  ))||"").trim();
+
+  if(explicit)return explicit;
+
+  if(p){
+    if(String(p.salePrice||p["매매가"]||p["매물가"]||"").trim())return "매매";
+    if(String(p.jeonsePrice||p["전세가"]||p["전세금"]||"").trim())return "전세";
+    if(String(p.rent||p["월세"]||"").trim())return "월세";
+    if(String(p.deposit||p["보증금"]||"").trim())return "월세";
+    if(normalizedType(p.type)==="단기")return "단기";
+  }
+  return "";
+}
+
+window.updateTradeTypeFields=function(){
+  const select=document.getElementById("fTradeType");
+  if(!select)return;
+
+  const type=select.value;
+  const groups={
+    deposit:document.getElementById("depositGroup"),
+    rent:document.getElementById("rentGroup"),
+    jeonse:document.getElementById("jeonseGroup"),
+    sale:document.getElementById("saleGroup")
+  };
+
+  Object.values(groups).forEach(function(g){
+    if(!g)return;
+    g.style.opacity="1";
+    g.style.background="";
+    g.style.borderRadius="";
+    g.style.padding="";
+  });
+
+  const active=[];
+  if(type==="월세" || type==="단기") active.push(groups.deposit,groups.rent);
+  if(type==="전세") active.push(groups.jeonse);
+  if(type==="매매") active.push(groups.sale);
+
+  active.forEach(function(g){
+    if(!g)return;
+    g.style.background="#f4f7ff";
+    g.style.borderRadius="10px";
+    g.style.padding="7px";
+  });
+};
+
 function formatPrice(p){
 
-let text="";
+  let text="";
+  const tradeType=inferTradeType(p);
 
-function firstValue(keys){
+  function firstValue(keys){
+    for(const key of keys){
+      const value=p[key];
+      if(value!==undefined && value!==null && String(value).trim()!==""){
+        return value;
+      }
+    }
+    return "";
+  }
 
-for(const key of keys){
+  const salePrice=firstValue([
+    "매물가(만원)","매물가","매매가(만원)","매매가격(만원)","매매금액(만원)",
+    "매매가","매매가격","매매금액","거래가","거래가격","가격","price","salePrice"
+  ]);
 
-const value=p[key];
+  const jeonsePrice=firstValue([
+    "전세가(만원)","전세금(만원)","전세가","전세금","jeonsePrice"
+  ]);
 
-if(
-value!==undefined &&
-value!==null &&
-String(value).trim()!==""
-){
+  const deposit=firstValue([
+    "보증금(만원)","보증금","deposit"
+  ]);
 
-return value;
+  const rent=firstValue([
+    "월세(만원)","월세","rent"
+  ]);
 
+  if(tradeType==="매매"){
+    text = String(salePrice).trim()!=="" ?
+      "매매 "+numberFormat(salePrice)+"만원" : "매매 가격 문의";
+  }
+  else if(tradeType==="전세"){
+    text = String(jeonsePrice).trim()!=="" ?
+      "전세 "+numberFormat(jeonsePrice)+"만원" : "전세 가격 문의";
+  }
+  else if(tradeType==="월세" || tradeType==="단기"){
+    text = tradeType==="단기" ? "단기 " : "월세 ";
+
+    const parts=[];
+    if(String(deposit).trim()!==""){
+      parts.push("보증금 "+numberFormat(deposit)+"만원");
+    }
+    if(String(rent).trim()!==""){
+      parts.push("월 "+numberFormat(rent)+"만원");
+    }
+
+    text += parts.length ? parts.join(" / ") : "가격 문의";
+  }
+  else{
+    if(String(salePrice).trim()!==""){
+      text="매매 "+numberFormat(salePrice)+"만원";
+    }else if(String(jeonsePrice).trim()!==""){
+      text="전세 "+numberFormat(jeonsePrice)+"만원";
+    }else{
+      const parts=[];
+      if(String(deposit).trim()!=="")parts.push("보증금 "+numberFormat(deposit)+"만원");
+      if(String(rent).trim()!=="")parts.push("월 "+numberFormat(rent)+"만원");
+      text=parts.length ? "월세 "+parts.join(" / ") : "가격 문의";
+    }
+  }
+
+  return text;
 }
-
-}
-
-return "";
-
-}
-
-/*
-  아파트/매매 매물:
-  실제 엑셀 원본에서 사용하는 "매물가(만원)"을
-  최우선으로 인식합니다.
-*/
-const salePrice=
-firstValue([
-  "매물가(만원)",
-  "매물가",
-  "매매가(만원)",
-  "매매가격(만원)",
-  "매매금액(만원)",
-  "매매가",
-  "매매가격",
-  "매매금액",
-  "거래가",
-  "거래가격",
-  "가격",
-  "price",
-  "salePrice"
-]);
-
-if(
-String(salePrice).trim()!==""
-){
-
-text=
-"매매가 "+
-numberFormat(salePrice)+
-"만원";
-
-}
-
-/* 전세 */
-const jeonsePrice=
-firstValue([
-  "전세가(만원)",
-  "전세금(만원)",
-  "전세가",
-  "전세금",
-  "jeonsePrice"
-]);
-
-if(
-!text &&
-String(jeonsePrice).trim()!==""
-){
-
-text=
-"전세 "+
-numberFormat(jeonsePrice)+
-"만원";
-
-}
-
-/* 임대 */
-const deposit=
-firstValue([
-  "보증금(만원)",
-  "보증금",
-  "deposit"
-]);
-
-const rent=
-firstValue([
-  "월세(만원)",
-  "월세",
-  "rent"
-]);
-
-if(
-!text &&
-String(deposit).trim()!==""
-){
-
-text=
-"보증금 "+
-numberFormat(deposit)+
-"만원";
-
-}
-
-if(
-String(rent).trim()!==""
-){
-
-if(text)text+=" / ";
-
-text+=
-"월세 "+
-numberFormat(rent)+
-"만원";
-
-}
-
-if(!text){
-
-text="가격 문의";
-
-}
-
-return text;
-
-}
-
 
 
 function getNextPropertyNumber(){
@@ -1716,6 +1726,12 @@ document
 .value=
 currentCategory||
 "상가";
+
+const tradeTypeInput=document.getElementById("fTradeType");
+if(tradeTypeInput){
+  tradeTypeInput.value=(currentCategory==="단기" ? "단기" : "월세");
+  if(typeof window.updateTradeTypeFields==="function")window.updateTradeTypeFields();
+}
 
 
 document
@@ -4323,6 +4339,9 @@ window.renderProperties=function(){
     card.innerHTML=
       '<div class="card-photo">'+photo+'</div>'+
       '<div class="card-body">'+
+      '<span class="trade-badge">'+
+      escapeHtml(inferTradeType(p)||"")+
+      '</span>'+
       '<span class="type-badge">'+
       escapeHtml(normalizedType(p.type)||"")+
       '</span>'+
@@ -4494,6 +4513,7 @@ window.saveProperty=async function(){
       document.getElementById("fMapAddress")?.value.trim()||
       address,
     type:normalizedType(document.getElementById("fType").value),
+    tradeType:(document.getElementById("fTradeType")?.value||"월세").trim(),
     deposit:document.getElementById("fDeposit").value.trim(),
     rent:document.getElementById("fRent").value.trim(),
     salePrice:document.getElementById("fSalePrice").value.trim(),
@@ -4730,7 +4750,7 @@ window.renderRegisteredProperties=function(){
   if(!list.length){
     const input=document.getElementById("registeredPropertySearch");
     const hasKeyword=!!(input&&input.value.trim());
-    body.innerHTML='<tr><td colspan="19" style="text-align:center;padding:35px;color:#888">'+
+    body.innerHTML='<tr><td colspan="21" style="text-align:center;padding:35px;color:#888">'+
       (hasKeyword?'검색 결과가 없습니다.':'등록된 매물이 없습니다.')+
       '</td></tr>';
     return;
@@ -4744,6 +4764,7 @@ window.renderRegisteredProperties=function(){
       '<td>'+escapeHtml(p.title||"-")+'</td>'+ 
       '<td>'+escapeHtml(p.address||"-")+'</td>'+ 
       '<td>'+escapeHtml(normalizedType(p.type)||"-")+'</td>'+ 
+      '<td>'+escapeHtml(inferTradeType(p)||"-")+'</td>'+
       '<td>'+escapeHtml(p.deposit?numberFormat(p.deposit)+"만원":"-")+'</td>'+ 
       '<td>'+escapeHtml(p.rent?numberFormat(p.rent)+"만원":"-")+'</td>'+ 
       '<td>'+escapeHtml(p.jeonsePrice?numberFormat(p.jeonsePrice)+"만원":"-")+'</td>'+ 
@@ -4802,6 +4823,7 @@ window.downloadRegisteredPropertiesExcel=function(){
       "제목":p.title||"",
       "주소":p.address||"",
       "종류":normalizedType(p.type)||"",
+      "거래유형":inferTradeType(p)||"",
       "보증금":p.deposit?numberFormat(p.deposit)+"만원":"",
       "월세":p.rent?numberFormat(p.rent)+"만원":"",
       "전세가":p.jeonsePrice?numberFormat(p.jeonsePrice)+"만원":"",
@@ -5302,8 +5324,8 @@ function upgradeExcelGuide(){
 
     p.innerHTML=
       '엑셀 첫 행의 열 이름을 아래 순서대로 사용하면 가장 정확합니다.<br>'+
-      '<b>제목 / 주소(소재지) / 지도주소 / 종류(매물종류) / '+
-      '보증금(만원) / 월세(만원) / 권리금(만원) / 면적(m²) / '+
+      '<b>제목 / 주소(소재지) / 지도주소 / 종류(매물종류) / 거래유형 / '+
+      '보증금(만원) / 월세(만원) / 전세가(만원) / 매매가(만원) / 권리금(만원) / 면적(m²) / '+
       '해당층/총층 / 주용도 / 관리비(만원) / 총주차대수 / 욕실 / 사용승인일 / 방향 / 상세주소 / 설명 / 사진URL</b>';
 
   }
@@ -5913,6 +5935,8 @@ document.addEventListener("click",function(e){
       setValue("fAddress", target.address || "");
       setValue("fMapAddress", target.mapAddress || target.address || "");
       setValue("fType", target.type || "상가");
+      setValue("fTradeType", inferTradeType(target) || (normalizedType(target.type)==="단기" ? "단기" : "월세"));
+      if(typeof window.updateTradeTypeFields==="function")window.updateTradeTypeFields();
       setValue("fDeposit", target.deposit || "");
       setValue("fRent", target.rent || "");
       setValue("fJeonsePrice", target.jeonsePrice || target["전세가"] || target["전세금"] || "");
@@ -6118,19 +6142,7 @@ document.addEventListener("click",function(e){
       const area = p.area || "";
       const floor = p.floor || "";
 
-      let priceText = "";
-
-      if(p.deposit || p.rent){
-        if(p.deposit){
-          priceText += "보증금 " + escapeHtml(String(p.deposit));
-        }
-        if(p.rent){
-          if(priceText) priceText += " / ";
-          priceText += "월세 " + escapeHtml(String(p.rent));
-        }
-      }else if(p.salePrice){
-        priceText = "매매 " + escapeHtml(String(p.salePrice));
-      }
+      const priceText = formatPrice(p);
 
       let infoText = "";
       if(area){
@@ -6148,6 +6160,8 @@ document.addEventListener("click",function(e){
             : '<div class="no-photo">사진 없음</div>') +
         '</div>' +
         '<div class="card-body">' +
+          '<span class="trade-badge">' + escapeHtml(inferTradeType(p)||"") + '</span>' +
+          '<span class="type-badge">' + escapeHtml(normalizedType(p.type)||"") + '</span>' +
           '<div class="card-title">' + escapeHtml(String(title)) + '</div>' +
           (priceText
             ? '<div class="card-price">' + priceText + '</div>'
