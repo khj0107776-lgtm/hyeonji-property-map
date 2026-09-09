@@ -1503,7 +1503,8 @@ function inferTradeType(p){
     if(String(p.jeonsePrice||p["전세가"]||p["전세금"]||"").trim())return "전세";
     if(String(p.rent||p["월세"]||"").trim())return "월세";
     if(String(p.deposit||p["보증금"]||"").trim())return "월세";
-    if(normalizedType(p.type)==="단기")return "단기";
+    const simpleType=String(p.type||"").trim()==="상가점포" ? "상가" : String(p.type||"").trim();
+    if(simpleType==="단기")return "단기";
   }
   return "";
 }
