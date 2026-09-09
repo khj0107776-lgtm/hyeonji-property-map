@@ -1447,6 +1447,47 @@ keyword
 
 
 
+
+function firstExistingValue(obj, keys, fallback=""){
+  if(!obj)return fallback;
+  for(const key of keys){
+    const v=obj[key];
+    if(v!==undefined && v!==null && String(v).trim()!==""){
+      return v;
+    }
+  }
+  return fallback;
+}
+
+function normalizeEditPropertyData(target){
+  const br=target?.buildingRegister||{};
+  return {
+    title:firstExistingValue(target,["title","제목","매물명"],""),
+    address:firstExistingValue(target,["address","주소","주소(소재지)","소재지"],""),
+    mapAddress:firstExistingValue(target,["mapAddress","지도주소","지도 주소"],""),
+    type:firstExistingValue(target,["type","종류","매물종류"],"상가"),
+    tradeType:inferTradeType(target)||(firstExistingValue(target,["거래유형","거래형태"],"월세")),
+    deposit:firstExistingValue(target,["deposit","보증금","보증금(만원)"],""),
+    rent:firstExistingValue(target,["rent","월세","월세(만원)"],""),
+    salePrice:firstExistingValue(target,["salePrice","매매가","매매가(만원)","매물가","매물가(만원)"],""),
+    jeonsePrice:firstExistingValue(target,["jeonsePrice","전세가","전세가(만원)","전세금"],""),
+    premium:firstExistingValue(target,["premium","권리금","권리금(만원)"],""),
+    landArea:firstExistingValue(target,["landArea","대지면적","대지면적(㎡)"],br.platArea||""),
+    area:firstExistingValue(target,["area","면적","면적(m²)","면적(m2)"],""),
+    floor:firstExistingValue(target,["floor","층","해당층","해당층/총층"],""),
+    mainUse:firstExistingValue(target,["mainUse","주용도"],br.floorMainUse||br.mainUse||""),
+    managementFee:firstExistingValue(target,["managementFee","관리비","관리비(만원)"],""),
+    totalParking:firstExistingValue(target,["totalParking","총주차대수","주차"],br.parkingCount||""),
+    bathroom:firstExistingValue(target,["bathroom","욕실","욕실수"],"1개"),
+    approvalDate:firstExistingValue(target,["approvalDate","사용승인일"],br.approvalDate||""),
+    moveInDate:firstExistingValue(target,["moveInDate","입주가능일","입주일"],"즉시입주"),
+    direction:firstExistingValue(target,["direction","방향"],""),
+    detailUrl:firstExistingValue(target,["detailUrl","상세페이지URL","상세페이지 주소","상세URL"],""),
+    description:firstExistingValue(target,["description","설명","매물설명"],""),
+    adminMemo:firstExistingValue(target,["adminMemo","관리자메모","비밀메모"],"")
+  };
+}
+
 function inferTradeType(p){
   const explicit=String((p&&(
     p.tradeType ||
@@ -5931,37 +5972,32 @@ document.addEventListener("click",function(e){
       const formTitle = getEl("formTitle");
       if (formTitle) formTitle.textContent = "매물 수정";
 
-      setValue("fTitle", target.title || "");
-      setValue("fAddress", target.address || "");
-      setValue("fMapAddress", target.mapAddress || target.address || "");
-      setValue("fType", target.type || "상가");
-      setValue("fTradeType", inferTradeType(target) || (normalizedType(target.type)==="단기" ? "단기" : "월세"));
+      const editData=normalizeEditPropertyData(target);
+
+      setValue("fTitle", editData.title);
+      setValue("fAddress", editData.address);
+      setValue("fMapAddress", editData.mapAddress || editData.address);
+      setValue("fType", normalizedType(editData.type)||"상가");
+      setValue("fTradeType", editData.tradeType || "월세");
       if(typeof window.updateTradeTypeFields==="function")window.updateTradeTypeFields();
-      setValue("fDeposit", target.deposit || "");
-      setValue("fRent", target.rent || "");
-      setValue("fJeonsePrice", target.jeonsePrice || target["전세가"] || target["전세금"] || "");
-      setValue(
-        "fSalePrice",
-        target.salePrice ||
-        target.price ||
-        target["매매가"] ||
-        target["매매가격"] ||
-        ""
-      );
-      setValue("fPremium", target.premium || "");
-      setValue("fLandArea", target.landArea || target.buildingRegister?.platArea || "");
-      setValue("fArea", target.area || "");
-      setValue("fFloor", target.floor || "");
-      setValue("fMainUse", target.mainUse || target.buildingRegister?.mainUse || "");
-      setValue("fManagementFee", target.managementFee || "");
-      setValue("fTotalParking", target.totalParking || target.buildingRegister?.parkingCount || "");
-      setValue("fBathroom", target.bathroom || "");
-      setValue("fApprovalDate", target.approvalDate || "");
-      setValue("fMoveInDate", target.moveInDate || "");
-      setValue("fDirection", target.direction || "");
-      setValue("fDetailUrl", target.detailUrl || "");
-      setValue("fDescription", target.description || "");
-      setValue("fAdminMemo", target.adminMemo || "");
+      setValue("fDeposit", editData.deposit);
+      setValue("fRent", editData.rent);
+      setValue("fSalePrice", editData.salePrice);
+      setValue("fJeonsePrice", editData.jeonsePrice);
+      setValue("fPremium", editData.premium);
+      setValue("fLandArea", editData.landArea);
+      setValue("fArea", editData.area);
+      setValue("fFloor", editData.floor);
+      setValue("fMainUse", editData.mainUse);
+      setValue("fManagementFee", editData.managementFee);
+      setValue("fTotalParking", editData.totalParking);
+      setValue("fBathroom", editData.bathroom);
+      setValue("fApprovalDate", editData.approvalDate);
+      setValue("fMoveInDate", editData.moveInDate);
+      setValue("fDirection", editData.direction);
+      setValue("fDetailUrl", editData.detailUrl);
+      setValue("fDescription", editData.description);
+      setValue("fAdminMemo", editData.adminMemo || "");
 
       currentImageData = target.image || "";
 
