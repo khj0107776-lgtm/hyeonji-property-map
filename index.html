@@ -6198,7 +6198,7 @@ document.addEventListener("click",function(e){
         '</div>' +
         '<div class="card-body">' +
           '<span class="trade-badge">' + escapeHtml(inferTradeType(p)||"") + '</span>' +
-          '<span class="type-badge">' + escapeHtml(normalizedType(p.type)||"") + '</span>' +
+          '<span class="type-badge">' + escapeHtml((String(p.type||"").trim()==="상가점포" ? "상가" : String(p.type||"").trim())) + '</span>' +
           '<div class="card-title">' + escapeHtml(String(title)) + '</div>' +
           (priceText
             ? '<div class="card-price">' + priceText + '</div>'
@@ -7366,6 +7366,220 @@ window.addEventListener("popstate",function(){
 <style id="hyeonji-one-column-toggle-v2">
 @media(min-width:901px){body.one-column-list .property-list{grid-template-columns:1fr!important}body.one-column-list .property-card{height:145px!important}}
 </style>
+
+
+<script id="hyeonji-final-edit-fix">
+/* =========================================================
+   최종 수정창 안정화
+   - 기존/신규 필드명 모두 복원
+   - 외부 스코프 함수 의존 제거
+   - 한 필드 오류가 수정창 전체를 막지 않게 처리
+========================================================= */
+(function(){
+  "use strict";
+
+  function el(id){ return document.getElementById(id); }
+
+  function setVal(id, value){
+    var node=el(id);
+    if(!node)return;
+    var v=(value===undefined || value===null) ? "" : String(value);
+    try{
+      node.value=v;
+    }catch(e){
+      console.warn("필드 복원 실패:",id,e);
+    }
+  }
+
+  function first(obj, keys, fallback){
+    if(!obj)return fallback||"";
+    for(var i=0;i<keys.length;i++){
+      var v=obj[keys[i]];
+      if(v!==undefined && v!==null && String(v).trim()!=="")return v;
+    }
+    return fallback||"";
+  }
+
+  function safeType(v){
+    var x=String(v||"").trim();
+    return x==="상가점포" ? "상가" : (x||"상가");
+  }
+
+  function safeTradeType(p){
+    var explicit=first(p,["tradeType","transactionType","거래유형","거래형태"],"");
+    if(explicit)return String(explicit);
+
+    if(first(p,["salePrice","매매가","매매가(만원)","매물가","매물가(만원)"],""))return "매매";
+    if(first(p,["jeonsePrice","전세가","전세가(만원)","전세금"],""))return "전세";
+    if(first(p,["rent","월세","월세(만원)"],""))return "월세";
+    if(first(p,["deposit","보증금","보증금(만원)"],""))return "월세";
+    if(safeType(first(p,["type","종류","매물종류"],""))==="단기")return "단기";
+    return "월세";
+  }
+
+  function editData(p){
+    var br=(p && p.buildingRegister && typeof p.buildingRegister==="object") ? p.buildingRegister : {};
+    return {
+      title:first(p,["title","제목","매물명"],""),
+      address:first(p,["address","주소","주소(소재지)","소재지"],""),
+      mapAddress:first(p,["mapAddress","지도주소","지도 주소"],""),
+      type:safeType(first(p,["type","종류","매물종류"],"상가")),
+      tradeType:safeTradeType(p),
+      deposit:first(p,["deposit","보증금","보증금(만원)"],""),
+      rent:first(p,["rent","월세","월세(만원)"],""),
+      salePrice:first(p,["salePrice","매매가","매매가(만원)","매물가","매물가(만원)"],""),
+      jeonsePrice:first(p,["jeonsePrice","전세가","전세가(만원)","전세금","전세금(만원)"],""),
+      premium:first(p,["premium","권리금","권리금(만원)"],""),
+      landArea:first(p,["landArea","대지면적","대지면적(㎡)"],first(br,["platArea"],"")),
+      area:first(p,["area","면적","면적(m²)","면적(m2)"],""),
+      floor:first(p,["floor","층","해당층","해당층/총층"],""),
+      mainUse:first(p,["mainUse","주용도"],first(br,["floorMainUse","mainUse"],"")),
+      managementFee:first(p,["managementFee","관리비","관리비(만원)"],""),
+      totalParking:first(p,["totalParking","총주차대수","주차"],first(br,["parkingCount"],"")),
+      bathroom:first(p,["bathroom","욕실","욕실수"],"1개"),
+      approvalDate:first(p,["approvalDate","사용승인일"],first(br,["approvalDate"],"")),
+      moveInDate:first(p,["moveInDate","입주가능일","입주일"],"즉시입주"),
+      direction:first(p,["direction","방향"],""),
+      detailUrl:first(p,["detailUrl","상세페이지URL","상세페이지 주소","상세URL"],""),
+      description:first(p,["description","설명","매물설명"],""),
+      adminMemo:first(p,["adminMemo","관리자메모","비밀메모"],"")
+    };
+  }
+
+  function showModal(){
+    var modal=el("propertyFormModal");
+    if(!modal)throw new Error("매물 등록/수정 창을 찾을 수 없습니다.");
+    modal.classList.add("show");
+    modal.style.setProperty("display","flex","important");
+    modal.style.setProperty("visibility","visible","important");
+    modal.style.setProperty("opacity","1","important");
+    modal.style.setProperty("pointer-events","auto","important");
+    modal.style.setProperty("z-index","30000","important");
+    document.body.style.overflow="hidden";
+  }
+
+  window.editCurrentProperty=function(property){
+    try{
+      var target=property || window.currentProperty || currentProperty;
+
+      if(!target){
+        alert("수정할 매물을 찾을 수 없습니다.");
+        return;
+      }
+
+      if(!auth.currentUser || auth.currentUser.email!==ADMIN_EMAIL){
+        alert("관리자만 수정할 수 있습니다.");
+        return;
+      }
+
+      /* 지도주소 입력칸이 아직 없으면 먼저 생성 */
+      try{
+        if(typeof addMapAddressField==="function")addMapAddressField();
+      }catch(e){
+        console.warn("지도주소 칸 준비 오류:",e);
+      }
+
+      var d=editData(target);
+
+      /* 전역 editingId는 기존 저장 로직에서 그대로 사용 */
+      editingId=target.id || null;
+
+      var title=el("formTitle");
+      if(title)title.textContent=target.id ? "매물 수정" : "매물 복사 등록";
+
+      setVal("fTitle",d.title);
+      setVal("fAddress",d.address);
+      setVal("fMapAddress",d.mapAddress || d.address);
+      setVal("fType",d.type);
+      setVal("fTradeType",d.tradeType);
+      setVal("fDeposit",d.deposit);
+      setVal("fRent",d.rent);
+      setVal("fSalePrice",d.salePrice);
+      setVal("fJeonsePrice",d.jeonsePrice);
+      setVal("fPremium",d.premium);
+      setVal("fLandArea",d.landArea);
+      setVal("fArea",d.area);
+      setVal("fFloor",d.floor);
+      setVal("fMainUse",d.mainUse);
+      setVal("fManagementFee",d.managementFee);
+      setVal("fTotalParking",d.totalParking);
+      setVal("fBathroom",d.bathroom);
+      setVal("fApprovalDate",d.approvalDate);
+      setVal("fMoveInDate",d.moveInDate);
+      setVal("fDirection",d.direction);
+      setVal("fDetailUrl",d.detailUrl);
+      setVal("fDescription",d.description);
+      setVal("fAdminMemo",d.adminMemo);
+
+      try{
+        if(typeof window.updateTradeTypeFields==="function")window.updateTradeTypeFields();
+      }catch(e){
+        console.warn("거래유형 UI 갱신 오류:",e);
+      }
+
+      currentImageData=first(target,["image","imageData","photo","사진URL"],"");
+      var preview=el("imagePreview");
+      if(preview){
+        if(currentImageData){
+          preview.src=currentImageData;
+          preview.style.display="block";
+        }else{
+          preview.style.display="none";
+          preview.removeAttribute("src");
+        }
+      }
+
+      /* 건축물대장 복원 실패가 수정창 자체를 막지 않도록 별도 처리 */
+      try{
+        if(typeof window.loadSavedBuildingRegister==="function"){
+          window.loadSavedBuildingRegister(target.buildingRegister || {});
+        }
+        if(typeof window.setBuildingRegisterStatusForEdit==="function"){
+          var hasBR=target.buildingRegister &&
+                    typeof target.buildingRegister==="object" &&
+                    Object.keys(target.buildingRegister).length>0;
+          window.setBuildingRegisterStatusForEdit(target.buildingRegisterStatus || (hasBR?"조회완료":"미조회"));
+        }
+      }catch(e){
+        console.warn("건축물대장 복원 오류:",e);
+      }
+
+      /* 상세창은 닫되 currentProperty는 지우지 않는다 */
+      var detail=el("detailPage");
+      if(detail){
+        detail.classList.remove("show");
+        detail.classList.remove("detail-split");
+      }
+
+      showModal();
+
+    }catch(error){
+      console.error("매물 수정창 최종 오류:",error);
+      alert("수정창을 여는 중 오류가 발생했습니다.\n\n"+(error && error.message ? error.message : error));
+    }
+  };
+
+  window.adminEdit=function(id){
+    var target=Array.isArray(properties)
+      ? properties.find(function(p){return p.id===id;})
+      : null;
+
+    if(!target){
+      alert("수정할 매물을 찾을 수 없습니다.");
+      return;
+    }
+
+    currentProperty=target;
+
+    try{
+      if(typeof closeAdminPanel==="function")closeAdminPanel();
+    }catch(e){}
+
+    window.editCurrentProperty(target);
+  };
+
+})();
+</script>
 
 </body>
 </html>
