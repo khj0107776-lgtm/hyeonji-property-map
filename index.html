@@ -841,7 +841,7 @@ onclick="closeExcelImport()">
 
 <p style="color:#6f7480;font-size:13px;line-height:1.6;margin-top:-8px">
 엑셀의 첫 번째 행은 제목으로 사용됩니다. 아래 열 이름을 그대로 사용하면 가장 정확합니다.<br>
-제목 / 주소 / 종류 / 보증금 / 월세 / 전세가 / 권리금 / 면적 / 층 / 주용도 / 관리비 / 총주차대수 / 욕실 / 사용승인일 / 상세주소 / 설명 / 사진URL
+제목 / 주소 / 종류 / 거래유형 / 보증금 / 월세 / 전세가 / 매매가 / 권리금 / 면적 / 층 / 주용도 / 관리비 / 총주차대수 / 욕실 / 사용승인일 / 설명 / 사진URL
 </p>
 
 <div class="file-box">
@@ -5119,6 +5119,46 @@ row,
 ["면적(m²)","면적(㎡)","면적","area"]
 );
 
+const rawTradeType=
+getExcelValue(
+row,
+["거래유형","거래","거래형태","transactionType","tradeType"]
+);
+
+let tradeType=String(rawTradeType||"").trim();
+if(tradeType.includes("매매"))tradeType="매매";
+else if(tradeType.includes("전세"))tradeType="전세";
+else if(tradeType.includes("월세"))tradeType="월세";
+else if(tradeType.includes("단기"))tradeType="단기";
+
+let depositValue=getExcelValue(row,["보증금(만원)","보증금","deposit"]);
+let rentValue=getExcelValue(row,["월세(만원)","월세","rent"]);
+let jeonseValue=getExcelValue(row,["전세가(만원)","전세금(만원)","전세가","전세금","jeonsePrice"]);
+let saleValue=getExcelValue(row,["매매가(만원)","매매가","매매가격(만원)","매매가격","매매금액(만원)","매매금액","salePrice"]);
+const legacyPrice=getExcelValue(row,["매물가(만원)","매물가","가격","price"]);
+
+if(!tradeType){
+  if(String(saleValue).trim()!=="")tradeType="매매";
+  else if(String(jeonseValue).trim()!=="")tradeType="전세";
+  else if(String(rentValue).trim()!==""||String(depositValue).trim()!=="")tradeType="월세";
+  else if(String(legacyPrice).includes("/"))tradeType="월세";
+  else if(String(legacyPrice).trim()!=="")tradeType="매매";
+}
+
+if(String(legacyPrice).trim()!==""){
+  if(tradeType==="월세"||tradeType==="단기"){
+    if(String(legacyPrice).includes("/")){
+      const parts=String(legacyPrice).split("/");
+      if(!String(depositValue).trim())depositValue=String(parts[0]||"").trim();
+      if(!String(rentValue).trim())rentValue=String(parts.slice(1).join("/")||"").trim();
+    }
+  }else if(tradeType==="전세"){
+    if(!String(jeonseValue).trim())jeonseValue=legacyPrice;
+  }else if(tradeType==="매매"){
+    if(!String(saleValue).trim())saleValue=legacyPrice;
+  }
+}
+
 const data={
 
 propertyNumber:
@@ -5143,41 +5183,15 @@ String(mapAddress)
 
 type:type,
 
-deposit:
-getExcelValue(
-row,
-["보증금(만원)","보증금","deposit"]
-),
+tradeType:tradeType,
 
-rent:
-getExcelValue(
-row,
-["월세(만원)","월세","rent"]
-),
+deposit:depositValue,
 
-jeonsePrice:
-getExcelValue(
-row,
-["전세가(만원)","전세금(만원)","전세가","전세금","jeonsePrice"]
-),
+rent:rentValue,
 
-salePrice:
-getExcelValue(
-row,
-[
-"매물가(만원)",
-"매물가",
-"매매가(만원)",
-"매매가",
-"매매가격(만원)",
-"매매가격",
-"매매금액(만원)",
-"매매금액",
-"가격",
-"price",
-"salePrice"
-]
-),
+jeonsePrice:jeonseValue,
+
+salePrice:saleValue,
 
 premium:
 getExcelValue(
