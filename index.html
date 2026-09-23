@@ -628,7 +628,7 @@ placeholder="58.23㎡">
 
 <input
 id="fFloor"
-placeholder="1층">
+placeholder="예: 1층/총3층">
 
 </div>
 
@@ -4143,7 +4143,7 @@ window.openDetailPage=function(id){
     }
 
     const normalizeFloorText=(value)=>{
-      const v=String(value||"").trim();
+      const v=String(value||"").trim().replace(/^총\s*/,"");
       if(!v)return "";
       return /층$/.test(v)?v:(/^-?\d+(?:\.\d+)?$/.test(v)?v+"층":v);
     };
@@ -6237,64 +6237,28 @@ document.addEventListener("click",function(e){
       return;
     }
 
-    /* 전체 매물목록과 동일한 카드 구조를 사용한다.
-       각 카드 클릭 시 기존 openProperty()를 그대로 호출해 상세페이지로 연결한다. */
+    /* 메인 매물목록(renderProperties)과 완전히 같은 카드 생성 방식 사용 */
     list.forEach(function(p){
 
-      const card = document.createElement("div");
-      card.className = "property-card";
-      card.style.cursor = "pointer";
+      const card=document.createElement("div");
+      card.className="property-card";
+      card.onclick=function(){ openProperty(p); };
 
-      const image = p.image || "";
-      const title = p.title || "매물";
-      const address = p.address || "";
-      const area = p.area || "";
-      const floor = p.floor || "";
+      const photo=p.image
+        ? '<img src="'+escapeAttr(p.image)+'" loading="lazy">'
+        : '<span>대표사진 없음</span>';
 
-      const priceText = formatPrice(p);
-
-      let infoText = "";
-      if(area){
-        infoText += escapeHtml(areaWithPyeong(area));
-      }
-      if(floor){
-        if(infoText) infoText += " · ";
-        infoText += escapeHtml(String(floor));
-      }
-
-      card.innerHTML =
-        '<div class="card-photo">' +
-          (image
-            ? '<img src="' + escapeAttr(image) + '" alt="">'
-            : '<div class="no-photo">사진 없음</div>') +
-        '</div>' +
-        '<div class="card-body">' +
-          '<span class="trade-badge">' + escapeHtml(inferTradeType(p)||"") + '</span>' +
-          '<span class="type-badge">' + escapeHtml((String(p.type||"").trim()==="상가점포" ? "상가" : String(p.type||"").trim())) + '</span>' +
-          '<div class="card-title">' + escapeHtml(String(title)) + '</div>' +
-          (priceText
-            ? '<div class="card-price">' + priceText + '</div>'
-            : '') +
-          (address
-            ? '<div class="card-address">' + escapeHtml(String(address)) + '</div>'
-            : '') +
-          (infoText
-            ? '<div class="card-right">' + infoText + '</div>'
-            : '') +
+      card.innerHTML=
+        '<div class="card-photo">'+photo+'</div>'+
+        '<div class="card-body">'+
+        '<span class="trade-badge">'+escapeHtml(inferTradeType(p)||"")+'</span>'+
+        '<span class="type-badge">'+escapeHtml(normalizedType(p.type)||"")+'</span>'+
+        '<div class="card-title">'+escapeHtml(p.title||"매물")+'</div>'+
+        '<div class="card-address">'+escapeHtml(p.address||"")+'</div>'+
+        '<div class="card-price">'+formatPrice(p)+
+        '<span class="card-right">'+escapeHtml(areaWithPyeong(p.area))+'</span>'+
+        '</div>'+
         '</div>';
-
-      card.addEventListener("click", function(event){
-        event.preventDefault();
-        event.stopPropagation();
-
-        if(typeof openProperty === "function"){
-          openProperty(p);
-        }else if(typeof window.openProperty === "function"){
-          window.openProperty(p);
-        }else if(typeof window.openDetailPage === "function" && p.id){
-          window.openDetailPage(p.id);
-        }
-      });
 
       propertyList.appendChild(card);
     });
