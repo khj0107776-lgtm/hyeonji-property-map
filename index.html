@@ -4387,6 +4387,9 @@ function renderPropertyCards(list){
   });
 }
 
+/* 동네별 목록에서도 기본 매물카드 렌더러를 그대로 사용할 수 있게 공개 */
+window.renderPropertyCards = renderPropertyCards;
+
 window.renderProperties=function(){
 
   const list=getFilteredProperties();
@@ -7607,8 +7610,8 @@ window.addEventListener("popstate",function(){
         : "현재 " + list.length + "개 매물";
     }
 
-    if(typeof renderPropertyCards === "function"){
-      renderPropertyCards(list);
+    if(typeof window.renderPropertyCards === "function"){
+      window.renderPropertyCards(list);
     }
   };
 
