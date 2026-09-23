@@ -5813,14 +5813,27 @@ document.addEventListener("click",function(e){
       '<strong>' + escapeHtml(String(count)) + '</strong> ' +
       '<span>' + escapeHtml(dong) + '</span>';
 
-    content.addEventListener("click", function(event){
-      event.preventDefault();
-      event.stopPropagation();
+    /* 지도 위 CustomOverlay는 브라우저/모바일 환경에 따라 click 이벤트가
+       지도 레이어에 먼저 잡힐 수 있어 pointerup + click을 함께 연결한다. */
+    let lastDongOpenAt = 0;
+    function openDongList(event){
+      if(event){
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const now = Date.now();
+      if(now - lastDongOpenAt < 250) return;
+      lastDongOpenAt = now;
 
       if(typeof window.renderDongPropertyList === "function"){
         window.renderDongPropertyList(dong);
       }
-    });
+    }
+
+    content.onclick = openDongList;
+    content.addEventListener("pointerup", openDongList, false);
+    content.addEventListener("touchend", openDongList, {passive:false});
 
     const overlay =
       new kakao.maps.CustomOverlay({
@@ -5833,7 +5846,9 @@ document.addEventListener("click",function(e){
 
         yAnchor: 1.4,
 
-        zIndex: 100
+        zIndex: 100,
+
+        clickable: true
 
       });
 
@@ -6226,29 +6241,7 @@ document.addEventListener("click",function(e){
 
   window.renderDongPropertyList = renderDongPropertyList;
 
-  /* Kakao CustomOverlay 안의 .count-overlay 클릭을 감지 */
-  document.addEventListener("click", function(event){
-    const overlay = event.target.closest
-      ? event.target.closest(".count-overlay")
-      : null;
-
-    if(!overlay) return;
-
-    const dong =
-      normalizeDongName(overlay.getAttribute("data-stable-dong")) ||
-      normalizeDongName(
-        overlay.querySelector("span")
-          ? overlay.querySelector("span").textContent
-          : ""
-      );
-
-    if(!dong) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    renderDongPropertyList(dong);
-  }, true);
+  /* 동네 클릭은 각 Kakao CustomOverlay DOM에 직접 연결한다. */
 
 })();
 </script>
