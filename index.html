@@ -96,12 +96,6 @@ text-align:center;
 line-height:52px;
 }
 
-/* 상세정보 보기 버튼만 강조 */
-#detailExternalLink{
-background:#f05a24 !important;
-color:#fff !important;
-}
-
 .detail-admin{display:none;gap:8px;margin-top:9px}
 .detail-admin.show{display:flex}
 .detail-admin button{flex:1;height:50px;border-radius:12px;border:0;font-size:15px;font-weight:900}
@@ -634,7 +628,7 @@ placeholder="58.23㎡">
 
 <input
 id="fFloor"
-placeholder="예: 1층/총3층">
+placeholder="1층">
 
 </div>
 
@@ -847,7 +841,7 @@ onclick="closeExcelImport()">
 
 <p style="color:#6f7480;font-size:13px;line-height:1.6;margin-top:-8px">
 엑셀의 첫 번째 행은 제목으로 사용됩니다. 아래 열 이름을 그대로 사용하면 가장 정확합니다.<br>
-제목 / 주소 / 종류 / 거래유형 / 보증금 / 월세 / 전세가 / 매매가 / 권리금 / 면적 / 층 / 주용도 / 관리비 / 총주차대수 / 욕실 / 사용승인일 / 설명 / 사진URL
+제목 / 주소 / 종류 / 보증금 / 월세 / 전세가 / 권리금 / 면적 / 층 / 주용도 / 관리비 / 총주차대수 / 욕실 / 사용승인일 / 상세주소 / 설명 / 사진URL
 </p>
 
 <div class="file-box">
@@ -1065,18 +1059,16 @@ id="adminPropertyList">
       <h2>📊 등록매물 확인</h2>
       <div class="registered-list-tools">
         <input id="registeredPropertySearch" class="registered-list-search" type="text" placeholder="매물번호·제목·주소·종류 검색" oninput="renderRegisteredProperties()">
-        <button class="registered-list-download" type="button" onclick="toggleRegisteredSelectAll()">☑ 전체선택</button>
-        <button class="registered-list-download" type="button" style="background:#d33" onclick="deleteSelectedRegisteredProperties()">🗑 선택삭제</button>
         <button class="registered-list-download" type="button" onclick="downloadRegisteredPropertiesExcel()">📥 엑셀 다운로드</button>
       </div>
       <div class="registered-list-wrap">
         <table class="registered-list-table">
           <thead>
             <tr>
-              <th style="text-align:center"><input id="registeredSelectAllCheckbox" type="checkbox" onchange="setRegisteredSelectAll(this.checked)"></th><th>매물번호</th><th>제목</th><th>주소</th><th>종류</th><th>거래유형</th>
+              <th>매물번호</th><th>제목</th><th>주소</th><th>종류</th><th>거래유형</th>
               <th>보증금</th><th>월세</th><th>전세가</th><th>매매가</th><th>권리금</th>
               <th>대지면적</th><th>면적</th><th>층</th><th>주용도</th><th>관리비</th>
-              <th>총주차대수</th><th>욕실</th><th>사용승인일</th><th>방향</th><th>업로드 날짜</th><th>건축물대장</th><th>관리</th>
+              <th>총주차대수</th><th>욕실</th><th>사용승인일</th><th>방향</th><th>건축물대장</th><th>관리</th>
             </tr>
           </thead>
           <tbody id="registeredPropertiesBody"></tbody>
@@ -4149,7 +4141,7 @@ window.openDetailPage=function(id){
     }
 
     const normalizeFloorText=(value)=>{
-      const v=String(value||"").trim().replace(/^총\s*/,"");
+      const v=String(value||"").trim();
       if(!v)return "";
       return /층$/.test(v)?v:(/^-?\d+(?:\.\d+)?$/.test(v)?v+"층":v);
     };
@@ -4238,13 +4230,32 @@ window.openDetailPage=function(id){
 
   const externalLink=document.getElementById("detailExternalLink");
 
-  if(p.detailUrl){
-    let url=String(p.detailUrl).trim();
-    if(!/^https?:\/\//i.test(url))url="https://"+url;
-    externalLink.href=url;
-    externalLink.style.display="block";
-  }else{
-    externalLink.style.display="none";
+  /* 기존 매물/엑셀 등록 매물의 상세URL 필드명도 모두 호환 */
+  const savedDetailUrl=String(
+    p.detailUrl ||
+    p["상세페이지URL"] ||
+    p["상세페이지 주소"] ||
+    p["상세URL"] ||
+    p.url ||
+    ""
+  ).trim();
+
+  if(externalLink){
+    if(savedDetailUrl){
+      let url=savedDetailUrl;
+      if(!/^https?:\/\//i.test(url))url="https://"+url;
+      externalLink.href=url;
+      externalLink.onclick=null;
+      externalLink.style.display="block";
+    }else{
+      /* 버튼 자체가 사라져 보이지 않도록 유지 */
+      externalLink.href="#";
+      externalLink.style.display="block";
+      externalLink.onclick=function(e){
+        e.preventDefault();
+        alert("등록된 상세페이지 URL이 없습니다.\n수정에서 상세페이지 URL을 입력해주세요.");
+      };
+    }
   }
 
   const admin=document.getElementById("detailAdmin");
@@ -4354,7 +4365,15 @@ window.openProperty=function(p){
 
 /* ---------- 목록 ---------- */
 
-function renderPropertyCards(list){
+window.renderProperties=function(){
+
+  const list=getFilteredProperties();
+
+  const count=document.getElementById("countLine");
+  if(count){
+    count.textContent=
+      "현재 "+list.length+"개 매물";
+  }
 
   const box=document.getElementById("propertyList");
   if(!box)return;
@@ -4371,6 +4390,7 @@ function renderPropertyCards(list){
 
     const card=document.createElement("div");
     card.className="property-card";
+
     card.onclick=()=>openProperty(p);
 
     const photo=p.image
@@ -4378,34 +4398,34 @@ function renderPropertyCards(list){
       :'<span>대표사진 없음</span>';
 
     card.innerHTML=
-      '<div class="card-photo">'+photo+'</div>'+ 
+      '<div class="card-photo">'+photo+'</div>'+
       '<div class="card-body">'+
-      '<span class="trade-badge">'+escapeHtml(inferTradeType(p)||"")+'</span>'+ 
-      '<span class="type-badge">'+escapeHtml(normalizedType(p.type)||"")+'</span>'+ 
-      '<div class="card-title">'+escapeHtml(p.title||"매물")+'</div>'+ 
-      '<div class="card-address">'+escapeHtml(p.address||"")+'</div>'+ 
-      '<div class="card-price">'+formatPrice(p)+
-      '<span class="card-right">'+escapeHtml(areaWithPyeong(p.area))+'</span>'+ 
-      '</div>'+ 
+      '<span class="trade-badge">'+
+      escapeHtml(inferTradeType(p)||"")+
+      '</span>'+
+      '<span class="type-badge">'+
+      escapeHtml(normalizedType(p.type)||"")+
+      '</span>'+
+      '<div class="card-title">'+
+      (p.propertyNumber?
+        '':"")+
+      escapeHtml(p.title||"매물")+
+      '</div>'+
+      '<div class="card-address">'+
+      escapeHtml(p.address||"")+
+      '</div>'+
+      '<div class="card-price">'+
+      formatPrice(p)+
+      '<span class="card-right">'+
+      escapeHtml(areaWithPyeong(p.area))+
+      '</span>'+
+      '</div>'+
       '</div>';
 
     box.appendChild(card);
+
   });
-}
 
-/* 동네별 목록에서도 기본 매물카드 렌더러를 그대로 사용할 수 있게 공개 */
-window.renderPropertyCards = renderPropertyCards;
-
-window.renderProperties=function(){
-
-  const list=getFilteredProperties();
-
-  const count=document.getElementById("countLine");
-  if(count){
-    count.textContent="현재 "+list.length+"개 매물";
-  }
-
-  renderPropertyCards(list);
 };
 
 /* ---------- 카테고리 ---------- */
@@ -4782,20 +4802,6 @@ window.getRegisteredPropertyResults=function(){
   });
 };
 
-function formatAdminUploadDate(p){
-  if(!p)return "-";
-  const value=p.createdAt||p.uploadedAt||p.registeredAt||"";
-  if(!value)return "-";
-  try{
-    let d;
-    if(value && typeof value.toDate==="function")d=value.toDate();
-    else if(value && value.seconds)d=new Date(Number(value.seconds)*1000);
-    else d=new Date(value);
-    if(!d||isNaN(d.getTime()))return "-";
-    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  }catch(e){return "-";}
-}
-
 window.renderRegisteredProperties=function(){
   const body=document.getElementById("registeredPropertiesBody");
   if(!body)return;
@@ -4805,7 +4811,7 @@ window.renderRegisteredProperties=function(){
   if(!list.length){
     const input=document.getElementById("registeredPropertySearch");
     const hasKeyword=!!(input&&input.value.trim());
-    body.innerHTML='<tr><td colspan="23" style="text-align:center;padding:35px;color:#888">'+
+    body.innerHTML='<tr><td colspan="21" style="text-align:center;padding:35px;color:#888">'+
       (hasKeyword?'검색 결과가 없습니다.':'등록된 매물이 없습니다.')+
       '</td></tr>';
     return;
@@ -4815,7 +4821,6 @@ window.renderRegisteredProperties=function(){
     const mainUse=p.mainUse||(p.buildingRegister&&p.buildingRegister.mainUse)||"-";
     const totalParking=p.totalParking||(p.buildingRegister&&p.buildingRegister.parkingCount)||"-";
     return '<tr>'+ 
-      '<td style="text-align:center"><input class="registered-property-check" type="checkbox" data-id="'+escapeAttr(p.id)+'" onchange="syncRegisteredSelectAllCheckbox()"></td>'+ 
       '<td>'+escapeHtml(p.propertyNumber?String(p.propertyNumber).replace(/^#/,""):"-")+'</td>'+ 
       '<td>'+escapeHtml(p.title||"-")+'</td>'+ 
       '<td>'+escapeHtml(p.address||"-")+'</td>'+ 
@@ -4835,7 +4840,6 @@ window.renderRegisteredProperties=function(){
       '<td>'+escapeHtml(p.bathroom||"-")+'</td>'+ 
       '<td>'+escapeHtml(p.approvalDate||"-")+'</td>'+ 
       '<td>'+escapeHtml(p.direction||"-")+'</td>'+ 
-      '<td>'+escapeHtml(formatAdminUploadDate(p))+'</td>'+ 
       '<td>'+escapeHtml((function(){
         if(p.buildingRegisterStatus)return p.buildingRegisterStatus;
         return p.buildingRegister&&Object.keys(p.buildingRegister).length?"조회완료":"미조회";
@@ -4846,45 +4850,7 @@ window.renderRegisteredProperties=function(){
         '<button class="registered-list-delete" onclick="deleteRegisteredProperty(\''+escapeAttr(p.id)+'\')">삭제</button>'+ 
       '</div></td>'+ 
     '</tr>';
-  }).join("");  syncRegisteredSelectAllCheckbox();
-};
-
-
-window.setRegisteredSelectAll=function(checked){
-  document.querySelectorAll("#registeredPropertiesBody .registered-property-check").forEach(function(cb){cb.checked=!!checked;});
-  syncRegisteredSelectAllCheckbox();
-};
-window.toggleRegisteredSelectAll=function(){
-  const checks=Array.from(document.querySelectorAll("#registeredPropertiesBody .registered-property-check"));
-  if(!checks.length){alert("선택할 매물이 없습니다.");return;}
-  const shouldCheck=checks.some(function(cb){return !cb.checked;});
-  checks.forEach(function(cb){cb.checked=shouldCheck;});
-  syncRegisteredSelectAllCheckbox();
-};
-window.syncRegisteredSelectAllCheckbox=function(){
-  const master=document.getElementById("registeredSelectAllCheckbox");
-  if(!master)return;
-  const checks=Array.from(document.querySelectorAll("#registeredPropertiesBody .registered-property-check"));
-  const n=checks.filter(function(cb){return cb.checked;}).length;
-  master.checked=checks.length>0&&n===checks.length;
-  master.indeterminate=n>0&&n<checks.length;
-};
-window.deleteSelectedRegisteredProperties=async function(){
-  if(!auth.currentUser||auth.currentUser.email!==ADMIN_EMAIL){alert("관리자만 삭제할 수 있습니다.");return;}
-  const ids=Array.from(document.querySelectorAll("#registeredPropertiesBody .registered-property-check:checked")).map(function(cb){return cb.getAttribute("data-id");}).filter(Boolean);
-  if(!ids.length){alert("삭제할 매물을 선택해주세요.");return;}
-  if(!confirm("선택한 "+ids.length+"개 매물을 정말 삭제하시겠습니까?\n삭제한 매물은 복구할 수 없습니다."))return;
-  try{
-    for(let i=0;i<ids.length;i+=450){
-      const batch=db.batch();
-      ids.slice(i,i+450).forEach(function(id){batch.delete(db.collection("properties").doc(id));});
-      await batch.commit();
-    }
-    await loadProperties();
-    renderRegisteredProperties();
-    renderAdminList();
-    alert("선택한 "+ids.length+"개 매물이 삭제되었습니다.");
-  }catch(error){alert("선택삭제 중 오류가 발생했습니다.\n\n"+error.message);}
+  }).join("");
 };
 
 window.downloadRegisteredPropertiesExcel=function(){
@@ -5131,46 +5097,6 @@ row,
 ["면적(m²)","면적(㎡)","면적","area"]
 );
 
-const rawTradeType=
-getExcelValue(
-row,
-["거래유형","거래","거래형태","transactionType","tradeType"]
-);
-
-let tradeType=String(rawTradeType||"").trim();
-if(tradeType.includes("매매"))tradeType="매매";
-else if(tradeType.includes("전세"))tradeType="전세";
-else if(tradeType.includes("월세"))tradeType="월세";
-else if(tradeType.includes("단기"))tradeType="단기";
-
-let depositValue=getExcelValue(row,["보증금(만원)","보증금","deposit"]);
-let rentValue=getExcelValue(row,["월세(만원)","월세","rent"]);
-let jeonseValue=getExcelValue(row,["전세가(만원)","전세금(만원)","전세가","전세금","jeonsePrice"]);
-let saleValue=getExcelValue(row,["매매가(만원)","매매가","매매가격(만원)","매매가격","매매금액(만원)","매매금액","salePrice"]);
-const legacyPrice=getExcelValue(row,["매물가(만원)","매물가","가격","price"]);
-
-if(!tradeType){
-  if(String(saleValue).trim()!=="")tradeType="매매";
-  else if(String(jeonseValue).trim()!=="")tradeType="전세";
-  else if(String(rentValue).trim()!==""||String(depositValue).trim()!=="")tradeType="월세";
-  else if(String(legacyPrice).includes("/"))tradeType="월세";
-  else if(String(legacyPrice).trim()!=="")tradeType="매매";
-}
-
-if(String(legacyPrice).trim()!==""){
-  if(tradeType==="월세"||tradeType==="단기"){
-    if(String(legacyPrice).includes("/")){
-      const parts=String(legacyPrice).split("/");
-      if(!String(depositValue).trim())depositValue=String(parts[0]||"").trim();
-      if(!String(rentValue).trim())rentValue=String(parts.slice(1).join("/")||"").trim();
-    }
-  }else if(tradeType==="전세"){
-    if(!String(jeonseValue).trim())jeonseValue=legacyPrice;
-  }else if(tradeType==="매매"){
-    if(!String(saleValue).trim())saleValue=legacyPrice;
-  }
-}
-
 const data={
 
 propertyNumber:
@@ -5195,15 +5121,41 @@ String(mapAddress)
 
 type:type,
 
-tradeType:tradeType,
+deposit:
+getExcelValue(
+row,
+["보증금(만원)","보증금","deposit"]
+),
 
-deposit:depositValue,
+rent:
+getExcelValue(
+row,
+["월세(만원)","월세","rent"]
+),
 
-rent:rentValue,
+jeonsePrice:
+getExcelValue(
+row,
+["전세가(만원)","전세금(만원)","전세가","전세금","jeonsePrice"]
+),
 
-jeonsePrice:jeonseValue,
-
-salePrice:saleValue,
+salePrice:
+getExcelValue(
+row,
+[
+"매물가(만원)",
+"매물가",
+"매매가(만원)",
+"매매가",
+"매매가격(만원)",
+"매매가격",
+"매매금액(만원)",
+"매매금액",
+"가격",
+"price",
+"salePrice"
+]
+),
 
 premium:
 getExcelValue(
@@ -5344,8 +5296,6 @@ data.lng=coords.lng;
 }
 
 try{
-
-data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
 
 await db
 .collection("properties")
@@ -5822,27 +5772,14 @@ document.addEventListener("click",function(e){
       '<strong>' + escapeHtml(String(count)) + '</strong> ' +
       '<span>' + escapeHtml(dong) + '</span>';
 
-    /* 지도 위 CustomOverlay는 브라우저/모바일 환경에 따라 click 이벤트가
-       지도 레이어에 먼저 잡힐 수 있어 pointerup + click을 함께 연결한다. */
-    let lastDongOpenAt = 0;
-    function openDongList(event){
-      if(event){
-        event.preventDefault();
-        event.stopPropagation();
-      }
-
-      const now = Date.now();
-      if(now - lastDongOpenAt < 250) return;
-      lastDongOpenAt = now;
+    content.addEventListener("click", function(event){
+      event.preventDefault();
+      event.stopPropagation();
 
       if(typeof window.renderDongPropertyList === "function"){
         window.renderDongPropertyList(dong);
       }
-    }
-
-    content.onclick = openDongList;
-    content.addEventListener("pointerup", openDongList, false);
-    content.addEventListener("touchend", openDongList, {passive:false});
+    });
 
     const overlay =
       new kakao.maps.CustomOverlay({
@@ -5855,9 +5792,7 @@ document.addEventListener("click",function(e){
 
         yAnchor: 1.4,
 
-        zIndex: 100,
-
-        clickable: true
+        zIndex: 100
 
       });
 
@@ -6239,8 +6174,77 @@ document.addEventListener("click",function(e){
 
     if(!propertyList) return;
 
-    /* 기본 목록과 같은 카드 렌더러를 그대로 사용 */
-    renderPropertyCards(list);
+    propertyList.innerHTML = "";
+
+    if(!list.length){
+      propertyList.innerHTML =
+        '<div style="padding:28px 12px;text-align:center;color:#777;">' +
+        escapeHtml(dong) + '에 표시할 매물이 없습니다.' +
+        '</div>';
+      return;
+    }
+
+    /* 전체 매물목록과 동일한 카드 구조를 사용한다.
+       각 카드 클릭 시 기존 openProperty()를 그대로 호출해 상세페이지로 연결한다. */
+    list.forEach(function(p){
+
+      const card = document.createElement("div");
+      card.className = "property-card";
+      card.style.cursor = "pointer";
+
+      const image = p.image || "";
+      const title = p.title || "매물";
+      const address = p.address || "";
+      const area = p.area || "";
+      const floor = p.floor || "";
+
+      const priceText = formatPrice(p);
+
+      let infoText = "";
+      if(area){
+        infoText += escapeHtml(String(area)) + "㎡";
+      }
+      if(floor){
+        if(infoText) infoText += " · ";
+        infoText += escapeHtml(String(floor));
+      }
+
+      card.innerHTML =
+        '<div class="card-photo">' +
+          (image
+            ? '<img src="' + escapeAttr(image) + '" alt="">'
+            : '<div class="no-photo">사진 없음</div>') +
+        '</div>' +
+        '<div class="card-body">' +
+          '<span class="trade-badge">' + escapeHtml(inferTradeType(p)||"") + '</span>' +
+          '<span class="type-badge">' + escapeHtml((String(p.type||"").trim()==="상가점포" ? "상가" : String(p.type||"").trim())) + '</span>' +
+          '<div class="card-title">' + escapeHtml(String(title)) + '</div>' +
+          (priceText
+            ? '<div class="card-price">' + priceText + '</div>'
+            : '') +
+          (address
+            ? '<div class="card-address">' + escapeHtml(String(address)) + '</div>'
+            : '') +
+          (infoText
+            ? '<div class="card-right">' + infoText + '</div>'
+            : '') +
+        '</div>';
+
+      card.addEventListener("click", function(event){
+        event.preventDefault();
+        event.stopPropagation();
+
+        if(typeof openProperty === "function"){
+          openProperty(p);
+        }else if(typeof window.openProperty === "function"){
+          window.openProperty(p);
+        }else if(typeof window.openDetailPage === "function" && p.id){
+          window.openDetailPage(p.id);
+        }
+      });
+
+      propertyList.appendChild(card);
+    });
 
     const side = document.querySelector(".side");
     if(side){
@@ -6250,7 +6254,29 @@ document.addEventListener("click",function(e){
 
   window.renderDongPropertyList = renderDongPropertyList;
 
-  /* 동네 클릭은 각 Kakao CustomOverlay DOM에 직접 연결한다. */
+  /* Kakao CustomOverlay 안의 .count-overlay 클릭을 감지 */
+  document.addEventListener("click", function(event){
+    const overlay = event.target.closest
+      ? event.target.closest(".count-overlay")
+      : null;
+
+    if(!overlay) return;
+
+    const dong =
+      normalizeDongName(overlay.getAttribute("data-stable-dong")) ||
+      normalizeDongName(
+        overlay.querySelector("span")
+          ? overlay.querySelector("span").textContent
+          : ""
+      );
+
+    if(!dong) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    renderDongPropertyList(dong);
+  }, true);
 
 })();
 </script>
@@ -7293,7 +7319,6 @@ window.addEventListener("popstate",function(){
         if(area==='small' && !(py<=20))return false;
         if(area==='medium' && !(py>20&&py<50))return false;
         if(area==='large' && !(py>=50))return false;
-        if(price==='under50' && !(rent>0&&rent<=50))return false;
         if(price==='low' && !(rent>0&&rent<=100))return false;
         if(price==='mid' && !(rent>100&&rent<300))return false;
         if(price==='high' && !(rent>=300))return false;
@@ -7337,7 +7362,7 @@ window.addEventListener("popstate",function(){
     var area=document.createElement('select');area.className='h-filter';area.id='hAreaFilter';
     [['','면적 전체'],['small','20평 이하'],['medium','20~50평'],['large','50평 이상']].forEach(x=>area.appendChild(makeOption(x[0],x[1])));toolbar.appendChild(area);
     var price=document.createElement('select');price.className='h-filter';price.id='hPriceFilter';
-    [['','가격 전체'],['under50','월세 50 이하'],['low','월세 100 이하'],['mid','월세 100~300'],['high','월세 300 이상']].forEach(x=>price.appendChild(makeOption(x[0],x[1])));toolbar.appendChild(price);
+    [['','가격 전체'],['low','월세 100 이하'],['mid','월세 100~300'],['high','월세 300 이상']].forEach(x=>price.appendChild(makeOption(x[0],x[1])));toolbar.appendChild(price);
     var theme=document.createElement('select');theme.className='h-filter';theme.id='hThemeFilter';
     [['','전체 테마'],['parking','주차좋음'],['vacant','즉시입주'],['premium','무권리']].forEach(x=>theme.appendChild(makeOption(x[0],x[1])));toolbar.appendChild(theme);
     var spacer=document.createElement('div');spacer.className='h-toolbar-spacer';toolbar.appendChild(spacer);
@@ -7575,78 +7600,5 @@ window.addEventListener("popstate",function(){
 })();
 </script>
 
-
-<script id="hyeonji-dong-list-final-fix">
-/* =========================================================
-   동네별 매물 목록 최종 고정
-   - 지도 동별 개수/오버레이 계산은 건드리지 않음
-   - 동네 클릭 후 다른 비동기 렌더가 실행돼도 해당 동 목록 유지
-   - 카테고리/검색을 새로 실행하면 동네 고정 해제
-========================================================= */
-(function(){
-  "use strict";
-
-  var selectedDong = "";
-
-  function cleanDong(v){
-    return String(v || "").replace(/\s+/g," ").trim();
-  }
-
-  function propertyDong(p){
-    var d = cleanDong(p && p.dong);
-    if(d) return d;
-    var a = String((p && (p.address || p.mapAddress)) || "")
-      .replace(/\r?\n/g," ").replace(/\s+/g," ").trim();
-    return typeof neighborhood === "function" ? cleanDong(neighborhood(a)) : "";
-  }
-
-  /* 목록 렌더만 동네 필터를 유지한다. 지도용 getFilteredProperties는 그대로 둔다. */
-  window.renderProperties = function(){
-    var list = typeof getFilteredProperties === "function"
-      ? (getFilteredProperties() || [])
-      : (Array.isArray(properties) ? properties.slice() : []);
-
-    if(selectedDong){
-      list = list.filter(function(p){ return propertyDong(p) === selectedDong; });
-    }
-
-    var count = document.getElementById("countLine");
-    if(count){
-      count.textContent = selectedDong
-        ? selectedDong + " 매물 " + list.length + "개"
-        : "현재 " + list.length + "개 매물";
-    }
-
-    if(typeof window.renderPropertyCards === "function"){
-      window.renderPropertyCards(list);
-    }
-  };
-
-  window.renderDongPropertyList = function(dong){
-    selectedDong = cleanDong(dong);
-    if(!selectedDong) return;
-    window.renderProperties();
-    var side=document.querySelector(".side");
-    if(side) side.scrollTop=0;
-  };
-
-  /* 새 카테고리 선택/검색은 전체 조건으로 돌아간다. */
-  var baseSelectCategory = window.selectCategory;
-  if(typeof baseSelectCategory === "function"){
-    window.selectCategory = function(category, button){
-      selectedDong = "";
-      return baseSelectCategory(category, button);
-    };
-  }
-
-  var baseSearchProperties = window.searchProperties;
-  if(typeof baseSearchProperties === "function"){
-    window.searchProperties = function(){
-      selectedDong = "";
-      return baseSearchProperties.apply(this, arguments);
-    };
-  }
-})();
-</script>
 </body>
 </html>
