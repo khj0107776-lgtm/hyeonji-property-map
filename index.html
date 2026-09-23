@@ -4348,15 +4348,7 @@ window.openProperty=function(p){
 
 /* ---------- 목록 ---------- */
 
-window.renderProperties=function(){
-
-  const list=getFilteredProperties();
-
-  const count=document.getElementById("countLine");
-  if(count){
-    count.textContent=
-      "현재 "+list.length+"개 매물";
-  }
+function renderPropertyCards(list){
 
   const box=document.getElementById("propertyList");
   if(!box)return;
@@ -4373,7 +4365,6 @@ window.renderProperties=function(){
 
     const card=document.createElement("div");
     card.className="property-card";
-
     card.onclick=()=>openProperty(p);
 
     const photo=p.image
@@ -4381,34 +4372,31 @@ window.renderProperties=function(){
       :'<span>대표사진 없음</span>';
 
     card.innerHTML=
-      '<div class="card-photo">'+photo+'</div>'+
+      '<div class="card-photo">'+photo+'</div>'+ 
       '<div class="card-body">'+
-      '<span class="trade-badge">'+
-      escapeHtml(inferTradeType(p)||"")+
-      '</span>'+
-      '<span class="type-badge">'+
-      escapeHtml(normalizedType(p.type)||"")+
-      '</span>'+
-      '<div class="card-title">'+
-      (p.propertyNumber?
-        '':"")+
-      escapeHtml(p.title||"매물")+
-      '</div>'+
-      '<div class="card-address">'+
-      escapeHtml(p.address||"")+
-      '</div>'+
-      '<div class="card-price">'+
-      formatPrice(p)+
-      '<span class="card-right">'+
-      escapeHtml(areaWithPyeong(p.area))+
-      '</span>'+
-      '</div>'+
+      '<span class="trade-badge">'+escapeHtml(inferTradeType(p)||"")+'</span>'+ 
+      '<span class="type-badge">'+escapeHtml(normalizedType(p.type)||"")+'</span>'+ 
+      '<div class="card-title">'+escapeHtml(p.title||"매물")+'</div>'+ 
+      '<div class="card-address">'+escapeHtml(p.address||"")+'</div>'+ 
+      '<div class="card-price">'+formatPrice(p)+
+      '<span class="card-right">'+escapeHtml(areaWithPyeong(p.area))+'</span>'+ 
+      '</div>'+ 
       '</div>';
 
     box.appendChild(card);
-
   });
+}
 
+window.renderProperties=function(){
+
+  const list=getFilteredProperties();
+
+  const count=document.getElementById("countLine");
+  if(count){
+    count.textContent="현재 "+list.length+"개 매물";
+  }
+
+  renderPropertyCards(list);
 };
 
 /* ---------- 카테고리 ---------- */
@@ -6227,41 +6215,8 @@ document.addEventListener("click",function(e){
 
     if(!propertyList) return;
 
-    propertyList.innerHTML = "";
-
-    if(!list.length){
-      propertyList.innerHTML =
-        '<div style="padding:28px 12px;text-align:center;color:#777;">' +
-        escapeHtml(dong) + '에 표시할 매물이 없습니다.' +
-        '</div>';
-      return;
-    }
-
-    /* 메인 매물목록(renderProperties)과 완전히 같은 카드 생성 방식 사용 */
-    list.forEach(function(p){
-
-      const card=document.createElement("div");
-      card.className="property-card";
-      card.onclick=function(){ openProperty(p); };
-
-      const photo=p.image
-        ? '<img src="'+escapeAttr(p.image)+'" loading="lazy">'
-        : '<span>대표사진 없음</span>';
-
-      card.innerHTML=
-        '<div class="card-photo">'+photo+'</div>'+
-        '<div class="card-body">'+
-        '<span class="trade-badge">'+escapeHtml(inferTradeType(p)||"")+'</span>'+
-        '<span class="type-badge">'+escapeHtml(normalizedType(p.type)||"")+'</span>'+
-        '<div class="card-title">'+escapeHtml(p.title||"매물")+'</div>'+
-        '<div class="card-address">'+escapeHtml(p.address||"")+'</div>'+
-        '<div class="card-price">'+formatPrice(p)+
-        '<span class="card-right">'+escapeHtml(areaWithPyeong(p.area))+'</span>'+
-        '</div>'+
-        '</div>';
-
-      propertyList.appendChild(card);
-    });
+    /* 기본 목록과 같은 카드 렌더러를 그대로 사용 */
+    renderPropertyCards(list);
 
     const side = document.querySelector(".side");
     if(side){
