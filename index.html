@@ -220,6 +220,18 @@ body{overflow:auto}
 .registered-list-download{height:40px;padding:0 12px}
 }
 </style>
+
+<style id="hyeonji-detail-button-highlight-final">
+/* 상세정보 보기 버튼 강조 */
+#detailExternalLink{
+  background:#f05a24 !important;
+  color:#fff !important;
+}
+#detailExternalLink:hover{
+  filter:brightness(.94);
+}
+</style>
+
 </head>
 
 <body>
@@ -7319,6 +7331,7 @@ window.addEventListener("popstate",function(){
         if(area==='small' && !(py<=20))return false;
         if(area==='medium' && !(py>20&&py<50))return false;
         if(area==='large' && !(py>=50))return false;
+        if(price==='under50' && !(rent>0&&rent<=50))return false;
         if(price==='low' && !(rent>0&&rent<=100))return false;
         if(price==='mid' && !(rent>100&&rent<300))return false;
         if(price==='high' && !(rent>=300))return false;
@@ -7362,7 +7375,7 @@ window.addEventListener("popstate",function(){
     var area=document.createElement('select');area.className='h-filter';area.id='hAreaFilter';
     [['','면적 전체'],['small','20평 이하'],['medium','20~50평'],['large','50평 이상']].forEach(x=>area.appendChild(makeOption(x[0],x[1])));toolbar.appendChild(area);
     var price=document.createElement('select');price.className='h-filter';price.id='hPriceFilter';
-    [['','가격 전체'],['low','월세 100 이하'],['mid','월세 100~300'],['high','월세 300 이상']].forEach(x=>price.appendChild(makeOption(x[0],x[1])));toolbar.appendChild(price);
+    [['','가격 전체'],['under50','월세 50 이하'],['low','월세 100 이하'],['mid','월세 100~300'],['high','월세 300 이상']].forEach(x=>price.appendChild(makeOption(x[0],x[1])));toolbar.appendChild(price);
     var theme=document.createElement('select');theme.className='h-filter';theme.id='hThemeFilter';
     [['','전체 테마'],['parking','주차좋음'],['vacant','즉시입주'],['premium','무권리']].forEach(x=>theme.appendChild(makeOption(x[0],x[1])));toolbar.appendChild(theme);
     var spacer=document.createElement('div');spacer.className='h-toolbar-spacer';toolbar.appendChild(spacer);
