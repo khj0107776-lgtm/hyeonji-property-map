@@ -6255,7 +6255,7 @@ document.addEventListener("click",function(e){
 
       let infoText = "";
       if(area){
-        infoText += escapeHtml(String(area)) + "㎡";
+        infoText += escapeHtml(areaWithPyeong(area));
       }
       if(floor){
         if(infoText) infoText += " · ";
