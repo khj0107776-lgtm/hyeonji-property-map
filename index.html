@@ -7565,5 +7565,78 @@ window.addEventListener("popstate",function(){
 })();
 </script>
 
+
+<script id="hyeonji-dong-list-final-fix">
+/* =========================================================
+   동네별 매물 목록 최종 고정
+   - 지도 동별 개수/오버레이 계산은 건드리지 않음
+   - 동네 클릭 후 다른 비동기 렌더가 실행돼도 해당 동 목록 유지
+   - 카테고리/검색을 새로 실행하면 동네 고정 해제
+========================================================= */
+(function(){
+  "use strict";
+
+  var selectedDong = "";
+
+  function cleanDong(v){
+    return String(v || "").replace(/\s+/g," ").trim();
+  }
+
+  function propertyDong(p){
+    var d = cleanDong(p && p.dong);
+    if(d) return d;
+    var a = String((p && (p.address || p.mapAddress)) || "")
+      .replace(/\r?\n/g," ").replace(/\s+/g," ").trim();
+    return typeof neighborhood === "function" ? cleanDong(neighborhood(a)) : "";
+  }
+
+  /* 목록 렌더만 동네 필터를 유지한다. 지도용 getFilteredProperties는 그대로 둔다. */
+  window.renderProperties = function(){
+    var list = typeof getFilteredProperties === "function"
+      ? (getFilteredProperties() || [])
+      : (Array.isArray(properties) ? properties.slice() : []);
+
+    if(selectedDong){
+      list = list.filter(function(p){ return propertyDong(p) === selectedDong; });
+    }
+
+    var count = document.getElementById("countLine");
+    if(count){
+      count.textContent = selectedDong
+        ? selectedDong + " 매물 " + list.length + "개"
+        : "현재 " + list.length + "개 매물";
+    }
+
+    if(typeof renderPropertyCards === "function"){
+      renderPropertyCards(list);
+    }
+  };
+
+  window.renderDongPropertyList = function(dong){
+    selectedDong = cleanDong(dong);
+    if(!selectedDong) return;
+    window.renderProperties();
+    var side=document.querySelector(".side");
+    if(side) side.scrollTop=0;
+  };
+
+  /* 새 카테고리 선택/검색은 전체 조건으로 돌아간다. */
+  var baseSelectCategory = window.selectCategory;
+  if(typeof baseSelectCategory === "function"){
+    window.selectCategory = function(category, button){
+      selectedDong = "";
+      return baseSelectCategory(category, button);
+    };
+  }
+
+  var baseSearchProperties = window.searchProperties;
+  if(typeof baseSearchProperties === "function"){
+    window.searchProperties = function(){
+      selectedDong = "";
+      return baseSearchProperties.apply(this, arguments);
+    };
+  }
+})();
+</script>
 </body>
 </html>
