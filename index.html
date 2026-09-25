@@ -1071,13 +1071,17 @@ id="adminPropertyList">
       <h2>📊 등록매물 확인</h2>
       <div class="registered-list-tools">
         <input id="registeredPropertySearch" class="registered-list-search" type="text" placeholder="매물번호·제목·주소·종류 검색" oninput="renderRegisteredProperties()">
+        <label style="display:flex;align-items:center;gap:5px;white-space:nowrap;font-weight:800;font-size:13px">
+          <input id="registeredSelectAll" type="checkbox" onchange="toggleRegisteredSelectAll(this.checked)"> 전체선택
+        </label>
+        <button class="registered-list-delete" type="button" onclick="deleteSelectedRegisteredProperties()" style="height:42px;padding:0 14px;white-space:nowrap">선택삭제</button>
         <button class="registered-list-download" type="button" onclick="downloadRegisteredPropertiesExcel()">📥 엑셀 다운로드</button>
       </div>
       <div class="registered-list-wrap">
         <table class="registered-list-table">
           <thead>
             <tr>
-              <th>매물번호</th><th>제목</th><th>주소</th><th>종류</th><th>거래유형</th>
+              <th style="text-align:center"><input id="registeredSelectAllHead" type="checkbox" onchange="toggleRegisteredSelectAll(this.checked)" aria-label="전체선택"></th><th>매물번호</th><th>제목</th><th>주소</th><th>종류</th><th>거래유형</th>
               <th>보증금</th><th>월세</th><th>전세가</th><th>매매가</th><th>권리금</th>
               <th>대지면적</th><th>면적</th><th>층</th><th>주용도</th><th>관리비</th>
               <th>총주차대수</th><th>욕실</th><th>사용승인일</th><th>방향</th><th>건축물대장</th><th>관리</th>
@@ -4823,7 +4827,7 @@ window.renderRegisteredProperties=function(){
   if(!list.length){
     const input=document.getElementById("registeredPropertySearch");
     const hasKeyword=!!(input&&input.value.trim());
-    body.innerHTML='<tr><td colspan="21" style="text-align:center;padding:35px;color:#888">'+
+    body.innerHTML='<tr><td colspan="22" style="text-align:center;padding:35px;color:#888">'+
       (hasKeyword?'검색 결과가 없습니다.':'등록된 매물이 없습니다.')+
       '</td></tr>';
     return;
@@ -4833,6 +4837,7 @@ window.renderRegisteredProperties=function(){
     const mainUse=p.mainUse||(p.buildingRegister&&p.buildingRegister.mainUse)||"-";
     const totalParking=p.totalParking||(p.buildingRegister&&p.buildingRegister.parkingCount)||"-";
     return '<tr>'+ 
+      '<td style="text-align:center"><input class="registered-row-check" type="checkbox" value="'+escapeAttr(p.id)+'" onchange="syncRegisteredSelectAll()"></td>'+
       '<td>'+escapeHtml(p.propertyNumber?String(p.propertyNumber).replace(/^#/,""):"-")+'</td>'+ 
       '<td>'+escapeHtml(p.title||"-")+'</td>'+ 
       '<td>'+escapeHtml(p.address||"-")+'</td>'+ 
@@ -4977,6 +4982,47 @@ window.copyRegisteredProperty=function(id){
   window.editCurrentProperty(copy);
   const titleEl=document.getElementById("formTitle");
   if(titleEl)titleEl.textContent="매물 복사 등록";
+};
+
+
+window.syncRegisteredSelectAll=function(){
+  const checks=Array.from(document.querySelectorAll(".registered-row-check"));
+  const checked=checks.length>0 && checks.every(function(c){return c.checked;});
+  const top=document.getElementById("registeredSelectAll");
+  const head=document.getElementById("registeredSelectAllHead");
+  if(top)top.checked=checked;
+  if(head)head.checked=checked;
+};
+
+window.toggleRegisteredSelectAll=function(checked){
+  document.querySelectorAll(".registered-row-check").forEach(function(c){c.checked=checked;});
+  const top=document.getElementById("registeredSelectAll");
+  const head=document.getElementById("registeredSelectAllHead");
+  if(top)top.checked=checked;
+  if(head)head.checked=checked;
+};
+
+window.deleteSelectedRegisteredProperties=async function(){
+  if(!auth.currentUser||auth.currentUser.email!==ADMIN_EMAIL){
+    alert("관리자만 삭제할 수 있습니다.");
+    return;
+  }
+  const ids=Array.from(document.querySelectorAll(".registered-row-check:checked")).map(function(c){return c.value;});
+  if(!ids.length){
+    alert("삭제할 매물을 선택해주세요.");
+    return;
+  }
+  if(!confirm("선택한 "+ids.length+"개 매물을 정말 삭제하시겠습니까?"))return;
+  try{
+    for(const id of ids){
+      await db.collection("properties").doc(id).delete();
+    }
+    await loadProperties();
+    renderRegisteredProperties();
+    renderAdminList();
+  }catch(error){
+    alert("선택삭제 중 오류가 발생했습니다.\\n\\n"+error.message);
+  }
 };
 
 window.deleteRegisteredProperty=async function(id){
