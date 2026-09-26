@@ -4650,8 +4650,13 @@ window.saveProperty=async function(){
       firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  /* 주용도는 건축물대장 자동값보다 관리자가 직접 입력한 값을 우선 저장 */
-  if(!data.mainUse && data.buildingRegister){
+  /* 주용도 최종 우선순위: 관리자가 입력한 fMainUse > 건축물대장 자동값 */
+  if(data.mainUse){
+    if(data.buildingRegister){
+      data.buildingRegister.mainUse=data.mainUse;
+      data.buildingRegister.floorMainUse=data.mainUse;
+    }
+  }else if(data.buildingRegister){
     data.mainUse=data.buildingRegister.floorMainUse||data.buildingRegister.mainUse||"";
   }
 
@@ -7228,7 +7233,7 @@ window.addEventListener("popstate",function(){
       parkingCount:text(it.parkingCount),
       elevatorCount:text(it.elevatorCount),
       rawManagementNo:text(it.rawManagementNo),
-      floorMainUse:text(selectedBuildingFloor?.mainUse)||text(el("fMainUse")?.value),
+      floorMainUse:text(el("fMainUse")?.value)||text(selectedBuildingFloor?.mainUse),
       floorUses:buildingFloorItems.map(x=>({floorName:text(x.floorName),mainUse:text(x.mainUse),etcUse:text(x.etcUse),area:text(x.area)}))
     };
   };
