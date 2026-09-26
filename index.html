@@ -3529,7 +3529,7 @@ function typeClass(t){
 }
 
 function neighborhood(address){
-  const m=String(address||"").match(/([가-힣0-9]+(?:동|읍|면))(?=\s|$)/);
+  const m=String(address||"").match(/([가-힣0-9]+(?:동|읍|면))(?=\s|\d|$)/);
   return m?m[1]:"";
 }
 
