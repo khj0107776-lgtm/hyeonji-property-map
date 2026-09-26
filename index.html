@@ -4650,8 +4650,9 @@ window.saveProperty=async function(){
       firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  if(data.buildingRegister&&data.buildingRegister.floorMainUse){
-    data.mainUse=data.buildingRegister.floorMainUse;
+  /* 주용도는 건축물대장 자동값보다 관리자가 직접 입력한 값을 우선 저장 */
+  if(!data.mainUse && data.buildingRegister){
+    data.mainUse=data.buildingRegister.floorMainUse||data.buildingRegister.mainUse||"";
   }
 
   if(currentImageData)data.image=currentImageData;
